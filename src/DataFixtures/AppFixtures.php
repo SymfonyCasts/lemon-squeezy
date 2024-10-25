@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use App\Entity\Product;
 use App\Factory\ProductFactory;
+use App\Factory\UserFactory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 
@@ -11,6 +12,12 @@ class AppFixtures extends Fixture
 {
     public function load(ObjectManager $manager): void
     {
+        UserFactory::new()->create([
+            'email' => 'victor@symfonycasts.com',
+            'plainPassword' => 'victorpass',
+            'firstName' => 'Victor',
+        ]);
+
         ProductFactory::new()->create([
             'name' => 'Classic Lemonade',
             'price' => 99,
