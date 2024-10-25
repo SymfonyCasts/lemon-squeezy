@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Checkout!{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>Checkout</h1>
+        {% if not cart().empty %}
+            <ul>
+                {% for product in cart.products %}
+                    <li>
+                        <a href="{{ path('app_product_show', {'slug': product.slug}) }}">{{ product.name }}</a>
+                        for {{ product.price|price_format }}
+                        x {{ cart.productQuantity(product) }}
+                    </li>
+                {% endfor %}
+            </ul>
+            <div>
+                <strong>Total: {{ cart.total|price_format }}</strong>
+            </div>
+            <form action="{{ path('app_cart_clear') }}" method="post">
+                <button type="submit">Clear cart</button>
+            </form>
+            <div><button>Checkout with LemonSqueezy</button></div>
+        {% else %}
+            <div>
+                Your cart is empty! :(
+                Go grab some lemonade in the <a href="{{ path('app_homepage') }}">store</a>!
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

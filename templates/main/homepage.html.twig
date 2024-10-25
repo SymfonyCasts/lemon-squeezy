@@ -1,0 +1,25 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Welcome to "Squeeze the Day" store!{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>Welcome to our lemonade stand store!</h1>
+        Lemonade Flavours:
+        {% if products|length %}
+            <ul>
+                {% for product in products %}
+                    <li>
+                        <h3><a href="{{ path('app_product_show', {'slug': product.slug}) }}">{{ product.name }}</a></h3>
+                        <div><img src="#{{ product.slug }}" alt="{{ product.name }}"></div>
+                        <p>Price: {{ product.price|price_format }}</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div>
+                We have run out of lemonades! Please check back later.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

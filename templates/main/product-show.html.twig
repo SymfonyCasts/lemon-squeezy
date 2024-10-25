@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+    <div>
+        <h1>{{ product.name }}</h1>
+        <div><img src="#{{ product.slug }}" alt="{{ product.name }}"></div>
+        <p>{{ product.description }}</p>
+        <p>Price: {{ product.price|price_format }}</p>
+        <form action="{{ path('app_cart_product_add', {'slug': product.slug}) }}" method="post">
+            <button type="submit">Add to cart</button>
+            <label for="quantity">Quantity:
+                <input type="number" name="quantity" value="1" min="1" required >
+            </label>
+        </form>
+    </div>
+{% endblock %}
+
