@@ -13,9 +13,9 @@ class AppFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         UserFactory::new()->create([
-            'email' => 'victor@symfonycasts.com',
-            'plainPassword' => 'victorpass',
-            'firstName' => 'Victor',
+            'email' => 'lemon@example.com',
+            'plainPassword' => 'lemonpass',
+            'firstName' => 'Lemon',
         ]);
 
         ProductFactory::new()->create([

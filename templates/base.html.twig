@@ -23,11 +23,12 @@
                 <ul>
                     <li><a href="{{ path('app_homepage') }}">Squeeze the Day Store</a></li>
                     <li><a href="{{ path('app_pricing') }}">Pricing</a></li>
-                    <li><a href="{{ path('app_user_account') }}">Account</a></li>
                     {% if app.user %}
+                        <li><a href="{{ path('app_user_account') }}">Account</a></li>
                         <li><a href="{{ path('app_logout') }}">Logout</a></li>
                     {% else %}
                         <li><a href="{{ path('app_login') }}">Login</a></li>
+                        <li><a href="{{ path('app_user_register') }}">Register</a></li>
                     {% endif %}
                     {% if not cart().empty %}
                         <li><a href="{{ path('app_order_checkout') }}">Cart</a></li>

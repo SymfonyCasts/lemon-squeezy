@@ -27,12 +27,6 @@ class MainController extends AbstractController
         return $this->render('main/pricing.html.twig');
     }
 
-    #[Route('/account', name: 'app_user_account')]
-    public function userAccount(): Response
-    {
-        return $this->render('main/user-account.html.twig');
-    }
-
     #[Route('/product/{slug:product}', name: 'app_product_show')]
     public function showProduct(Product $product): Response
     {
