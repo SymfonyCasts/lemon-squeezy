@@ -33,6 +33,9 @@ class ShoppingCart
         $this->getSession()->set(self::SESSION_KEY, $this->cart);
     }
 
+    /**
+     * @return array|Product[]
+     */
     public function getProducts(): array
     {
         $this->cart = $this->getSession()->get(self::SESSION_KEY, $this->cart);

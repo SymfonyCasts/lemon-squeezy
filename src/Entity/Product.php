@@ -29,6 +29,9 @@ class Product
     #[ORM\Column(length: 255)]
     private ?string $imageFilename = null;
 
+    #[ORM\Column(length: 255, unique: true, nullable: true)]
+    private ?string $lsVariantId = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -92,5 +95,15 @@ class Product
         $this->imageFilename = $imageFilename;
 
         return $this;
+    }
+
+    public function getLsVariantId(): ?string
+    {
+        return $this->lsVariantId;
+    }
+
+    public function setLsVariantId(?string $lsVariantId): void
+    {
+        $this->lsVariantId = $lsVariantId;
     }
 }

@@ -22,11 +22,13 @@ class AppFixtures extends Fixture
             'name' => 'Classic Lemonade',
             'price' => 99,
             'slug' => 'classic-lemonade',
+            'lsVariantId' => '579933',
         ]);
         ProductFactory::new()->create([
             'name' => 'Watermelon Lemonade',
             'price' => 199,
             'slug' => 'watermelon-lemonade',
+            'lsVariantId' => '586559',
         ]);
         ProductFactory::new()->create([
             'name' => 'Strawberry Lemonade',
