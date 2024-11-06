@@ -3,12 +3,14 @@
 namespace App\Controller;
 
 use App\Entity\Product;
+use App\Store\LemonSqueezyApi;
 use App\Store\ShoppingCart;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class OrderController extends AbstractController
@@ -44,101 +46,24 @@ class OrderController extends AbstractController
 
     #[Route('/checkout', name: 'app_order_checkout')]
     public function checkout(
-        #[Target('lemonSqueezyClient')]
-        HttpClientInterface $lsClient,
-        ShoppingCart $cart
+        LemonSqueezyApi $lsApi,
     ): Response {
-        $lsCheckout = $this->createCheckout($lsClient, $cart);
+        $lsCheckout = $lsApi->createCheckout();
         $checkoutUrl = $lsCheckout['data']['attributes']['url'];
 
         return $this->redirect($checkoutUrl);
     }
 
-    private function createCheckout(HttpClientInterface $lemonSqueezyClient, ShoppingCart $cart): array
+    #[Route('/checkout/success', name: 'app_order_success')]
+    public function success(ShoppingCart $cart): Response
     {
         if ($cart->isEmpty()) {
-            throw new \LogicException('Nothing to checkout!');
+            return $this->redirectToRoute('app_homepage');
         }
 
-        $products = $cart->getProducts();
-        if (count($products) === 1) {
-            $variantId = $products[0]->getLsVariantId();
-            $attributes = [
-                'checkout_data' => [
-                    'variant_quantities' => [
-                        [
-                            'variant_id' => (int)$variantId, // Should be int!
-                            'quantity' => $cart->getProductQuantity($products[0]),
-                        ],
-                    ],
-                ],
-            ];
-        } else {
-//            throw new \LogicException('Only one product purchase is supported for now!');
-            $variantId = $products[0]->getLsVariantId();
+        $cart->clear();
+        $this->addFlash('success', 'Thanks for your order!');
 
-            $description = '';
-            foreach ($products as $product) {
-                $description .= $product->getName()
-                    . ' for $' . number_format($product->getPrice()/100, 2)
-                    . ' x ' . $cart->getProductQuantity($product)
-                    . '<br>';
-            }
-            $attributes = [
-                'custom_price' => $cart->getTotal(),
-                'product_options' => [
-                    'name' => sprintf('E-lemonades'),
-                    'description' => $description,
-                ]
-            ];
-        }
-
-        $response = $lemonSqueezyClient->request(Request::METHOD_POST, 'checkouts', [
-//            'json' => [
-//                'data' => [
-//                    'type' => 'checkouts',
-//                ],
-//            ],
-            'json' => [
-                'data' => [
-                    'type' => 'checkouts',
-                    'attributes' => $attributes,
-//                    [
-//                        'checkout_data' => [
-//                            'variant_quantities' => [
-////                                [
-////                                    'variant_id' => 579933,
-////                                    // TODO
-////                                    'quantity' => 3,
-////                                ],
-//                                $variantQuantities,
-//                            ],
-//                        ],
-//                    ],
-                    'relationships' => [
-                        'store' => [
-                            'data' => [
-                                'type' => 'stores',
-//                                'id' => '132127', // TODO Convert to env var
-                                'id' => $this->getParameter('env(LEMON_SQUEEZY_STORE_ID)'),
-                            ],
-                        ],
-                        'variant' => [
-                            'data' => [
-                                'type' => 'variants',
-
-//                                'id' => 579933, // TODO Should be a string!
-                                'id' => $variantId, // Should be a string!
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ]);
-
-//        dd($response->getContent());
-//        dd($response->getContent(false));
-
-        return $response->toArray();
+        return $this->redirectToRoute('app_homepage');
     }
 }

@@ -60,6 +60,8 @@
 - Fill in the form, we can use test card which is 4242424242424242, insert any
   future expiration date and any CVC code, billing address is required: "Broadway 1",
   then choose from the list to autocomplete everything.
+- See LS test card numbers for more supported testing card:
+  https://docs.lemonsqueezy.com/help/getting-started/test-mode#test-card-numbers
 - Press "Pay".
 - "Thanks for your order!", press "View Order" now - here you can generate
   a PDF invoice.
@@ -111,8 +113,14 @@
 - For authorization, we need to add a Bearer token.
 - First, let's set up the API key so we could make API requests
 - Go to Settings > API > Add API key > name it "API", and copy the key.
-- Open .env.local and set it as `LEMON_SQUEEZY_API_KEY`.
-- Open .env and add this env var but left empty `LEMON_SQUEEZY_API_KEY=`
+- Keep it secret! Nobody should see it... oh crap, I've already failed this.
+  OK, not a big problem, I can always delete it and generate a new one.
+- We usually save things on `.env` file, but for better security I do not want
+  to commit it to the repository, so I will save it in `.env.local` instead.
+- Create `.env.local` and set it there as `LEMON_SQUEEZY_API_KEY`.
+- Open `.env` and add this env var but left empty `LEMON_SQUEEZY_API_KEY=`
+- On production, you can set it on a real env var with your cloud hosting.
+- Or to make it even more secure - take a look at Symfony's secrets management system.
 - Now we can add `auth_bearer: '%env(LEMON_SQUEEZY_API_KEY)%'`
 
 ### Create a Checkout
@@ -132,7 +140,7 @@
 - Now let's implement that `createCheckout()`.
 - Inject the same dependencies: `HttpClientInterface $lsClient` and `ShoppingCart $cart`.
 - Inside, first of all, `if ($cart->isEmpty())` - `throw new \LogicException('Nothing to checkout!');`
-- Next `$response = $lemonSqueezyClient->request(Request::METHOD_POST, 'checkouts', []);`.
+- Next `$response = $lsClient->request(Request::METHOD_POST, 'checkouts', []);`.
 - Inside options - let's just it as : `'json' => ['data' => ['type' => 'checkouts']]`.
 - LS docs do not make it clear what option is required - let's execute this
   and see if there will be any errors.
@@ -144,7 +152,7 @@
 - Run `bin/console debug:autowiring HttpClientInterface` to see the related services.
 - Aha, to inject LS client we need to use named autowiring: `$lemonSqueezyClient`
   while we have shortened it to: `$lsClient` in the code.
-- We can rename it to `$lemonSqueezyClient` here but I would prefer a shorter name.
+- We can rename it to `$lemonSqueezyClient` here, but I would prefer a shorter name.
 - Instead, let's leverage the new `#[Target]` PHP attr to link it:
   `#[Target('lemonSqueezyClient')]` - above the argument.
 - Update again - great, an error! I mean, a *different* error now! As you can see
@@ -206,6 +214,12 @@
   i.e. overwrite a product if it's already there with a new one.
 - Or we can make a custom workaround - if you take a look at the API docs - LS
   allows you to set up your own price.
+
+### Workaround for Multiple Products Purchase
+? The problem is that even if we will change the name and description of the
+  product in the LS checkout - LS will still use the original name and image
+  in the emails and orders. That's why probably better to create a base product,
+  e.g. "E-lemonades" and use it as a base variant ID for multiple product purchases?
 - Let's do the second option because it's more fun and a good change to see
   more options in action.
 - Let's `if (count($products) === 1) {` first, and then do everything we did so far.
@@ -223,8 +237,83 @@
 - And finally in `product_options` set `'description' => $description,`
 - Checkout again - much better, I like this workaround!
 - We can do much more, change the image, etc - but I will leave it to you.
+
+### Complete the Checkout
 - Now, let's finally complete the checkout!
+- It shows us a successful alert:
+  > Thanks for your order!
+- It can be configured as well and it's a product-specific config.
+- Open LS dashboard > Store > Products > A product > Confirmation modal.
+- There it is! Title & Message fields which the defaults I see. I'm pretty
+  happy with the defaults, maybe just add more exclamations because I'm super excited!
+- You can also change the Button text & link here.
+- OK, click the Continue button - and we're to the LS Order page.
+- But if you return to the website - we still have products in the cart - we need
+  to clear the cart after the purchase.
+- Let's create a new action `OrderController::success()`
+- Register the route as `#[Route('/checkout/success', name: 'app_order_success')]`
+- Add `ShoppingCart $cart` dependency.
+- Inside, `if ($cart->isEmpty())` - return redirect to homepage
+- Next add `$cart->clear();`
+- You can render a separate success page if you want, but I will simplify and just
+  add a flash message: `$this->addFlash('success', 'Thanks for your order!');`,
+  and return redirect to homepage.
+- Now in the `createCheckout()` API request, add:
+  `$attributes['product_options']['redirect_url'] = $this->generateUrl('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL),`
+- Go checkout again, complete, here's the Confirmation modal, press Continue... 
+  and te success flash message! And the cart is empty now.
+
+### Centralize LS logic
+- It would be great centralize all the LS logic into a separate service.
+  First of all, we're going to add more requests to the LS API and it would
+  be convenient to have everything LS API related in a separate class.
+  But also it's the best practice that will allow us to keep our controllers
+  thin and help to test that code easier.
+- Let's create a new service: `App\Store\LemonSqueezyApi`.
+- Now move there our `createCheckout()` method but make it public now.
+- Make `$lsClient` and `$cart` as proper constructor dependencies - I
+  will name it just `$client` for simplicity.
+- But here we will need our trick with `#[Target('lemonSqueezyClient')]`.
+- Then change vars to properties in `createCheckout()`.
+- We also need a service to generate URLs.
+- Inject it as: `UrlGeneratorInterface $urlGenerator`.
+- Replace `$this->generateUrl()` with the service.
+- Also, we need a service to get access to the parameters.
+- Inject it as `ParameterBagInterface $parameterBag` 
+- Replace `$this->getParameter()` with the service.
+- Now back to `OrderController::checkout()` - drop current dependencies and
+  inject `LemonSqueezyApi $lsApi` instead.
+- Use the service: `$lsCheckout = $lsApi->createCheckout();`
+- Make sure you can still checkout.
+
+### Always use HTTPS
+- Thanks to the way LS handles checkouts - you can see that card credentials
+  are never sent to our server. Instead, they are sent directly to LS server.
+  It means we do not save sensitive card credentials on our servers at all. Yay!
+  But nevertheless this fact, you should always use HTTPS for your checkout.
+  Wait! Actually, no, you should always use HTTPS on your whole website!
+  That's a pretty standard lately and brings user security to the next level.
+- ...
 - Check the email to see how it looks like there - btw you can configure it
   in the LS dashboard > Design > Email: https://app.lemonsqueezy.com/design/email
 - ...
+- Let's extract LS API into a separate service for convenience - easier to test,
+  easier to reuse, and easier to maintain!
+- ...
 
+### TODO Sync User with LS Customer
+- The problem is that when you create a Checkout - you can't specify the customer
+  ID and LS will assign a customer to the order automatically behind the scene.
+  On the one hand, it's convenient, but on the other hand - it complicates things
+  because I cannot sync my user with LS customer easily.
+- To overcome it, we need to listen to the LS webhooks and update our user
+  with the LS customer ID. For this, we will need to pass custom metadata to LS
+  when creating a Checkout. Ideally, we need to pass the user ID. Later, when
+  we receive a webhook - we will take that user ID, find the corresponding
+  user and set the LS customer ID on it.
+- P.S. We also may want to listen to the `checkout:complete` JS event that will
+  also give us a customer, and set the customer ID on the current user. It will
+  be especially convenient locally when you don't want to set up webhooks.
+  See https://chatgpt.com/c/672bd203-8160-8011-9d36-e17fef609fd1
+- When we will have customer - we can render a link to the LS Orders list page.
+- We can also render a link to a LS Customer Portal
