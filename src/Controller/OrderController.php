@@ -49,10 +49,10 @@ class OrderController extends AbstractController
         LemonSqueezyApi $lsApi,
         #[CurrentUser] ?User $user,
     ): Response {
-//        $this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);
-//        if (!$user instanceof User) {
-//            throw $this->createAccessDeniedException('You must be logged in to checkout!');
-//        }
+        $this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException('You must be logged in to checkout!');
+        }
 
         $lsCheckout = $lsApi->createCheckout($user);
         $checkoutUrl = $lsCheckout['data']['attributes']['url'];

@@ -20,17 +20,16 @@ class LemonSqueezyApi
     ) {
     }
 
-    public function createCheckout(?User $user = null): array
+    public function createCheckout(User $user): array
     {
         if ($this->cart->isEmpty()) {
             throw new \LogicException('Nothing to checkout!');
         }
 
         $attributes = [];
-        if ($user) {
-            $attributes['checkout_data']['email'] = $user->getEmail();
-            $attributes['checkout_data']['name'] = $user->getFirstName();
-        }
+        $attributes['checkout_data']['email'] = $user->getEmail();
+        $attributes['checkout_data']['name'] = $user->getFirstName();
+        $attributes['checkout_data']['custom']['user_id'] = $user->getId();
 
         $products = $this->cart->getProducts();
         if (count($products) === 1) {

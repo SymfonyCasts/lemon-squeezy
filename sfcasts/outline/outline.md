@@ -123,6 +123,8 @@
   and you will find a basic account info.
 
 ### Install HTTP Client
+- Let's take a look at the dev guide first for help:
+  https://docs.lemonsqueezy.com/guides/developer-guide/getting-started
 - To send API requests let's leverage the Symfony HttpClient component - it should
   be perfect for executing HTTP requests.
 - Install it with: `com req symfony/http-client`.
@@ -149,8 +151,10 @@
 - Now we can add `auth_bearer: '%env(LEMON_SQUEEZY_API_KEY)%'`
 
 ### Create a Checkout
-- If we want our customers to buy something via LS - we need to create a
-  Checkout object in LS and LS has an API endpoint for this:
+- Next dev guide will help us to charge the user:
+  https://docs.lemonsqueezy.com/guides/developer-guide/taking-payments
+- If we want our customers to buy something via LS on our website - we need
+  to create a Checkout object in LS and LS has an API endpoint for this:
   https://docs.lemonsqueezy.com/api/checkouts/create-checkout
 - When we create a Checkout object - it returns us the URL to which we should
   redirect our customers to complete the payment.
@@ -339,12 +343,6 @@
   Wait! Actually, no, you should always use HTTPS on your whole website!
   That's a pretty standard lately and brings user security to the next level.
 
-### Listen to Webhooks
-- ... TODO
-
-
-
-
 ### TODO Sync User with LS Customer
 - The problem is that when you create a Checkout - you can't specify the customer
   ID and LS will assign a customer to the order automatically behind the scene.
@@ -359,5 +357,125 @@
   also give us a customer, and set the customer ID on the current user. It will
   be especially convenient locally when you don't want to set up webhooks.
   See https://chatgpt.com/c/672bd203-8160-8011-9d36-e17fef609fd1
+- Actually, we can do both! The JS sync will simplify things locally as we will
+  not have to configure webhooks locally for working customer syncronization.
 - When we will have customer - we can render a link to the LS Orders list page.
-- We can also render a link to a LS Customer Portal
+
+### Listen to Webhooks
+- So let's go with webhooks first. There's a dev guide about it:
+  https://docs.lemonsqueezy.com/guides/developer-guide/webhooks
+- There're only few events about Orders, and to sync customer with app user
+  we need to listen to the `order_created` event.
+- Let's create a `WebhookController`, extend `AbstractController`.
+- Add base route about it: `#[Route('/webhook')]`.
+- Now create `lemonSqueezy(): Response` action.
+- Declare route as `#[Route('/lemon-squeezy', name: 'app_webhook_lemon_squeezy')]`.
+- Inside, let's just `throw new \Exception('Not implemented yet!');`
+- Go to Settings > Webhooks > +:
+  https://app.lemonsqueezy.com/settings/webhooks
+- For callback we need to set https://127.0.0.1:8000/webhook/lemon-squeezy - but
+  it will not work as it's not a public URL!
+- Thankfully, there's a solution. We can use a tool like Ngrok to create a tunnel
+  to our local server. It will give us a public URL that will redirect to our
+  local server. It's super easy to use, just download it, run it, and it will
+  give you a public URL that you can use in LS settings.
+- I already have it installed. If you don't - go to the https://download.ngrok.com/
+  and install it for your OS.
+- To start it, in the console, run `ngrok http 8000` - 8000 is the port that
+  should match your local website address: https://127.0.0.1:8000/ - if you have
+  a different port - use that instead.
+- Now it says something like:
+  `Forwarding https://fa09-89-64-51-130.ngrok-free.app -> http://localhost:8000`
+- If you open that https://fa09-89-64-51-130.ngrok-free.app - you will see our
+  website under a public URL!
+- Copy that URL and paste it to the LS webhook callback URL, but add:
+  https://fa09-89-64-51-130.ngrok-free.app/webhook/lemon-squeezy
+- For Signing secret - generate a random string. You can save it as env var,
+  but I will simplify it and hardcode in the `WebhookController` as a private const.
+- Add `WEBHOOK_SECRETLEMON_SQUEEZY_WEBHOOK_SECRET = 'lEm0n-5qUeEzY';` - I will use
+  some numbers and register, but I bet you can have a better randomness with
+  any password generation tool.
+- And of course you want to keep it secret!
+- Now cope that and paste into the Signing secret.
+- For events - select `order_created` and save.
+- Perfect, if you open the console tab where we ran Ngrok - you will see the
+  another local URL for Web Interface http://127.0.0.1:4040 - open it!
+- Welcome to the Ngrok Web Interface! Here you can see all the requests that
+  are coming to your public URL. It's super useful for debugging and seeing
+  what's going on.
+- Now let's simulate a webhook. We can definitely go through the checkout again,
+  but we can do much simpler! LS can "simulate" webhooks for dev purposes.
+- Open the URL to see it works:
+  https://fa09-89-64-51-130.ngrok-free.app/webhook/lemon-squeezy
+- Now open the Ngrok inspector: http://127.0.0.1:4040/inspect/http
+- Here's our request! We can even see the response - yeah, that's not implemented yet.
+- But before start implementing that, let's trigger a real webhook. Go checkout
+  a new order.
+- Success!
+- Back to the Ngrok inspector - wow, there are a few new requests! Actually if we
+  wait for a few minutes - we will see 3 failed requests. It was the same request
+  that LS tried to deliver a few times. Every time our server do not response
+  with a successful status code - LS will try to deliver it again:
+  in 5 seconds, 25 seconds, then 125 seconds. If it fails 3 times - LS will
+  give up and we will have to retry to manually from the LS dashboard:
+- Here's one failed: https://app.lemonsqueezy.com/settings/webhooks - and here's
+  the Resend button. We can even see the response body here - so convenient.
+- Now let's focus on implementing it.
+- First of all, all webhooks are sent as JSON with POST request - let's fix it
+  in the route:
+  `#[Route('/lemon-squeezy', name: 'app_webhook_lemon_squeezy', methods: ['POST'])]`
+- Now drop throwing the exception.
+- Let's inject `lemonSqueezy(Request $request)`.
+- Inside, add: `$payload = $request->getContent();`.
+- Compute hash of the payload: `$hash = hash_hmac('sha256', $payload, self::LEMON_SQUEEZY_WEBHOOK_SECRET);`.
+- Fetch request signature: `$signature = $request->headers->get('X-Signature', '');`.
+- Check for match: `if (!hash_equals($hash, $signature))` and `throw new \Exception('Invalid LemonSqueezy signature!');`.
+- Get the response data: `$data = $request->toArray();`
+- Get event name: `$eventName = $data['meta']['event_name'];`.
+- Add a switch-case: `switch ($eventName)`.
+- Inside: `case 'order_created': break;`.
+- Let's also add: `default: throw new \Exception(sprintf('Unsupported LemonSqueezy event: "%s"', $eventName));`.
+- Inside the case, get customer ID: `$customerId = $data['data']['attributes']['customer_id'];`.
+- And we need to set it on the user. But `$this->getUser()` will not work, we're
+  handling a webhook, i.e. a completely separate request that does not have access
+  to the session of the user who made this order. We need to somehow find the
+  corresponding user. Thankfully, LS allow us add custom data on a Checkout creation.
+- Go to the `createCheckout()`.
+- Add: `$attributes['checkout_data']['custom']['user_id'] = $user->getId();`.
+- From now on we also need to require the user to be logged in to checkout
+  because from now on we need to link the corresponding LS customer to it.
+- Make it required in the method signature: `createCheckout(User $user)`.
+- We don't need that `if ($user)` anymore.
+- In the `OrderController::checkout()`, right in the beginning, add:
+  `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
+- This should be enough, but PhpStorm is not happy at this line:
+  `$lsCheckout = $lsApi->createCheckout($user);`.
+- That's why above add: `if (!$user instanceof User)`.
+- And inside: `throw $this->createAccessDeniedException('You must be logged in to checkout!');`.
+- Just a sanity check, but it will help to suppress that warning.
+- Back to the webhook, above `switch`, add:
+ `$userId = $data['meta']['custom']['user_id'] ?? null;`.
+- Then: `if (!$userId)`.
+- Inside: `throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $webhookId));`.
+- Above add that var name: `$webhookId = $data['meta']['webhook_id'];`.
+- Inject `EntityManagerInterface $entityManager`.
+- Fetch the user: `$user = $entityManager->getRepository(User::class)->find($userId);`.
+- Next add: `if (!$user)`.
+- Inside: `throw new \Exception(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $webhookId));`.
+- Now we have the User, but we also need a new property on it.
+- Add: `private ?string $lsCustomerId = null;`.
+- Map it as: `#[ORM\Column(length: 255, unique: true, nullable: true)]`.
+- Add setters and getters.
+- Create a migration and migrate.
+- Finally, inside the case: `$user->setLsCustomerId($customerId);`.
+- After the switch, save everything: `$entityManager->flush();`
+- And return 200 response: `return new Response('Webhook successfully handled!');`
+- Time to retry the webhook, and we can do it either in LS dashboard, or directly
+  in the Ngrok inspector - I love Ngrok!
+- Ah, the error! Well, that makes sense, that webhook does not have a user ID set
+  on custom data.
+- OK, let's checkout again.
+- Success, check the webhook - beautiful!
+- Now we can leverage the LS customer ID in our app and show the link to orders list.
+
+### Render link to LS orders
