@@ -3,15 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\Product;
+use App\Entity\User;
 use App\Store\LemonSqueezyApi;
 use App\Store\ShoppingCart;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class OrderController extends AbstractController
 {
@@ -47,8 +47,14 @@ class OrderController extends AbstractController
     #[Route('/checkout', name: 'app_order_checkout')]
     public function checkout(
         LemonSqueezyApi $lsApi,
+        #[CurrentUser] ?User $user,
     ): Response {
-        $lsCheckout = $lsApi->createCheckout();
+//        $this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);
+//        if (!$user instanceof User) {
+//            throw $this->createAccessDeniedException('You must be logged in to checkout!');
+//        }
+
+        $lsCheckout = $lsApi->createCheckout($user);
         $checkoutUrl = $lsCheckout['data']['attributes']['url'];
 
         return $this->redirect($checkoutUrl);

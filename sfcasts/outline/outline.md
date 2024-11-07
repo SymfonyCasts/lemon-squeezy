@@ -52,11 +52,24 @@
 - Finally, "Publish product"!
 - Close "Product Details", here's the product we just created.
 - Let's create and publish a few more products - see data from our fixtures.
+- Btw, you can share the link to specific product with this Share button
+  and send to your customer - it will lead them directly to the checkout page
+  where they can buy that product.
 
 ### LS Storefront
+- Or just share the link to your Storefront sp that users can see all your
+  available products.
 - Let's open the storefront: below "Squeeze the Day" store name > "My Store".
 - Here it is: https://squeeze-the-day.lemonsqueezy.com/ - click on the lemonade,
   and you can buy it directly from here!
+- Btw you can configure some styles in LS dashboard > Design > General:
+  https://app.lemonsqueezy.com/design/general
+- I would like to upload my logo for sure - you can even upload a favicon here!
+- Maybe want some preconfigured theme? Or go wild and set up your own colors!
+- There's even more flexibility on the other tab: Design > Store:
+  https://app.lemonsqueezy.com/design/storefront
+- The Design > Checkout tab also allows you to override some styles if needed - go
+  wild and create our own unique style!
 - Fill in the form, we can use test card which is 4242424242424242, insert any
   future expiration date and any CVC code, billing address is required: "Broadway 1",
   then choose from the list to autocomplete everything.
@@ -66,6 +79,18 @@
 - "Thanks for your order!", press "View Order" now - here you can generate
   a PDF invoice.
 - This all is from the customer's perspective, but what about the store owner?
+
+### Invoice Emails
+- Check your inbox to see the invoice email to see how it looks like.
+- Seems we received 2 emails: 1 as a customer and 1 as a store owner.
+  I don't want to receive that 2nd type of emails, so I will turn them off:
+  Go to Settings > General > Account and switch the sales notifications off:
+  https://app.lemonsqueezy.com/settings/account
+- Don't forget to Save changes.
+- Btw you can configure it in the LS dashboard > Design > Email:
+  https://app.lemonsqueezy.com/design/email
+- We can also control the email when create a checkout, see `receipt_*` fields
+  in `product_options`.
 
 ### LS Dashboard
 - Back to https://app.lemonsqueezy.com/dashboard - here we go, our charts already
@@ -203,6 +228,30 @@
   should be integer, not a string. Yep, a subtle detail that easy to skip,
   it would be nice to have an error about it LS!
 - Fix it by casting to int: `'variant_id' => (int)$variantId, // Should be an int!`
+- Hm, but where this email comes from? I'm authenticated in LS as a store owner,
+  so they pre-fill it for me. What if I try to checkout in incognito mode?
+- Open incognito, log in as `lemon@example.com` with password `lemonpass`, try
+- to checkout - aha, user data is empty! Not a big deal, user can manually
+  fill that... but we can do better and prefill it from our app as we know
+  user email and name when they authenticated.
+- First, we will need User object - inject `?User $user = null` to the `createCheckout()`.
+- Next, below `$attributes = [];`, add `if ($user)`.
+- Inside add `$attributes['checkout_data']['email'] = $user->getEmail();`.
+- And add `$attributes['checkout_data']['name'] = $user->getFirstName();`.
+- Now, inside `OrderController::checkout()`, inject `#[CurrentUser] ?User $user`.
+- And pass the user to the `createCheckout($user)`.
+// TODO Too early - let's do it later
+//- But inside add `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
+//- PhpStorm does not like it much though it should work. To make PhpStorm
+//  happy - above add `if (!$user instanceof User)`.
+//- And then `throw $this->createAccessDeniedException('You must be logged in to checkout!');`.
+- Perfect, let's try checkout in incognito again - now user data pre-filled!
+
+### Workaround for Multiple Products Purchase
+? The problem is that even if we will change the name and description of the
+  product in the LS checkout - LS will still use the original name and image
+  in the emails and orders. That's why probably better to create a base product,
+  e.g. "E-lemonades" and use it as a base variant ID for multiple product purchases?
 - OK, now a single product purchase looks awesome, but if we add one more product
   there's a problem - we purchase only the first product from our shopping cart.
 - Actually, there's a bigger problem - LS do not allow you to buy more than
@@ -214,12 +263,6 @@
   i.e. overwrite a product if it's already there with a new one.
 - Or we can make a custom workaround - if you take a look at the API docs - LS
   allows you to set up your own price.
-
-### Workaround for Multiple Products Purchase
-? The problem is that even if we will change the name and description of the
-  product in the LS checkout - LS will still use the original name and image
-  in the emails and orders. That's why probably better to create a base product,
-  e.g. "E-lemonades" and use it as a base variant ID for multiple product purchases?
 - Let's do the second option because it's more fun and a good change to see
   more options in action.
 - Let's `if (count($products) === 1) {` first, and then do everything we did so far.
@@ -269,7 +312,9 @@
   be convenient to have everything LS API related in a separate class.
   But also it's the best practice that will allow us to keep our controllers
   thin and help to test that code easier.
-- Let's create a new service: `App\Store\LemonSqueezyApi`.
+- So let's extract LS API into a separate service for convenience - easier to test,
+  easier to reuse, and easier to maintain!
+- Create a new service: `App\Store\LemonSqueezyApi`.
 - Now move there our `createCheckout()` method but make it public now.
 - Make `$lsClient` and `$cart` as proper constructor dependencies - I
   will name it just `$client` for simplicity.
@@ -293,13 +338,12 @@
   But nevertheless this fact, you should always use HTTPS for your checkout.
   Wait! Actually, no, you should always use HTTPS on your whole website!
   That's a pretty standard lately and brings user security to the next level.
-- ...
-- Check the email to see how it looks like there - btw you can configure it
-  in the LS dashboard > Design > Email: https://app.lemonsqueezy.com/design/email
-- ...
-- Let's extract LS API into a separate service for convenience - easier to test,
-  easier to reuse, and easier to maintain!
-- ...
+
+### Listen to Webhooks
+- ... TODO
+
+
+
 
 ### TODO Sync User with LS Customer
 - The problem is that when you create a Checkout - you can't specify the customer

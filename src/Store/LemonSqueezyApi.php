@@ -2,6 +2,7 @@
 
 namespace App\Store;
 
+use App\Entity\User;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,23 +20,25 @@ class LemonSqueezyApi
     ) {
     }
 
-    public function createCheckout(): array
+    public function createCheckout(?User $user = null): array
     {
         if ($this->cart->isEmpty()) {
             throw new \LogicException('Nothing to checkout!');
         }
 
         $attributes = [];
+        if ($user) {
+            $attributes['checkout_data']['email'] = $user->getEmail();
+            $attributes['checkout_data']['name'] = $user->getFirstName();
+        }
 
         $products = $this->cart->getProducts();
         if (count($products) === 1) {
             $variantId = $products[0]->getLsVariantId();
-            $attributes['checkout_data'] = [
-                'variant_quantities' => [
-                    [
-                        'variant_id' => (int)$variantId, // Should be int!
-                        'quantity' => $this->cart->getProductQuantity($products[0]),
-                    ],
+            $attributes['checkout_data']['variant_quantities'] = [
+                [
+                    'variant_id' => (int)$variantId, // Should be int!
+                    'quantity' => $this->cart->getProductQuantity($products[0]),
                 ],
             ];
         } else {
