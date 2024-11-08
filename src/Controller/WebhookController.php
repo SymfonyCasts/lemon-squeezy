@@ -28,7 +28,7 @@ class WebhookController extends AbstractController
         $webhookId = $data['meta']['webhook_id'];
 
         // $this->getUser() will not work in webhooks
-        $userId = $data['meta']['custom']['user_id'] ?? null;
+        $userId = $data['meta']['custom_data']['user_id'] ?? null;
         if (!$userId) {
             throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $webhookId));
         }

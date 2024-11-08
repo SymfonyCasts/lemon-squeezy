@@ -29,7 +29,7 @@ class LemonSqueezyApi
         $attributes = [];
         $attributes['checkout_data']['email'] = $user->getEmail();
         $attributes['checkout_data']['name'] = $user->getFirstName();
-        $attributes['checkout_data']['custom']['user_id'] = $user->getId();
+        $attributes['checkout_data']['custom']['user_id'] = (string)$user->getId();
 
         $products = $this->cart->getProducts();
         if (count($products) === 1) {

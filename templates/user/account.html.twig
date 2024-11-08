@@ -7,5 +7,11 @@
         <h1>My Account</h1>
         <p>Email: {{ app.user.email }}</p>
         <p>Name: {{ app.user.firstName }}</p>
+
+        {% if app.user.lsCustomerId %}
+            <p>
+                <a href="https://app.lemonsqueezy.com/my-orders" target="_blank">My Orders</a>
+            </p>
+        {% endif %}
     </div>
 {% endblock %}

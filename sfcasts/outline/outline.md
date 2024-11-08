@@ -454,7 +454,7 @@
 - And inside: `throw $this->createAccessDeniedException('You must be logged in to checkout!');`.
 - Just a sanity check, but it will help to suppress that warning.
 - Back to the webhook, above `switch`, add:
- `$userId = $data['meta']['custom']['user_id'] ?? null;`.
+ `$userId = $data['meta']['custom_data']['user_id'] ?? null;`.
 - Then: `if (!$userId)`.
 - Inside: `throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $webhookId));`.
 - Above add that var name: `$webhookId = $data['meta']['webhook_id'];`.
@@ -475,7 +475,28 @@
 - Ah, the error! Well, that makes sense, that webhook does not have a user ID set
   on custom data.
 - OK, let's checkout again.
-- Success, check the webhook - beautiful!
-- Now we can leverage the LS customer ID in our app and show the link to orders list.
+- Ah, an error. The custom data should be string.
+- Typecast user ID to string: `$attributes['checkout_data']['custom']['user_id'] = (string)$user->getId();`.
+- Try again - now success!
+- Check the webhook - now we have the user ID.
+- Check the DB: `bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 3"`.
+- Now the user have customer ID set and we can leverage it in our app to show
+  the link to orders list.
 
 ### Render link to LS orders
+- How your customers can see their orders? Let's search for my orders:
+  https://docs.lemonsqueezy.com/help/online-store/my-orders
+ - So we need to render a link to the LS Orders page which is:
+  https://app.lemonsqueezy.com/my-orders
+- Open `account.html.twig` and add a link:
+  `<a href="https://app.lemonsqueezy.com/my-orders">My Orders</a>`.
+- But we want to show it only if customers ever bought something on our website.
+  how can we know? The lsCustomerID field! If it's set - then customer made an
+  order, then show the link.
+- Wrap the link with `{% if app.user.lsCustomerId %}`.
+- I will also add `target="_blank"` for this link.
+? Well, seems this page is empty, I suppose we need to activate the store first,
+  or maybe it will work only in live mode?
+
+
+
