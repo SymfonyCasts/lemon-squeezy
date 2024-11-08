@@ -483,7 +483,7 @@
 - Now the user have customer ID set and we can leverage it in our app to show
   the link to orders list.
 
-### Render link to LS orders
+### Render Link to LS Orders
 - How your customers can see their orders? Let's search for my orders:
   https://docs.lemonsqueezy.com/help/online-store/my-orders
  - So we need to render a link to the LS Orders page which is:
@@ -498,5 +498,38 @@
 ? Well, seems this page is empty, I suppose we need to activate the store first,
   or maybe it will work only in live mode?
 
-
+### Better API Error Handling
+- Let's temporary remove the `(string)` typecasting for user ID in `createCheckout()`
+- Try to checkout - an error!
+- But when we do a bad request - it throws a `ClientException`. But it hides the
+  actual error from us. Let's improve the error so we could see what went wrong
+  without needing to uncomment that `dd($response->getContent(false));` line.
+- Let's create a request method that will match the signature of client's `request()`:
+  `private function request(string $method, string $url, array $options = []): array`.
+- Inside add `try-catch (ClientException $e)`.
+- Inside try: `$response = $this->client->request($method, $url, $options);`.
+- And `$data = $response->toArray();`.
+- At the very end: `return $data;`.
+- Inside catch, we can get the response from the exception and convert it to an array
+  without throwing: `$data = $e->getResponse()->toArray(false);`.
+- And just add `dd($errorsData)` for now.
+- Now we just need to make request with simple `$this->request()`.
+- And we can immediately return the result which is already an array of data.
+  `return $this->request(Request::METHOD_POST, 'checkouts', [...])`.
+- Now try to checkout - an error! And here's our dump.
+- So we have an array of errors, I will simplify things (I think most of the time
+  we will have only one error).
+- I will start as: `$mainErrorMessage = 'LS API Error:';`.
+- Then `$error = $data['errors'][0] ?? null;`.
+- So `if ($error)`.
+- Next I will be extra safe and add `if (isset($error['status']))`.
+- Then `$mainErrorMessage .= ' ' . $error['status'];`.
+- Let's do the same for `title` and `detail`.
+- And finally add `if (isset($error['source']['pointer']))`.
+- Then `$mainErrorMessage .= sprintf(' (at path "%s")', $error['source']['pointer']);`.
+- Else, if somehow we have no errors but it still a client error - let's print
+  the whole error content at least: `$mainErrorMessage .= $e->getResponse()->getContent(false);`.
+- Finally, `throw new \Exception($mainErrorMessage, 0, $e);`
+- Go try it now - much better! A lot of context is displayed on the error page.
+- Go add that `(string)` typecasting for user ID again.
 

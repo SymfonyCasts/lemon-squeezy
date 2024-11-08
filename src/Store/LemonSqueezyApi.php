@@ -5,6 +5,7 @@ namespace App\Store;
 use App\Entity\User;
 use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -29,7 +30,7 @@ class LemonSqueezyApi
         $attributes = [];
         $attributes['checkout_data']['email'] = $user->getEmail();
         $attributes['checkout_data']['name'] = $user->getFirstName();
-        $attributes['checkout_data']['custom']['user_id'] = (string)$user->getId();
+        $attributes['checkout_data']['custom']['user_id'] = (string) $user->getId();
 
         $products = $this->cart->getProducts();
         if (count($products) === 1) {
@@ -60,7 +61,7 @@ class LemonSqueezyApi
 
         $attributes['product_options']['redirect_url'] = $this->urlGenerator->generate('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $response = $this->client->request(Request::METHOD_POST, 'checkouts', [
+        return $this->request(Request::METHOD_POST, 'checkouts', [
 //            'json' => [
 //                'data' => [
 //                    'type' => 'checkouts',
@@ -105,7 +106,41 @@ class LemonSqueezyApi
 
 //        dd($response->getContent());
 //        dd($response->getContent(false));
+//        return $response->toArray();
+    }
 
-        return $response->toArray();
+    private function request(string $method, string $url, array $options = []): array
+    {
+        try {
+            $response = $this->client->request($method, $url, $options);
+            $data = $response->toArray();
+        } catch (ClientException $e) {
+            $data = $e->getResponse()->toArray(false);
+//            dd($data);
+
+            $mainErrorMessage = 'LS API Error:';
+
+            $error = $data['errors'][0] ?? null;
+            if ($error) {
+                if (isset($error['status'])) {
+                    $mainErrorMessage .= ' ' . $error['status'];
+                }
+                if (isset($error['title'])) {
+                    $mainErrorMessage .= ' ' . $error['title'];
+                }
+                if (isset($error['detail'])) {
+                    $mainErrorMessage .= ' "' . $error['detail'] . '"';
+                }
+                if (isset($error['source']['pointer'])) {
+                    $mainErrorMessage .= sprintf(' (at path "%s")', $error['source']['pointer']);
+                }
+            } else {
+                $mainErrorMessage .= $e->getResponse()->getContent(false);
+            }
+
+            throw new \Exception($mainErrorMessage, 0, $e);
+        }
+
+        return $data;
     }
 }
