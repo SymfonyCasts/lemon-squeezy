@@ -2,6 +2,12 @@
 
 {% block title %}Checkout!{% endblock %}
 
+{% block javascripts %}
+    {{ parent() }}
+
+    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
+{% endblock %}
+
 {% block content %}
     <div>
         <h1>Checkout</h1>
@@ -21,7 +27,7 @@
             <form action="{{ path('app_cart_clear') }}" method="post">
                 <button type="submit">Clear cart</button>
             </form>
-            <div><a href="{{ path('app_order_checkout') }}">Checkout with LemonSqueezy</a></div>
+            <div><a class="lemonsqueezy-button" href="{{ path('app_order_checkout') }}">Checkout with LemonSqueezy</a></div>
         {% else %}
             <div>
                 Your cart is empty! :(

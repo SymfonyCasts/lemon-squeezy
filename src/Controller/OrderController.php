@@ -54,8 +54,7 @@ class OrderController extends AbstractController
             throw $this->createAccessDeniedException('You must be logged in to checkout!');
         }
 
-        $lsCheckout = $lsApi->createCheckout($user);
-        $checkoutUrl = $lsCheckout['data']['attributes']['url'];
+        $checkoutUrl = $lsApi->createCheckoutUrl($user);
 
         return $this->redirect($checkoutUrl);
     }

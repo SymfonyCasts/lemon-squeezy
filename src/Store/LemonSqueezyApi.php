@@ -109,6 +109,13 @@ class LemonSqueezyApi
 //        return $response->toArray();
     }
 
+    public function createCheckoutUrl(User $user): string
+    {
+        $lsCheckout = $this->createCheckout($user);
+
+        return $lsCheckout['data']['attributes']['url'];
+    }
+
     private function request(string $method, string $url, array $options = []): array
     {
         try {

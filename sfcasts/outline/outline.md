@@ -332,7 +332,11 @@
 - Replace `$this->getParameter()` with the service.
 - Now back to `OrderController::checkout()` - drop current dependencies and
   inject `LemonSqueezyApi $lsApi` instead.
-- Use the service: `$lsCheckout = $lsApi->createCheckout();`
+- For convenience, let's create a shortcut `createCheckoutUrl()` that will
+  return only the checkout URL.
+- Inside, call `$lsCheckout = $this->createCheckout($user);`.
+- And fetch the URL like `return $lsCheckout['data']['attributes']['url'];`.
+- Use the service: `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`
 - Make sure you can still checkout.
 
 ### Always use HTTPS
@@ -533,3 +537,15 @@
 - Go try it now - much better! A lot of context is displayed on the error page.
 - Go add that `(string)` typecasting for user ID again.
 
+### LS Checkout Overlay
+- In `cart.html.twig`, add `{% block javascripts %}`.
+- Inside: `<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>`.
+- Don't forget to `{{ parent() }}` call.
+- Now let's add `lemonsqueezy-button` CSS class to the Checkout link.
+- Refresh the cart page and try.
+- It's loading, but then 404.
+- Yeah, that's because we have a special endpoint that redirects to the actual
+  LS checkout URL.
+- We can temporarily `dd($lsCheckoutUrl)`, copy it, and use in that link.
+- But we can do better.
+- 
