@@ -548,4 +548,71 @@
   LS checkout URL.
 - We can temporarily `dd($lsCheckoutUrl)`, copy it, and use in that link.
 - But we can do better.
-- 
+- Let's create `lemon-squeezy_controller.js`.
+- Add `openOverlay()` to it.
+- Back to `cart.html.twig`, add `data-controller="lemon-squeezy"` to the LS
+  checkout link.
+- And: `data-action="lemon-squeezy#openOverlay"`.
+- We will also need to pass the LS checkout URL, but I don't want to create it
+  every time the cart page is load, I want it to do on the link click.
+- For this let's add a new action to the controller.
+- I will copy the `checkout()` action and duplicate it as `createCheckout()`.
+- Change route to: `#[Route('/checkout/create', name: 'app_order_checkout_create', methods: ['POST'])]`.
+- Inside, keep checking that user is logged in.
+- But then just `return $this->json(['targetUrl' => $lsApi->createCheckoutUrl($user)]);`.
+- Back to the template, add: `data-target-url="{{ path('app_order_checkout_create') }}"`.
+? TODO Probably replace with Stimulus value.
+- You can replace `href="{{ path('app_order_checkout') }}"` with `href="#"` if you
+  want, but I will keep it.
+- Back in `openOverlay()`.
+- Inside, add: `e.preventDefault();`.
+- Then: `const linkEl = e.currentTarget;`.
+- Next: `fetch(linkEl.dataset.targetUrl, {`.
+- With `method: 'POST',`.
+- And `headers: { 'Content-Type': 'application/json', },`.
+- Now add `.then(response => {`.
+- And `if (!response.ok)` - `throw new Error("Network response was not ok " + response.statusText);`.
+- Next just `return response.json();`.
+- One more `.then(data => {`.
+- Inside: `window.LemonSqueezy.Url.Open(data.targetUrl);`.
+- And let's add `.catch(error => {`.
+- With `console.error('Fetch error:', error);` inside.
+- We also want to disable the link to avoid double-clicks.
+- Create `#disableLink(link) {`.
+- With `link.classList.add('disabled');`.
+- And `link.style.pointerEvents = 'none';`.
+- And `link.style.opacity = '0.5';`.
+- Below, create `#enableLink(link) {`.
+- With `link.classList.remove('disabled');`.
+- And `link.style.pointerEvents = 'auto';`.
+- And `link.style.opacity = '1';`.
+- Now right after `const linkEl`, add `this.#disableLink(linkEl);`.
+- After we open the URL, add `this.#enableLink(linkEl);`.
+- And also add it in the `catch` too.
+- Now try to checkout
+- Go checkout, it loads, and the LS checkout page is opened.
+- But if you look closer to the URL in the address bar - you will see that
+  it's our https://127.0.0.1:8000/cart
+- So it kinda works!
+- But to make it better, open the `LSAPI::createCheckout()`.
+- Add: `$attributes['checkout_options']['embed'] = true;`
+- Go checkout again - now it's a real overlay that we can even close.
+- Let's do not hardcode it.
+- In `createCheckout()`, add a new argument to the method: `bool $embed = false`.
+- Use it inside: `$attributes['checkout_options']['embed'] = $embed;`.
+- The same in `createCheckoutUrl()`: `bool $embed = false`.
+- Now in `OrderController::createCheckout()`, pass `true` to the `createCheckout()`.
+- Go checkout again to make sure everything still works.
+
+- But we still have a problem for non-authed users.
+- Log out, to something to the cart, and try to checkout - nothing happen.
+- In the WDT we see that the request was redirected to the login page.
+- TODO
+
+- So right now if we want our Stimulus controller to work properly - we should
+  not forget to include that LS `script`. Can we make it automatically included
+  when we use our Stimulus controller? Yes, we can!
+- TODO
+
+### Listen to LS JS events
+-

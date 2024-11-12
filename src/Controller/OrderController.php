@@ -71,4 +71,19 @@ class OrderController extends AbstractController
 
         return $this->redirectToRoute('app_homepage');
     }
+
+    #[Route('/checkout/create', name: 'app_order_checkout_create', methods: ['POST'])]
+    public function createCheckout(
+        LemonSqueezyApi $lsApi,
+        #[CurrentUser] ?User $user,
+    ): Response {
+        $this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException('You must be logged in to checkout!');
+        }
+
+        return $this->json([
+            'targetUrl' => $lsApi->createCheckoutUrl($user, true),
+        ]);
+    }
 }

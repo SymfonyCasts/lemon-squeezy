@@ -21,7 +21,7 @@ class LemonSqueezyApi
     ) {
     }
 
-    public function createCheckout(User $user): array
+    public function createCheckout(User $user, bool $embed = false): array
     {
         if ($this->cart->isEmpty()) {
             throw new \LogicException('Nothing to checkout!');
@@ -31,6 +31,7 @@ class LemonSqueezyApi
         $attributes['checkout_data']['email'] = $user->getEmail();
         $attributes['checkout_data']['name'] = $user->getFirstName();
         $attributes['checkout_data']['custom']['user_id'] = (string) $user->getId();
+        $attributes['checkout_options']['embed'] = $embed;
 
         $products = $this->cart->getProducts();
         if (count($products) === 1) {
@@ -109,9 +110,9 @@ class LemonSqueezyApi
 //        return $response->toArray();
     }
 
-    public function createCheckoutUrl(User $user): string
+    public function createCheckoutUrl(User $user, bool $embed = false): string
     {
-        $lsCheckout = $this->createCheckout($user);
+        $lsCheckout = $this->createCheckout($user, $embed);
 
         return $lsCheckout['data']['attributes']['url'];
     }

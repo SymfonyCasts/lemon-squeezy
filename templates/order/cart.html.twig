@@ -27,7 +27,16 @@
             <form action="{{ path('app_cart_clear') }}" method="post">
                 <button type="submit">Clear cart</button>
             </form>
-            <div><a class="lemonsqueezy-button" href="{{ path('app_order_checkout') }}">Checkout with LemonSqueezy</a></div>
+            <div>
+                <a data-controller="lemon-squeezy"
+                    data-action="lemon-squeezy#openOverlay"
+                    data-target-url="{{ path('app_order_checkout_create') }}"
+                    class="_lemonsqueezy-button"
+                    href="{{ path('app_order_checkout') }}"
+                >
+                    Checkout with LemonSqueezy
+                </a>
+            </div>
         {% else %}
             <div>
                 Your cart is empty! :(
