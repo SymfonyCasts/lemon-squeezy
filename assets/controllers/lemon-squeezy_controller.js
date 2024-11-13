@@ -23,9 +23,10 @@ export default class extends Controller {
             window.LemonSqueezy.Setup({
                 eventHandler: (data) => {
                     if (data.event === 'Checkout.Success') {
-                        //console.log(data);
+                        // console.log(data);
+                        const userId = data.data.order.meta.custom_data.user_id;
                         const lsCustomerId = data.data.order.data.attributes.customer_id;
-                        this.#handleCheckout(lsCustomerId);
+                        this.#handleCheckout(userId, lsCustomerId);
                     }
                 },
             });
@@ -64,13 +65,14 @@ export default class extends Controller {
             });
     }
 
-    #handleCheckout(lsCustomerId) {
+    #handleCheckout(userId, lsCustomerId) {
         fetch(this.checkoutHandleUrlValue, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: new URLSearchParams({
+                userId: userId,
                 lsCustomerId: lsCustomerId,
             }),
         })

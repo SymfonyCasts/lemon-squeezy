@@ -696,4 +696,32 @@
   to sync the customer with user via JS webhook - that's perfect for local
   development and testing.
 
+### Security vulnerability
+- Open `OrderController::handleCheckout()`.
+- If you think about this - you may see a possible security problem.
+- For example, some tricky users may try to send an AJAX request to this endpoint
+  with a different `lsCustomerId` to override their own customer.
+- It may lead to a situation where our app will generate a signed URL for that
+  customer and give it to the attacker so that they can view personal information
+  or even do some changes on behalf of the customer.
+- There're a few way to solve this problem.
+- For example, you can use this customer sync via JS LS event only in dev mode,
+  i.e. real users will be synced only via webhooks with signed signature.
+- Or we can add some extra checks to the `handleCheckout()` method.
+- For example, we can check if the current user ID matches the user ID set in the
+  custom data of the LS event.
+- Let's do this way.
+- Inside `Checkout.Success`, you can `console.log(data)` again to see the structure.
+- Or just believe me and write: `const userId = data.data.order.meta.custom_data.user_id;`.
+- Then pass add it to the method: `this.#handleCheckout(userId, lsCustomerId);`.
+- Inside `#handleCheckout()`, pass `userId: userId,` in the request too.
+- And in `OrderController::handleCheckout()`.
+- Add `$userId = $request->request->get('userId');`.
+- Then add check: `if ($userId !== (string) $user->getId()) {`.
+- Let's throw so we could see it in logs:
+  `throw $this->createAccessDeniedException(sprintf('Current user ID "%s" does not match the user ID "%s" of the order!', $user->getId(), $userId));`
+- Now it's safe to set the customer as we know for sure it relates to the current user.
+- Go to the DB, set customer ID to null, no Ngrok tunnel running.
+- Checkout, check the DB - here's our customer ID again, it works!
 
+### Testing webhooks
