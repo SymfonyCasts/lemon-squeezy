@@ -21,7 +21,7 @@ class LemonSqueezyApi
     ) {
     }
 
-    public function createCheckout(User $user, bool $embed = false): array
+    public function createCheckoutUrl(User $user, bool $embed = false): string
     {
         if ($this->cart->isEmpty()) {
             throw new \LogicException('Nothing to checkout!');
@@ -62,7 +62,7 @@ class LemonSqueezyApi
 
         $attributes['product_options']['redirect_url'] = $this->urlGenerator->generate('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        return $this->request(Request::METHOD_POST, 'checkouts', [
+        $lsCheckout = $this->request(Request::METHOD_POST, 'checkouts', [
 //            'json' => [
 //                'data' => [
 //                    'type' => 'checkouts',
@@ -89,7 +89,7 @@ class LemonSqueezyApi
                             'data' => [
                                 'type' => 'stores',
 //                                'id' => '132127', // TODO Convert to env var
-                                'id' => $this->parameterBag->get('env(LEMON_SQUEEZY_STORE_ID)'),
+                                'id' => $this->getStoreId(),
                             ],
                         ],
                         'variant' => [
@@ -108,13 +108,20 @@ class LemonSqueezyApi
 //        dd($response->getContent());
 //        dd($response->getContent(false));
 //        return $response->toArray();
-    }
-
-    public function createCheckoutUrl(User $user, bool $embed = false): string
-    {
-        $lsCheckout = $this->createCheckout($user, $embed);
 
         return $lsCheckout['data']['attributes']['url'];
+    }
+
+    public function retrieveStoreUrl(): string
+    {
+        $lsStore = $this->request(Request::METHOD_GET, 'stores/' . $this->getStoreId());
+
+        return $lsStore['data']['attributes']['url'];
+    }
+
+    private function getStoreId(): string
+    {
+        return $this->parameterBag->get('env(LEMON_SQUEEZY_STORE_ID)');
     }
 
     private function request(string $method, string $url, array $options = []): array

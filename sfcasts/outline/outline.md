@@ -162,18 +162,16 @@
 - Make it route: `#[Route('/checkout', name: 'app_order_checkout')]`.
 - Set "Checkout with LemonSqueezy" link URL to `app_order_checkout` in `cart.html.twig`
 - Inject `HttpClientInterface $lsClient` and `ShoppingCart $cart`.
-- Inside, `$lsCheckout = $this->createCheckout($lsClient, $cart);`.
-- From the API docs we see it returns an array of data, find the URL:
-  `$checkoutUrl = $lsCheckout['data']['attributes']['url'];`.
+- Inside, `$lsCheckoutUrl = $this->createCheckoutUrl($lsClient, $cart);`.
 - And `return $this->redirect($checkoutUrl);`.
-- Now let's implement that `createCheckout()`.
+- Now let's implement that `createCheckoutUrl()`.
 - Inject the same dependencies: `HttpClientInterface $lsClient` and `ShoppingCart $cart`.
 - Inside, first of all, `if ($cart->isEmpty())` - `throw new \LogicException('Nothing to checkout!');`
-- Next `$response = $lsClient->request(Request::METHOD_POST, 'checkouts', []);`.
+- Next `$lsCheckout = $this->client->request(Request::METHOD_POST, 'checkouts', []);`.
 - Inside options - let's just it as : `'json' => ['data' => ['type' => 'checkouts']]`.
 - LS docs do not make it clear what option is required - let's execute this
   and see if there will be any errors.
-- Below, `return $response->toArray();`.
+- Below, `return $lsCheckout['data']['attributes']['url'];`.
 - An error:
   > Invalid URL: scheme is missing in "checkouts". Did you forget to add "http(s)://"?
 - Hm, it ignored our base URL from the scoped client, it feels like it inject
@@ -216,7 +214,7 @@
 - Create a migration and migrate.
 - Now in AppFixtures - set it to variant ID from the LS dashboard.
 - Run `bin/console doctrine:fixtures:load` to update the DB.
-- Inside `createCheckout()`, get `$products = $cart->getProducts();`.
+- Inside `createCheckoutUrl()`, get `$products = $cart->getProducts();`.
 - Let's just set `$variantId = $products[0]->getLsVariantId();`
 - And set the `variantId` on the `relationships.variant.data.id` 
 - Now let's checkout - great! We're on the right product in LS checkout.
@@ -238,12 +236,12 @@
 - to checkout - aha, user data is empty! Not a big deal, user can manually
   fill that... but we can do better and prefill it from our app as we know
   user email and name when they authenticated.
-- First, we will need User object - inject `?User $user = null` to the `createCheckout()`.
+- First, we will need User object - inject `?User $user = null` to the `createCheckoutUrl()`.
 - Next, below `$attributes = [];`, add `if ($user)`.
 - Inside add `$attributes['checkout_data']['email'] = $user->getEmail();`.
 - And add `$attributes['checkout_data']['name'] = $user->getFirstName();`.
 - Now, inside `OrderController::checkout()`, inject `#[CurrentUser] ?User $user`.
-- And pass the user to the `createCheckout($user)`.
+- And pass the user to the `createCheckoutUrl($user)`.
 // TODO Too early - let's do it later
 //- But inside add `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
 //- PhpStorm does not like it much though it should work. To make PhpStorm
@@ -299,13 +297,31 @@
   to clear the cart after the purchase.
 - Let's create a new action `OrderController::success()`
 - Register the route as `#[Route('/checkout/success', name: 'app_order_success')]`
-- Add `ShoppingCart $cart` dependency.
-- Inside, `if ($cart->isEmpty())` - return redirect to homepage
+- To avoid direct access to this page - let's do a little trick.
+- Inject `Request $request`.
+- Inside, add `$referer = $request->headers->get('referer');`.
+- Then `$lsStoreUrl = 'https://squeeze-the-day.lemonsqueezy.com';`.
+- Let's check now: `if (!str_starts_with($referer, $lsStoreUrl)) {`.
+- If true `return $this->redirectToRoute('app_homepage');`.
+- Can we make that URL dynamic? We can, LS has an API endpoint to fetch that store URL.
+- Creat `LemonSqueezyApi::retrieveStoreUrl()`.
+- Here's the API endpoint: https://docs.lemonsqueezy.com/api/stores/retrieve-store
+- We will need LS Store ID for that, let's simplify getting it.
+- Create `private function getStoreId(): string`.
+- Inside `return $this->parameterBag->get('env(LEMON_SQUEEZY_STORE_ID)');`.
+- Now use this method in `createCheckoutUrl()`.
+- Back to `retrieveStoreUrl()`.
+- Add `$lsStore = $this->request(Request::METHOD_GET, 'stores/' . $this->getStoreId());`.
+- Finish with `return $lsStore['data']['attributes']['url'];`
+- Back to `success()`.
+- Replace hardcoded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl();`.
+- Now inject `ShoppingCart $cart` dependency.
+- Now add `if ($cart->isEmpty())` - return redirect to homepage again.
 - Next add `$cart->clear();`
 - You can render a separate success page if you want, but I will simplify and just
   add a flash message: `$this->addFlash('success', 'Thanks for your order!');`,
   and return redirect to homepage.
-- Now in the `createCheckout()` API request, add:
+- Now in the `createCheckoutUrl()` API request, add:
   `$attributes['product_options']['redirect_url'] = $this->generateUrl('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL),`
 - Go checkout again, complete, here's the Confirmation modal, press Continue... 
   and te success flash message! And the cart is empty now.
@@ -319,11 +335,11 @@
 - So let's extract LS API into a separate service for convenience - easier to test,
   easier to reuse, and easier to maintain!
 - Create a new service: `App\Store\LemonSqueezyApi`.
-- Now move there our `createCheckout()` method but make it public now.
+- Now move there our `createCheckoutUrl()` method but make it public now.
 - Make `$lsClient` and `$cart` as proper constructor dependencies - I
   will name it just `$client` for simplicity.
 - But here we will need our trick with `#[Target('lemonSqueezyClient')]`.
-- Then change vars to properties in `createCheckout()`.
+- Then change vars to properties in `createCheckoutUrl()`.
 - We also need a service to generate URLs.
 - Inject it as: `UrlGeneratorInterface $urlGenerator`.
 - Replace `$this->generateUrl()` with the service.
@@ -332,10 +348,6 @@
 - Replace `$this->getParameter()` with the service.
 - Now back to `OrderController::checkout()` - drop current dependencies and
   inject `LemonSqueezyApi $lsApi` instead.
-- For convenience, let's create a shortcut `createCheckoutUrl()` that will
-  return only the checkout URL.
-- Inside, call `$lsCheckout = $this->createCheckout($user);`.
-- And fetch the URL like `return $lsCheckout['data']['attributes']['url'];`.
 - Use the service: `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`
 - Make sure you can still checkout.
 
@@ -540,6 +552,10 @@
 ### LS Checkout Overlay
 - In `cart.html.twig`, add `{% block javascripts %}`.
 - Inside: `<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>`.
+- Recommendation from the LS:
+  > Please don’t self-host Lemon.js, you may miss out on new features and important security patches.
+- So better to link to it directly, the payment stuff is important from the
+  security perspective.
 - Don't forget to `{{ parent() }}` call.
 - Now let's add `lemonsqueezy-button` CSS class to the Checkout link.
 - Refresh the cart page and try.
@@ -664,7 +680,8 @@
 - Ah, an error... We start using LS faster than it's downloaded.
 - Let's wrap our code in `script.addEventListener('load', () => {`.
 - Refresh cart page again - another error!
-- We need to initiate the LS object.
+- See https://docs.lemonsqueezy.com/help/lemonjs/using-with-frameworks-libraries#re-initialize-button-listeners
+- So we need to manually initiate the LS object.
 - Before `Setup()` call add `window.createLemonSqueezy();`.
 - Try again! Yes, no errors in the console.
 - Try to checkout and check the DB - what? Customer has undefined value?
