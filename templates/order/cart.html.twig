@@ -2,12 +2,6 @@
 
 {% block title %}Checkout!{% endblock %}
 
-{% block javascripts %}
-    {{ parent() }}
-
-    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
-{% endblock %}
-
 {% block content %}
     <div>
         <h1>Checkout</h1>
@@ -29,10 +23,11 @@
             </form>
             <div>
                 <a data-controller="lemon-squeezy"
-                    data-action="lemon-squeezy#openOverlay"
-                    data-target-url="{{ path('app_order_checkout_create') }}"
-                    class="_lemonsqueezy-button"
-                    href="{{ path('app_order_checkout') }}"
+                   data-action="lemon-squeezy#openOverlay"
+                   data-lemon-squeezy-checkout-create-url-value="{{ path('app_order_checkout_create') }}"
+                   data-lemon-squeezy-checkout-handle-url-value="{{ path('app_order_checkout_handle') }}"
+                   class="_lemonsqueezy-button"
+                   href="{{ path('app_order_checkout') }}"
                 >
                     Checkout with LemonSqueezy
                 </a>

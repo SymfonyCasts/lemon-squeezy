@@ -560,14 +560,14 @@
 - Change route to: `#[Route('/checkout/create', name: 'app_order_checkout_create', methods: ['POST'])]`.
 - Inside, keep checking that user is logged in.
 - But then just `return $this->json(['targetUrl' => $lsApi->createCheckoutUrl($user)]);`.
-- Back to the template, add: `data-target-url="{{ path('app_order_checkout_create') }}"`.
-? TODO Probably replace with Stimulus value.
-- You can replace `href="{{ path('app_order_checkout') }}"` with `href="#"` if you
+- Back to the template, add Stimulus value: `data-lemon-squeezy-checkout-create-url-value="{{ path('app_order_checkout_create') }}"`.
+- Let's also replace `href="{{ path('app_order_checkout') }}"` with `href="#"` if you
   want, but I will keep it.
+- In Stimulus controller - add `static values = { checkoutCreateUrl: String, };`
 - Back in `openOverlay()`.
 - Inside, add: `e.preventDefault();`.
 - Then: `const linkEl = e.currentTarget;`.
-- Next: `fetch(linkEl.dataset.targetUrl, {`.
+- Next: `fetch(this.checkoutCreateUrlValue, {`.
 - With `method: 'POST',`.
 - And `headers: { 'Content-Type': 'application/json', },`.
 - Now add `.then(response => {`.
@@ -609,10 +609,74 @@
 - In the WDT we see that the request was redirected to the login page.
 - TODO
 
+### Dynamically include Lemon.js script
 - So right now if we want our Stimulus controller to work properly - we should
-  not forget to include that LS `script`. Can we make it automatically included
+  remember to include that LS `script`. Can we make it automatically included
   when we use our Stimulus controller? Yes, we can!
-- TODO
+- Add `connect()`.
+- Let's check if there's no LS script tag yet:
+  `let script = window.document.querySelector('script[src="https://assets.lemonsqueezy.com/lemon.js"]');`.
+- Then `if (!script)`.
+- Create script tag: `script = window.document.createElement('script');`.
+- Set `script.src = 'https://app.lemonsqueezy.com/js/lemon.js';`.
+- Set `script.defer = true;`.
+- Set `window.document.head.appendChild(script);`.
+- Done! Now celebrate by removing the whole javascript block from the `cart.html.twig`.
+- Go checkout again - it still works!
 
 ### Listen to LS JS events
--
+- So we have to configure webhooks locally every time we want to save corresponding
+  LS customer ID to our user. But we can do it an alternative way  - listen to
+  the LS JS events and set the customer ID on the successful checkout.
+- And LS has a special event for this: `Checkout.Success`.
+- At the end of `connect()`, add `window.LemonSqueezy.Setup({`.
+- Then `eventHandler: (data) => {`.
+- We can `console.log()` the `data` here, but there's already an example of the
+  event data in the docs: https://docs.lemonsqueezy.com/guides/developer-guide/lemonjs.
+- And let's filter for the event we needed: `if (data.event === 'Checkout.Success') {`.
+- Get customer ID: `const lsCustomerId = data.data.customer_id;`.
+- And next `this.#handleCheckout(lsCustomerId);`.
+- Now create that method `#handleCheckout(lsCustomerId) {`.
+- Now we need to add an endpoint to save the LS customer ID to the current user.
+- Open OrderController and add a new action: `handleCheckout()`.
+- Route it as: `#[Route('/checkout/handle', name: 'app_order_checkout_handle', methods: ['POST'])]`.
+- Inject `#[CurrentUser] ?User $user,`
+- Inside let's keep our `if (!$user instanceof User) { throw $this->createAccessDeniedException`.
+- Inject `Request $request,`.
+- Fetch the ID: `$lsCustomerId = $request->request->get('lsCustomerId');`.
+- Set it on the current: `$user->setLsCustomerId($lsCustomerId);`.
+- Inject `EntityManagerInterface $entityManager,`.
+- Save the changes: `$entityManager->flush();`.
+- It's enough to return a successful response: `return $this->json([]);`.
+- Back to `#handleCheckout`.
+- Let's `fetch(this.checkoutHandleUrlValue, {`.
+- Use `method: 'POST',`
+- For headers I will use `'Content-Type': 'application/x-www-form-urlencoded',` because
+  we use `$request->request->get()`.
+- And for body: `new URLSearchParams({ lsCustomerId: lsCustomerId, }),`.
+- Below `.then(response => {`.
+- Inside `if (!response.ok) { throw new Error("...`.
+- And `return response.json();`
+- Add one more `.then(data => {`.
+- But inside I will just leave a comment: `// Nothing to do`.
+- Finally finish with our `.catch(error => { console.error('...`.
+- Now go refresh the cart page.
+- Ah, an error... We start using LS faster than it's downloaded.
+- Let's wrap our code in `script.addEventListener('load', () => {`.
+- Refresh cart page again - another error!
+- We need to initiate the LS object.
+- Before `Setup()` call add `window.createLemonSqueezy();`.
+- Try again! Yes, no errors in the console.
+- Try to checkout and check the DB - what? Customer has undefined value?
+- Hm, this sounds like we're using an undefined property there.
+- OK, let's `console.log(data);` in the `Checkout.Success` event.
+- Checkout again - aha, seems docs mismatch the returning object.
+- OK, let's fix the path to `const lsCustomerId = data.data.order.data.attributes.customer_id;`.
+- I will delete the `console.log()`.
+- Try one more time - yes, success!
+- Check the DB - here's out customer ID.
+- So even though we didn't have webhooks configured via Ngrok, we still were able
+  to sync the customer with user via JS webhook - that's perfect for local
+  development and testing.
+
+

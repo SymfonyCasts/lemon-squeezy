@@ -6,6 +6,7 @@ use App\Entity\Product;
 use App\Entity\User;
 use App\Store\LemonSqueezyApi;
 use App\Store\ShoppingCart;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -85,5 +86,23 @@ class OrderController extends AbstractController
         return $this->json([
             'targetUrl' => $lsApi->createCheckoutUrl($user, true),
         ]);
+    }
+
+    #[Route('/checkout/handle', name: 'app_order_checkout_handle', methods: ['POST'])]
+    public function handleCheckout(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        #[CurrentUser] ?User $user,
+    ): Response {
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException('You must be logged in to handle checkout!');
+        }
+
+        $lsCustomerId = $request->request->get('lsCustomerId');
+        $user->setLsCustomerId($lsCustomerId);
+
+        $entityManager->flush();
+
+        return $this->json([]);
     }
 }
