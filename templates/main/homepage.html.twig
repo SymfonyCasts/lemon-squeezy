@@ -4,8 +4,8 @@
 
 {% block content %}
     <div>
-        <h1>Welcome to our lemonade stand store!</h1>
-        Lemonade Flavours:
+        <h1>Welcome to our lemonade stand!</h1>
+        Lemonade Flavors:
         {% if products|length %}
             <ul>
                 {% for product in products %}
@@ -18,7 +18,7 @@
             </ul>
         {% else %}
             <div>
-                We have run out of lemonades! Please check back later.
+                We have run out of lemonade! Please check back later.
             </div>
         {% endif %}
     </div>
