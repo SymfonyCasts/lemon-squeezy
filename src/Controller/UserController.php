@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Form\RegistrationFormType;
 use App\Security\LoginFormAuthenticator;
+use App\Store\LemonSqueezyApi;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -12,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class UserController extends AbstractController
 {
@@ -48,8 +50,13 @@ class UserController extends AbstractController
     }
 
     #[Route('/account', name: 'app_user_account')]
-    public function account(): Response
+    public function account(LemonSqueezyApi $api, #[CurrentUser] $user): Response
     {
-        return $this->render('user/account.html.twig');
+        $orders = $api->listOrders($user);
+
+        return $this->render('user/account.html.twig', [
+            'orders' => $orders,
+            'latestOrder' => $orders['data'][0] ?? null,
+        ]);
     }
 }

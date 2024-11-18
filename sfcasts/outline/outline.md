@@ -499,20 +499,83 @@
 - Now the user have customer ID set and we can leverage it in our app to show
   the link to orders list.
 
-### Render Link to LS Orders
-- How your customers can see their orders? Let's search for my orders:
+### Render LS Orders
+- How can your customers see their orders? Let's render the orders for them
+  on the account page.
+- First of all, let's create `public function listOrders(User $user): array`.
+- Open the docs: https://docs.lemonsqueezy.com/api/orders/list-all-orders.
+- So we need to make a GET request to the `orders` endpoint.
+- Inside `listOrders`, add return `$this->request(Request::METHOD_GET, 'orders');`.
+- And we want to filter the orders by our store ID and user email - that can be
+  done as a query string.
+- Let's create a `$queryString = http_build_query([]);`.
+- Inside add `'filter' => []`.
+- Then inside: `'store_id' => $this->getStoreId(),`.
+- And `'user_email' => $user->getEmail(),`.
+- Add it to the API endpoint URL as:
+  `request(Request::METHOD_GET, 'orders?' . $queryString);`.
+- Inside `account()` action, inject `LemonSqueezyApi $lsApi`.
+- Also, we will need user `#[CurrentUser] $user`.
+- Now call that `$orders = $api->listOrders($user);`.
+- And pass to the template: `'orders' => $orders,`.
+- Finally, inside the template, let's render the orders.
+- But we want to show it only if customers ever bought something on our website.
+  how can we know? The lsCustomerID field! If it's set - then customer made an
+  order, and we can show the orders table.
+- Add `{% if app.user.lsCustomerId %}`.
+- Inside: `<table>`.
+- With `{% for order in orders.data %}` the `<tr>`.
+- Now add `<td>#{{ order.attributes.order_number }}</td>`.
+- And `<td>{{ order.attributes.created_at|date('d M Y, H:i') }}</td>`.
+- And `<td>{{ order.attributes.total_formatted }}</td>`.
+- And finally  `<td><a href="{{ order.attributes.urls.receipt }}" target="_blank">View</a></td>`.
+- Refresh Account page to the orders.
+- By default LS list API endpoint return 10 records, can we change it?
+- We can! See https://docs.lemonsqueezy.com/api/getting-started/requests#pagination
+- Let's add `'page' => [` to the query string.
+- Inside, I will add `'size' => 5,`.
+- Refresh the account page to see changes.
+- Now let's add a button to the LS orders page, see the docs:
   https://docs.lemonsqueezy.com/help/online-store/my-orders
  - So we need to render a link to the LS Orders page which is:
   https://app.lemonsqueezy.com/my-orders
-- Open `account.html.twig` and add a link:
-  `<a href="https://app.lemonsqueezy.com/my-orders">My Orders</a>`.
-- But we want to show it only if customers ever bought something on our website.
-  how can we know? The lsCustomerID field! If it's set - then customer made an
-  order, then show the link.
-- Wrap the link with `{% if app.user.lsCustomerId %}`.
+- In `account.html.twig` add a link after the table:
+  `<a href="https://app.lemonsqueezy.com/my-orders">More Orders</a>`.
 - I will also add `target="_blank"` for this link.
-? Well, seems this page is empty, I suppose we need to activate the store first,
-  or maybe it will work only in live mode?
+- How can we show this link only if we have more orders than those we already
+  rendered on the Account page?
+- Let's `dd($orders)` again - LS gives us a pagination data in `meta.page`.
+- Wrap the link with an if:
+  `{% if orders.meta.page.total > orders.meta.page.perPage %}`.
+- Now refresh the page. OK, table - check, link - check.
+- Click the link, it redirects you to https://app.lemonsqueezy.com/my-orders.
+- But this page is empty. Yeah, that's because this page only shows ordres
+  that were made in prod mode, but we're in test mode right now. LS may fix it
+  at the moment when this course is released, but if it's not - you can follow
+  the workaround I will show you next.
+- To make it work, we need to add an order identifier to that URL.
+- For this, let's pass the latest order to the template:
+  `'latestOrder' => $orders['data'][0] ?? null,`.
+- In the template, write the link as:
+  `https://app.lemonsqueezy.com/my-orders/{{ latestOrder.attributes.identifier|default('') }}`.
+- I will add that `default('')` just in case we don't have any orders, it will just
+  render the empty string instead.
+- Now refresh the page and click the link - great, all the past orders are shown now.
+- But if you will look at our list Orders API implementation - you may notice
+  the problem. Yes, passing user email isn't safe, because users can change their
+  email to a different one (not owned by them) and if you do not verify emails - that
+   can be a problem, because we will render signed URLs to the LS Orders.
+- Maybe it's not that bad, but we can securely avoid this.
+- I have the next plan: We know LS customer ID. We can fetch the current customer
+  by ID, get its email address, and pass it to the LS Orders list API.
+- Create `public function retrieveCustomer(string $customerId): array`.
+- Inside, `return $this->request(Request::METHOD_GET, 'customers/' . $customerId);`.
+- Back in `listOrders()`.
+- Add `$userEmail = $user->getEmail();` in the beginning.
+- Next let's check `if ($user->getLsCustomerId()) {`.
+- Then `$lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());`.
+- And `$userEmail = $lsCustomer['data']['attributes']['email'];`.
+- Now we will render relevant orders only for emails who actually made an order.
 
 ### Better API Error Handling
 - Let's temporary remove the `(string)` typecasting for user ID in `createCheckout()`

@@ -7,6 +7,7 @@ use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -17,7 +18,7 @@ class LemonSqueezyApi
         private readonly HttpClientInterface $client,
         private readonly ShoppingCart $cart,
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly ParameterBagInterface $parameterBag,
+        private readonly ParameterBagInterface $parameterBag, private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -110,6 +111,33 @@ class LemonSqueezyApi
 //        return $response->toArray();
 
         return $lsCheckout['data']['attributes']['url'];
+    }
+
+    public function listOrders(User $user): array
+    {
+        $userEmail = $user->getEmail();
+        if ($user->getLsCustomerId()) {
+            $lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());
+            $userEmail = $lsCustomer['data']['attributes']['email'];
+        }
+
+        $queryString = http_build_query([
+            'filter' => [
+                'store_id' => $this->getStoreId(),
+//                'user_email' => $user->getEmail(),
+                'user_email' => $userEmail,
+            ],
+            'page' => [
+                'size' => 5, // @see https://docs.lemonsqueezy.com/api/getting-started/requests#pagination
+            ],
+        ]);
+
+        return $this->request(Request::METHOD_GET, 'orders?' . $queryString);
+    }
+
+    public function retrieveCustomer(string $customerId): array
+    {
+        return $this->request(Request::METHOD_GET, 'customers/' . $customerId);
     }
 
     public function retrieveStoreUrl(): string

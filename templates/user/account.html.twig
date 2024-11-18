@@ -9,9 +9,22 @@
         <p>Name: {{ app.user.firstName }}</p>
 
         {% if app.user.lsCustomerId %}
-            <p>
-                <a href="https://app.lemonsqueezy.com/my-orders" target="_blank">My Orders</a>
-            </p>
+            <table>
+                {% for order in orders.data %}
+                    <tr>
+                        <td>#{{ order.attributes.order_number }}</td>
+                        <td>{{ order.attributes.created_at|date('d M Y, H:i') }}</td>
+                        <td>{{ order.attributes.total_formatted }}</td>
+                        <td><a href="{{ order.attributes.urls.receipt }}" target="_blank">View</a></td>
+                    </tr>
+                {% endfor %}
+            </table>
+
+            {% if orders.meta.page.total > orders.meta.page.perPage %}
+                <p>
+                    <a href="https://app.lemonsqueezy.com/my-orders/{{ latestOrder.attributes.identifier|default('') }}" target="_blank">More Orders</a>
+                </p>
+            {% endif %}
         {% endif %}
     </div>
 {% endblock %}
