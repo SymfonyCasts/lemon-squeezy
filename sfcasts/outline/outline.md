@@ -17,7 +17,7 @@
   store - you will be able to switch between your live (real) store and test (fake)
   store using this switch.
 - First of all, you even don't need any website to start selling with LemonSqueezy,
-  isn't that cool? You can just share your LS storefront URL with your customers
+  isn't that cool? You can just share your LS storefront URL with your customers,
   and they will be able to buy your products directly from there.
 
 ### Create a Product
@@ -99,7 +99,7 @@
 - Also, go to Store > Customers - we have a customer already! Oh wait, it's me.
 - Anyway, LS handles all emails for us, so you don't need to worry about it.
   You will find the invoice email in your inbox shortly. Sour (🍋)! Um, I mean, sweet!!
-- OK OK, that's really great! You can start selling your products without a website,
+- OK, OK, that's really great! You can start selling your products without a website,
   just create more products, publish them on the storefront, and share the link
   to your storefront to your friends!
 - But since we're developers, and since we already have a super popular
@@ -117,7 +117,7 @@
 - Welcome to the "Squeeze the Day" website - our digital Lemonade Stand!
 - Let's look around! We have some products here, you can add it to cart for buying,
   you can even specify the quantity. The actual cart page where you will be able
-  to checkout - that's something for what we will need LS integration. We also
+  to check out - that's something for what we will need LS integration. We also
   provide weekly lemonade delivery for subscribed users - how convenient! We will
   see subscriptions in the next episode. You can also register and then log in,
   and you will find a basic account info.
@@ -138,7 +138,7 @@
   `Accept: 'application/vnd.api+json'`
   `Content-Type: 'application/vnd.api+json'`
 - For authorization, we need to add a Bearer token.
-- First, let's set up the API key so we could make API requests
+- First, let's set up the API key, so we could make API requests
 - Go to Settings > API > Add API key > name it "API", and copy the key.
 - Keep it secret! Nobody should see it... oh crap, I've already failed this.
   OK, not a big problem, I can always delete it and generate a new one.
@@ -219,7 +219,7 @@
 - Inside `createCheckoutUrl()`, get `$products = $cart->getProducts();`.
 - Let's just set `$variantId = $products[0]->getLsVariantId();`
 - And set the `variantId` on the `relationships.variant.data.id` 
-- Now let's checkout - great! We're on the right product in LS checkout.
+- Now let's check out - great! We're on the right product in LS checkout.
 - Notice that the variantId in this specific case should be a string, not an int
   according to the docs. It's important to match that type, otherwise you will get
   an error. But since our variant ID is already a string - we're good. Though
@@ -235,9 +235,9 @@
 
 ### Pre-fill User Data
 - Hm, but where this email comes from? I'm authenticated in LS as a store owner,
-  so they pre-fill it for me. What if I try to checkout in incognito mode?
+  so they pre-fill it for me. What if I try to check out in incognito mode?
 - Open incognito, log in as `lemon@example.com` with password `lemonpass`, try
-- to checkout - aha, user data is empty! Not a big deal, user can manually
+- to check out - aha, user data is empty! Not a big deal, user can manually
   fill that... but we can do better and prefill it from our app as we know
   user email and name when they authenticated.
 - First, we will need User object - inject `?User $user = null` to the `createCheckoutUrl()`.
@@ -246,11 +246,6 @@
 - And add `$attributes['checkout_data']['name'] = $user->getFirstName();`.
 - Now, inside `OrderController::checkout()`, inject `#[CurrentUser] ?User $user`.
 - And pass the user to the `createCheckoutUrl($user)`.
-// TODO Too early - let's do it later
-//- But inside add `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
-//- PhpStorm does not like it much though it should work. To make PhpStorm
-//  happy - above add `if (!$user instanceof User)`.
-//- And then `throw $this->createAccessDeniedException('You must be logged in to checkout!');`.
 - Perfect, let's try checkout in incognito again - now user data pre-filled!
 
 ## Workaround for Multiple Products Purchase
@@ -265,7 +260,7 @@
   closer for their roadmap: https://www.lemonsqueezy.com/roadmap - there is
   a "Cart" feature that will add support for a traditional cart checkout experience
   and I hope it will solve this issue.
-- So we can either twaek our shopping card and allow to add only 1 product to it,
+- So we can either tweak our shopping card and allow to add only 1 product to it,
   i.e. overwrite a product if it's already there with a new one.
 - Or we can make a custom workaround - if you take a look at the API docs - LS
   allows you to set up your own price.
@@ -285,13 +280,13 @@
   `$description .= $product->getName() . ' for $' . number_format($product->getPrice()/100, 2) . ' x ' . $cart->getProductQuantity($product) . '<br>'`
 - And finally in `product_options` set `'description' => $description,`
 - Checkout again - much better, I like this workaround!
-- We can do much more, change the image, etc - but I will leave it to you.
+- We can do much more, change the image, etc. - but I will leave it to you.
 
 ## Complete the Checkout
 - Now, let's finally complete the checkout!
 - It shows us a successful alert:
   > Thanks for your order!
-- It can be configured as well and it's a product-specific config.
+- It can be configured as well, and it's a product-specific config.
 - Open LS dashboard > Store > Products > A product > Confirmation modal.
 - There it is! Title & Message fields which the defaults I see. I'm pretty
   happy with the defaults, maybe just add more exclamations because I'm super excited!
@@ -334,7 +329,7 @@
 
 ## Centralize LS Logic
 - It would be great centralize all the LS logic into a separate service.
-  First of all, we're going to add more requests to the LS API and it would
+  First of all, we're going to add more requests to the LS API, and it would
   be convenient to have everything LS API related in a separate class.
   But also it's the best practice that will allow us to keep our controllers
   thin and help to test that code easier.
@@ -387,7 +382,7 @@
 ### Listen to Webhooks
 - So let's go with webhooks first. There's a dev guide about it:
   https://docs.lemonsqueezy.com/guides/developer-guide/webhooks
-- There're only few events about Orders, and to sync customer with app user
+- There are only few events about Orders, and to sync customer with app user
   we need to listen to the `order_created` event.
 - Let's create a `WebhookController`, extend `AbstractController`.
 - Add base route about it: `#[Route('/webhook')]`.
@@ -396,7 +391,7 @@
 - Inside, let's just `throw new \Exception('Not implemented yet!');`
 - Go to Settings > Webhooks > +:
   https://app.lemonsqueezy.com/settings/webhooks
-- For callback we need to set https://127.0.0.1:8000/webhook/lemon-squeezy - but
+- For callback, we need to set https://127.0.0.1:8000/webhook/lemon-squeezy - but
   it will not work as it's not a public URL!
 
 ### Use Ngrok for Accessing Webhooks Locally
@@ -446,7 +441,7 @@
   that LS tried to deliver a few times. Every time our server do not response
   with a successful status code - LS will try to deliver it again:
   in 5 seconds, 25 seconds, then 125 seconds. If it fails 3 times - LS will
-  give up and we will have to retry to manually from the LS dashboard:
+  give up, and we will have to retry to manually from the LS dashboard:
 - Here's one failed: https://app.lemonsqueezy.com/settings/webhooks - and here's
   the Resend button. We can even see the response body here - so convenient.
 - Now let's focus on implementing it.
@@ -475,10 +470,10 @@
 - And we need to set it on the user. But `$this->getUser()` will not work, we're
   handling a webhook, i.e. a completely separate request that does not have access
   to the session of the user who made this order. We need to somehow find the
-  corresponding user. Thankfully, LS allow us add custom data on a Checkout creation.
+  corresponding user. Thankfully, LS allow us to add custom data on a Checkout creation.
 - Go to the `createCheckout()`.
 - Add: `$attributes['checkout_data']['custom']['user_id'] = $user->getId();`.
-- From now on we also need to require the user to be logged in to checkout
+- From now on we also need to require the user to be logged in to check out
   because from now on we need to link the corresponding LS customer to it.
 - Make it required in the method signature: `createCheckout(User $user)`.
 - We don't need that `if ($user)` anymore.
@@ -512,13 +507,13 @@
   in the Ngrok inspector - I love Ngrok!
 - Ah, the error! Well, that makes sense, that webhook does not have a user ID set
   on custom data.
-- OK, let's checkout again.
+- OK, let's check out again.
 - Ah, an error. The custom data should be string.
 - Typecast user ID to string: `$attributes['checkout_data']['custom']['user_id'] = (string)$user->getId();`.
 - Try again - now success!
 - Check the webhook - now we have the user ID.
 - Check the DB: `bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 3"`.
-- Now the user have customer ID set and we can leverage it in our app to show
+- Now the user have customer ID set, and we can leverage it in our app to show
   the link to orders list.
 
 ## Testing webhooks
@@ -643,7 +638,7 @@
   `{% if orders.meta.page.total > orders.meta.page.perPage %}`.
 - Now refresh the page. OK, table - check, link - check.
 - Click the link, it redirects you to https://app.lemonsqueezy.com/my-orders.
-- But this page is empty. Yeah, that's because this page only shows ordres
+- But this page is empty. Yeah, that's because this page only shows orders
   that were made in prod mode, but we're in test mode right now. LS may fix it
   at the moment when this course is released, but if it's not - you can follow
   the workaround I will show you next.
@@ -683,9 +678,9 @@
 
 ## Better API Error Handling
 - Let's temporary remove the `(string)` typecasting for user ID in `createCheckout()`
-- Try to checkout - an error!
+- Try to check out - an error!
 - But when we do a bad request - it throws a `ClientException`. But it hides the
-  actual error from us. Let's improve the error so we could see what went wrong
+  actual error from us. Let's improve the error, so we could see what went wrong
   without needing to uncomment that `dd($response->getContent(false));` line.
 - Let's create a request method that will match the signature of client's `request()`:
   `private function request(string $method, string $url, array $options = []): array`.
@@ -699,7 +694,7 @@
 - Now we just need to make request with simple `$this->request()`.
 - And we can immediately return the result which is already an array of data.
   `return $this->request(Request::METHOD_POST, 'checkouts', [...])`.
-- Now try to checkout - an error! And here's our dump.
+- Now try to check out - an error! And here's our dump.
 - So we have an array of errors, I will simplify things (I think most of the time
   we will have only one error).
 - I will start as: `$mainErrorMessage = 'LS API Error:';`.
@@ -710,7 +705,7 @@
 - Let's do the same for `title` and `detail`.
 - And finally add `if (isset($error['source']['pointer']))`.
 - Then `$mainErrorMessage .= sprintf(' (at path "%s")', $error['source']['pointer']);`.
-- Else, if somehow we have no errors but it still a client error - let's print
+- Else, if somehow we have no errors, but it still a client error - let's print
   the whole error content at least: `$mainErrorMessage .= $e->getResponse()->getContent(false);`.
 - Finally, `throw new \Exception($mainErrorMessage, 0, $e);`
 - Go try it now - much better! A lot of context is displayed on the error page.
@@ -778,7 +773,7 @@
 - Now right after `const linkEl`, add `this.#disableLink(linkEl);`.
 - After we open the URL, add `this.#enableLink(linkEl);`.
 - And also add it in the `catch` too.
-- Now try to checkout
+- Now try to check out
 
 ### Show Embedded LS Overlay 
 - Go checkout, it loads, and the LS checkout page is opened.
@@ -797,7 +792,7 @@
 
 ## TODO 
 - But we still have a problem for non-authed users.
-- Log out, to something to the cart, and try to checkout - nothing happen.
+- Log out, to something to the cart, and try to check out - nothing happen.
 - In the WDT we see that the request was redirected to the login page.
 
 ### Dynamically Include Lemon.js Script
@@ -861,7 +856,7 @@
 - So we need to manually initiate the LS object.
 - Before `Setup()` call add `window.createLemonSqueezy();`.
 - Try again! Yes, no errors in the console.
-- Try to checkout and check the DB - what? Customer has undefined value?
+- Try to check out and check the DB - what? Customer has undefined value?
 - Hm, this sounds like we're using an undefined property there.
 - OK, let's `console.log(data);` in the `Checkout.Success` event.
 - Checkout again - aha, seems docs mismatch the returning object.
@@ -895,7 +890,7 @@
 - And in `OrderController::handleCheckout()`.
 - Add `$userId = $request->request->get('userId');`.
 - Then add check: `if ($userId !== (string) $user->getId()) {`.
-- Let's throw so we could see it in logs:
+- Let's throw, so we could see it in logs:
   `throw $this->createAccessDeniedException(sprintf('Current user ID "%s" does not match the user ID "%s" of the order!', $user->getId(), $userId));`
 - Now it's safe to set the customer as we know for sure it relates to the current user.
 - Go to the DB, set customer ID to null, no Ngrok tunnel running.
