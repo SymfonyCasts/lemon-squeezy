@@ -1,6 +1,6 @@
 # Outline
 
-### Register LS Account
+## Register LS Account
 - LemonSqueezy is your Merchant of record! It means that they handle all the
   payment processing, taxes, and compliance for you. You just need to focus on
   your product and marketing.
@@ -56,7 +56,7 @@
   and send to your customer - it will lead them directly to the checkout page
   where they can buy that product.
 
-### LS Storefront
+## Make orders in LS Storefront
 - Or just share the link to your Storefront sp that users can see all your
   available products.
 - Let's open the storefront: below "Squeeze the Day" store name > "My Store".
@@ -108,7 +108,7 @@
   like to have an integration of LemonSqueezy directly on *our* website.
   So, let's do it!
 
-### Start the Project Code App
+## Start the Course Project Code App
 - Well, "payment system integration" term may sound scary at the first sight,
   but don't worry, "with LemonSqueezy - it's super easy"! And you will see it
   at the end of this course.
@@ -150,7 +150,7 @@
 - Or to make it even more secure - take a look at Symfony's secrets management system.
 - Now we can add `auth_bearer: '%env(LEMON_SQUEEZY_API_KEY)%'`
 
-### Create a Checkout
+## Create a Checkout URL
 - Next dev guide will help us to charge the user:
   https://docs.lemonsqueezy.com/guides/developer-guide/taking-payments
 - If we want our customers to buy something via LS on our website - we need
@@ -167,6 +167,8 @@
 - Now let's implement that `createCheckoutUrl()`.
 - Inject the same dependencies: `HttpClientInterface $lsClient` and `ShoppingCart $cart`.
 - Inside, first of all, `if ($cart->isEmpty())` - `throw new \LogicException('Nothing to checkout!');`
+
+### Make a Request to LS API
 - Next `$lsCheckout = $this->client->request(Request::METHOD_POST, 'checkouts', []);`.
 - Inside options - let's just it as : `'json' => ['data' => ['type' => 'checkouts']]`.
 - LS docs do not make it clear what option is required - let's execute this
@@ -201,7 +203,7 @@
 - Yes, we're on the LS checkout page and buying the product.
 - Now let's make it dynamic
 
-### Use dynamic data in the Checkout object
+### Use Dynamic Data in the Checkout Object
 - Store ID is unique for test/live env, let's set it as an env var.
 - Open .env and set `LEMON_SQUEEZY_STORE_ID` with the value.
 - Now in `config/services.yaml` add a new parameter:
@@ -230,6 +232,8 @@
   should be integer, not a string. Yep, a subtle detail that easy to skip,
   it would be nice to have an error about it LS!
 - Fix it by casting to int: `'variant_id' => (int)$variantId, // Should be an int!`
+
+### Pre-fill User Data
 - Hm, but where this email comes from? I'm authenticated in LS as a store owner,
   so they pre-fill it for me. What if I try to checkout in incognito mode?
 - Open incognito, log in as `lemon@example.com` with password `lemonpass`, try
@@ -249,11 +253,11 @@
 //- And then `throw $this->createAccessDeniedException('You must be logged in to checkout!');`.
 - Perfect, let's try checkout in incognito again - now user data pre-filled!
 
-### Workaround for Multiple Products Purchase
+## Workaround for Multiple Products Purchase
 ? The problem is that even if we will change the name and description of the
   product in the LS checkout - LS will still use the original name and image
   in the emails and orders. That's why probably better to create a base product,
-  e.g. "E-lemonades" and use it as a base variant ID for multiple product purchases?
+  e.g. "E-lemonade" and use it as a base variant ID for multiple product purchases?
 - OK, now a single product purchase looks awesome, but if we add one more product
   there's a problem - we purchase only the first product from our shopping cart.
 - Actually, there's a bigger problem - LS do not allow you to buy more than
@@ -283,7 +287,7 @@
 - Checkout again - much better, I like this workaround!
 - We can do much more, change the image, etc - but I will leave it to you.
 
-### Complete the Checkout
+## Complete the Checkout
 - Now, let's finally complete the checkout!
 - It shows us a successful alert:
   > Thanks for your order!
@@ -293,6 +297,8 @@
   happy with the defaults, maybe just add more exclamations because I'm super excited!
 - You can also change the Button text & link here.
 - OK, click the Continue button - and we're to the LS Order page.
+
+### Clear the Cart after Purchase
 - But if you return to the website - we still have products in the cart - we need
   to clear the cart after the purchase.
 - Let's create a new action `OrderController::success()`
@@ -304,7 +310,7 @@
 - Let's check now: `if (!str_starts_with($referer, $lsStoreUrl)) {`.
 - If true `return $this->redirectToRoute('app_homepage');`.
 - Can we make that URL dynamic? We can, LS has an API endpoint to fetch that store URL.
-- Creat `LemonSqueezyApi::retrieveStoreUrl()`.
+- Create `LemonSqueezyApi::retrieveStoreUrl()`.
 - Here's the API endpoint: https://docs.lemonsqueezy.com/api/stores/retrieve-store
 - We will need LS Store ID for that, let's simplify getting it.
 - Create `private function getStoreId(): string`.
@@ -326,7 +332,7 @@
 - Go checkout again, complete, here's the Confirmation modal, press Continue... 
   and te success flash message! And the cart is empty now.
 
-### Centralize LS logic
+## Centralize LS Logic
 - It would be great centralize all the LS logic into a separate service.
   First of all, we're going to add more requests to the LS API and it would
   be convenient to have everything LS API related in a separate class.
@@ -359,7 +365,7 @@
   Wait! Actually, no, you should always use HTTPS on your whole website!
   That's a pretty standard lately and brings user security to the next level.
 
-### TODO Sync User with LS Customer
+## Assign LS Customer to the Current User
 - The problem is that when you create a Checkout - you can't specify the customer
   ID and LS will assign a customer to the order automatically behind the scene.
   On the one hand, it's convenient, but on the other hand - it complicates things
@@ -374,8 +380,9 @@
   be especially convenient locally when you don't want to set up webhooks.
   See https://chatgpt.com/c/672bd203-8160-8011-9d36-e17fef609fd1
 - Actually, we can do both! The JS sync will simplify things locally as we will
-  not have to configure webhooks locally for working customer syncronization.
-- When we will have customer - we can render a link to the LS Orders list page.
+  not have to configure webhooks locally for working customer synchronization.
+- When we will have customer - we can render their orders. Also, it will help
+  with debugging in LS dashboard when User have problems.
 
 ### Listen to Webhooks
 - So let's go with webhooks first. There's a dev guide about it:
@@ -391,6 +398,8 @@
   https://app.lemonsqueezy.com/settings/webhooks
 - For callback we need to set https://127.0.0.1:8000/webhook/lemon-squeezy - but
   it will not work as it's not a public URL!
+
+### Use Ngrok for Accessing Webhooks Locally
 - Thankfully, there's a solution. We can use a tool like Ngrok to create a tunnel
   to our local server. It will give us a public URL that will redirect to our
   local server. It's super easy to use, just download it, run it, and it will
@@ -414,6 +423,8 @@
 - And of course you want to keep it secret!
 - Now cope that and paste into the Signing secret.
 - For events - select `order_created` and save.
+
+### Ngrok Web Interface for Traffic Inspection
 - Perfect, if you open the console tab where we ran Ngrok - you will see the
   another local URL for Web Interface http://127.0.0.1:4040 - open it!
 - Welcome to the Ngrok Web Interface! Here you can see all the requests that
@@ -428,6 +439,8 @@
 - But before start implementing that, let's trigger a real webhook. Go checkout
   a new order.
 - Success!
+
+### Failed Webhook Retry Strategy
 - Back to the Ngrok inspector - wow, there are a few new requests! Actually if we
   wait for a few minutes - we will see 3 failed requests. It was the same request
   that LS tried to deliver a few times. Every time our server do not response
@@ -442,11 +455,18 @@
   `#[Route('/lemon-squeezy', name: 'app_webhook_lemon_squeezy', methods: ['POST'])]`
 - Now drop throwing the exception.
 - Let's inject `lemonSqueezy(Request $request)`.
+
+### Verify Webhook Signature
+- Create `private function verifyLemonSqueezySignature(Request $request): void`.
 - Inside, add: `$payload = $request->getContent();`.
 - Compute hash of the payload: `$hash = hash_hmac('sha256', $payload, self::LEMON_SQUEEZY_WEBHOOK_SECRET);`.
 - Fetch request signature: `$signature = $request->headers->get('X-Signature', '');`.
-- Check for match: `if (!hash_equals($hash, $signature))` and `throw new \Exception('Invalid LemonSqueezy signature!');`.
-- Get the response data: `$data = $request->toArray();`
+- Check for match: `if (hash_equals($hash, $signature))` - then return.
+- At the end: `throw new \Exception('Invalid LemonSqueezy signature!');`.
+- Call it from `WebhookController::lemonSqueezy()`.
+
+### Handle the Webhook Event
+- Below, get the response data: `$data = $request->toArray();`.
 - Get event name: `$eventName = $data['meta']['event_name'];`.
 - Add a switch-case: `switch ($eventName)`.
 - Inside: `case 'order_created': break;`.
@@ -484,8 +504,10 @@
 - Add setters and getters.
 - Create a migration and migrate.
 - Finally, inside the case: `$user->setLsCustomerId($customerId);`.
-- After the switch, save everything: `$entityManager->flush();`
-- And return 200 response: `return new Response('Webhook successfully handled!');`
+- After the switch, save everything: `$entityManager->flush();`.
+- And return 200 response: `return new Response('Webhook successfully handled!');`.
+
+### Retry the failed Webhook
 - Time to retry the webhook, and we can do it either in LS dashboard, or directly
   in the Ngrok inspector - I love Ngrok!
 - Ah, the error! Well, that makes sense, that webhook does not have a user ID set
@@ -499,9 +521,11 @@
 - Now the user have customer ID set and we can leverage it in our app to show
   the link to orders list.
 
-### Testing webhooks
+## Testing webhooks
 - Mention our testing courses for more details.
 - Install test pack: `com req test --dev`.
+
+### Create a Test
 - Create a `WebTestCase` test with `cl make:test`.
 - Name the test as `Controller\WebhookContoller`.
 - Open that `WebhookContollerTest` just created.
@@ -510,17 +534,23 @@
 - Let's add a nice error message `assertResponseIsSuccessful('Webhook failed!')`.
 - Now let's see if it works.
 - Run `bin/phpunit` - en error!
+
+### Create Test DB
 - We need to create test DB.
 - Run `bin/console doctrine:database:create --env=test`.
 - And `bin/console doctrine:schema:create --env=test`.
 - Rerun again - it pass now.
 - Ok, now let's write this test.
 - We can leverage Foundry to create a user.
+
+### Create Dummy Data in Tests
 - Add `$user = UserFactory::new()->create([`.
 - Let's pass some data.
 - Add `'email' => 'test@example.com',`.
 - And `'plainPassword' => 'testpass',`.
 - And `'firstName' => 'Test',`.
+
+### Create a Request with Fake Payload
 - Now `$client = static::createClient();`.
 - Next add `$client->request('POST', '/webhook/lemon-squeezy', [], [], [], $json);`.
 - We need to pass the JSON payload - go grab it from Ngrok, or you can find it
@@ -541,6 +571,8 @@
 - But easier would be just to disable signature checking in test mode.
 - In the beginning, add: `if ($this->getParameter('kernel.environment') === 'test') {`.
 - Then return.
+
+### Make Data Dynamic in Test Payload 
 - Try again - it works! Well, it's another error, but this is a good sign.
 - We need to use the correct `user_id` and `customer_id` in the payload.
 - Replace their values with placeholders: `%user_id%` & `%customer_id%`.
@@ -553,9 +585,11 @@
 - Install `com req dama/doctrine-test-bundle --dev`.
 - Run again - it passes!
 
-### Render LS Orders
+## Render LS Orders
 - How can your customers see their orders? Let's render the orders for them
   on the account page.
+
+### Get List of Orders from LS API
 - First of all, let's create `public function listOrders(User $user): array`.
 - Open the docs: https://docs.lemonsqueezy.com/api/orders/list-all-orders.
 - So we need to make a GET request to the `orders` endpoint.
@@ -571,6 +605,8 @@
 - Inside `account()` action, inject `LemonSqueezyApi $lsApi`.
 - Also, we will need user `#[CurrentUser] $user`.
 - Now call that `$orders = $api->listOrders($user);`.
+
+### Render Customer Orders 
 - And pass to the template: `'orders' => $orders,`.
 - Finally, inside the template, let's render the orders.
 - But we want to show it only if customers ever bought something on our website.
@@ -584,15 +620,19 @@
 - And `<td>{{ order.attributes.total_formatted }}</td>`.
 - And finally  `<td><a href="{{ order.attributes.urls.receipt }}" target="_blank">View</a></td>`.
 - Refresh Account page to the orders.
-- By default LS list API endpoint return 10 records, can we change it?
+
+### Paginate List API
+- By default, LS list API endpoint return 10 records, can we change it?
 - We can! See https://docs.lemonsqueezy.com/api/getting-started/requests#pagination
 - Let's add `'page' => [` to the query string.
 - Inside, I will add `'size' => 5,`.
 - Refresh the account page to see changes.
 - Now let's add a button to the LS orders page, see the docs:
   https://docs.lemonsqueezy.com/help/online-store/my-orders
- - So we need to render a link to the LS Orders page which is:
+- So we need to render a link to the LS Orders page which is:
   https://app.lemonsqueezy.com/my-orders
+
+### Refer to All Orders in LS
 - In `account.html.twig` add a link after the table:
   `<a href="https://app.lemonsqueezy.com/my-orders">More Orders</a>`.
 - I will also add `target="_blank"` for this link.
@@ -615,10 +655,12 @@
 - I will add that `default('')` just in case we don't have any orders, it will just
   render the empty string instead.
 - Now refresh the page and click the link - great, all the past orders are shown now.
+
+### Avoid Orders List Leaking
 - But if you will look at our list Orders API implementation - you may notice
   the problem. Yes, passing user email isn't safe, because users can change their
   email to a different one (not owned by them) and if you do not verify emails - that
-   can be a problem, because we will render signed URLs to the LS Orders.
+  can be a problem, because we will render signed URLs to the LS Orders.
 - Maybe it's not that bad, but we can securely avoid this.
 - I have the next plan: We know LS customer ID. We can fetch the current customer
   by ID, get its email address, and pass it to the LS Orders list API.
@@ -630,8 +672,16 @@
 - Then `$lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());`.
 - And `$userEmail = $lsCustomer['data']['attributes']['email'];`.
 - Now we will render relevant orders only for emails who actually made an order.
+- It's still possible for users to change their email to one that they do not own,
+  *make* the purchase, and they will get access to the order history. Well, even
+  though it requires a good effort and some money spending, it's still possible.
+  And nevertheless the fact that seems you can't do anything except just see
+  someone's orders, it would be great to keep it in mind. I hope LS will fix it
+  on their side somehow someday.
+? Probably making `User::lsCustomerId` a unique field will do the trick, the
+  request will fail and won't be able to update the customer.
 
-### Better API Error Handling
+## Better API Error Handling
 - Let's temporary remove the `(string)` typecasting for user ID in `createCheckout()`
 - Try to checkout - an error!
 - But when we do a bad request - it throws a `ClientException`. But it hides the
@@ -666,7 +716,7 @@
 - Go try it now - much better! A lot of context is displayed on the error page.
 - Go add that `(string)` typecasting for user ID again.
 
-### LS Checkout Overlay
+## LS Checkout Overlay
 - In `cart.html.twig`, add `{% block javascripts %}`.
 - Inside: `<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>`.
 - Recommendation from the LS:
@@ -681,6 +731,8 @@
   LS checkout URL.
 - We can temporarily `dd($lsCheckoutUrl)`, copy it, and use in that link.
 - But we can do better.
+
+### Manually Open links in LS Overlay
 - Let's create `lemon-squeezy_controller.js`.
 - Add `openOverlay()` to it.
 - Back to `cart.html.twig`, add `data-controller="lemon-squeezy"` to the LS
@@ -710,6 +762,10 @@
 - Inside: `window.LemonSqueezy.Url.Open(data.targetUrl);`.
 - And let's add `.catch(error => {`.
 - With `console.error('Fetch error:', error);` inside.
+
+### Prevent Double Clicks and Show Loading 
+? Should we show a loading spinner when the checkout is loading?
+  Right now it's just link opacity visual effect.
 - We also want to disable the link to avoid double-clicks.
 - Create `#disableLink(link) {`.
 - With `link.classList.add('disabled');`.
@@ -723,6 +779,8 @@
 - After we open the URL, add `this.#enableLink(linkEl);`.
 - And also add it in the `catch` too.
 - Now try to checkout
+
+### Show Embedded LS Overlay 
 - Go checkout, it loads, and the LS checkout page is opened.
 - But if you look closer to the URL in the address bar - you will see that
   it's our https://127.0.0.1:8000/cart
@@ -737,12 +795,12 @@
 - Now in `OrderController::createCheckout()`, pass `true` to the `createCheckout()`.
 - Go checkout again to make sure everything still works.
 
+## TODO 
 - But we still have a problem for non-authed users.
 - Log out, to something to the cart, and try to checkout - nothing happen.
 - In the WDT we see that the request was redirected to the login page.
-- TODO
 
-### Dynamically include Lemon.js script
+### Dynamically Include Lemon.js Script
 - So right now if we want our Stimulus controller to work properly - we should
   remember to include that LS `script`. Can we make it automatically included
   when we use our Stimulus controller? Yes, we can!
@@ -757,7 +815,7 @@
 - Done! Now celebrate by removing the whole javascript block from the `cart.html.twig`.
 - Go checkout again - it still works!
 
-### Listen to LS JS events
+## Listen to LS JS Events
 - So we have to configure webhooks locally every time we want to save corresponding
   LS customer ID to our user. But we can do it an alternative way  - listen to
   the LS JS events and set the customer ID on the successful checkout.
@@ -770,6 +828,8 @@
 - Get customer ID: `const lsCustomerId = data.data.customer_id;`.
 - And next `this.#handleCheckout(lsCustomerId);`.
 - Now create that method `#handleCheckout(lsCustomerId) {`.
+
+### Refer Customer ID to the Current User 
 - Now we need to add an endpoint to save the LS customer ID to the current user.
 - Open OrderController and add a new action: `handleCheckout()`.
 - Route it as: `#[Route('/checkout/handle', name: 'app_order_checkout_handle', methods: ['POST'])]`.
@@ -784,7 +844,7 @@
 - Back to `#handleCheckout`.
 - Let's `fetch(this.checkoutHandleUrlValue, {`.
 - Use `method: 'POST',`
-- For headers I will use `'Content-Type': 'application/x-www-form-urlencoded',` because
+- For headers, I will use `'Content-Type': 'application/x-www-form-urlencoded',` because
   we use `$request->request->get()`.
 - And for body: `new URLSearchParams({ lsCustomerId: lsCustomerId, }),`.
 - Below `.then(response => {`.
@@ -813,7 +873,7 @@
   to sync the customer with user via JS webhook - that's perfect for local
   development and testing.
 
-### Security vulnerability
+### Make Sure no Customer ID Hijacking
 - Open `OrderController::handleCheckout()`.
 - If you think about this - you may see a possible security problem.
 - For example, some tricky users may try to send an AJAX request to this endpoint
@@ -821,7 +881,7 @@
 - It may lead to a situation where our app will generate a signed URL for that
   customer and give it to the attacker so that they can view personal information
   or even do some changes on behalf of the customer.
-- There're a few way to solve this problem.
+- There are a few way to solve this problem.
 - For example, you can use this customer sync via JS LS event only in dev mode,
   i.e. real users will be synced only via webhooks with signed signature.
 - Or we can add some extra checks to the `handleCheckout()` method.
