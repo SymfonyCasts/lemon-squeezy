@@ -1,0 +1,110 @@
+{
+    "data": {
+        "id": "4096877",
+        "type": "orders",
+        "links": {
+            "self": "https://api.lemonsqueezy.com/v1/orders/4096877"
+        },
+        "attributes": {
+            "tax": 0,
+            "urls": {
+                "receipt": "https://app.lemonsqueezy.com/my-orders/62f80085-2c4c-4925-be81-4537bcbc6431?signature=997d4b63bf9c4b517198a9e8d456e9a1923bae09114c3b39996e5c1bf4d92248"
+            },
+            "total": 99,
+            "status": "paid",
+            "tax_usd": 0,
+            "currency": "USD",
+            "refunded": false,
+            "store_id": 132127,
+            "subtotal": 99,
+            "tax_name": "Sales Tax",
+            "tax_rate": 0,
+            "setup_fee": 0,
+            "test_mode": true,
+            "total_usd": 99,
+            "user_name": "Victor",
+            "created_at": "2024-11-14T21:03:30.000000Z",
+            "identifier": "62f80085-2c4c-4925-be81-4537bcbc6431",
+            "updated_at": "2024-11-14T21:03:31.000000Z",
+            "user_email": "victor@symfonycasts.com",
+            "customer_id": %customer_id%,
+            "refunded_at": null,
+            "order_number": 13212715,
+            "subtotal_usd": 99,
+            "currency_rate": "1.00000000",
+            "setup_fee_usd": 0,
+            "tax_formatted": "$0.00",
+            "tax_inclusive": false,
+            "discount_total": 0,
+            "refunded_amount": 0,
+            "total_formatted": "$0.99",
+            "first_order_item": {
+                "id": 4039382,
+                "price": 99,
+                "order_id": 4096877,
+                "price_id": 880383,
+                "quantity": 1,
+                "test_mode": true,
+                "created_at": "2024-11-14T21:03:31.000000Z",
+                "product_id": 383051,
+                "updated_at": "2024-11-14T21:03:31.000000Z",
+                "variant_id": 579933,
+                "product_name": "Classic E-lemonade",
+                "variant_name": "Default"
+            },
+            "status_formatted": "Paid",
+            "discount_total_usd": 0,
+            "subtotal_formatted": "$0.99",
+            "refunded_amount_usd": 0,
+            "setup_fee_formatted": "$0.00",
+            "discount_total_formatted": "$0.00",
+            "refunded_amount_formatted": "$0.00"
+        },
+        "relationships": {
+            "store": {
+                "links": {
+                    "self": "https://api.lemonsqueezy.com/v1/orders/4096877/relationships/store",
+                    "related": "https://api.lemonsqueezy.com/v1/orders/4096877/store"
+                }
+            },
+            "customer": {
+                "links": {
+                    "self": "https://api.lemonsqueezy.com/v1/orders/4096877/relationships/customer",
+                    "related": "https://api.lemonsqueezy.com/v1/orders/4096877/customer"
+                }
+            },
+            "order-items": {
+                "links": {
+                    "self": "https://api.lemonsqueezy.com/v1/orders/4096877/relationships/order-items",
+                    "related": "https://api.lemonsqueezy.com/v1/orders/4096877/order-items"
+                }
+            },
+            "license-keys": {
+                "links": {
+                    "self": "https://api.lemonsqueezy.com/v1/orders/4096877/relationships/license-keys",
+                    "related": "https://api.lemonsqueezy.com/v1/orders/4096877/license-keys"
+                }
+            },
+            "subscriptions": {
+                "links": {
+                    "self": "https://api.lemonsqueezy.com/v1/orders/4096877/relationships/subscriptions",
+                    "related": "https://api.lemonsqueezy.com/v1/orders/4096877/subscriptions"
+                }
+            },
+            "discount-redemptions": {
+                "links": {
+                    "self": "https://api.lemonsqueezy.com/v1/orders/4096877/relationships/discount-redemptions",
+                    "related": "https://api.lemonsqueezy.com/v1/orders/4096877/discount-redemptions"
+                }
+            }
+        }
+    },
+    "meta": {
+        "test_mode": true,
+        "event_name": "order_created",
+        "webhook_id": "cae10d84-439c-4ae6-a94a-85f2dd89e3bd",
+        "custom_data": {
+            "user_id": "%user_id%"
+        }
+    }
+}

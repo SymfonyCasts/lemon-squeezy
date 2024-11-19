@@ -17,12 +17,7 @@ class WebhookController extends AbstractController
     #[Route('/lemon-squeezy', name: 'app_webhook_lemon_squeezy', methods: ['POST'])]
     public function lemonSqueezy(Request $request, EntityManagerInterface $entityManager): Response
     {
-        $payload = $request->getContent();
-        $hash = hash_hmac('sha256', $payload, self::LEMON_SQUEEZY_WEBHOOK_SECRET);
-        $signature = $request->headers->get('X-Signature', '');
-        if (!hash_equals($hash, $signature)) {
-            throw new \Exception('Invalid LemonSqueezy signature!');
-        }
+        $this->verifyLemonSqueezySignature($request);
 
         $data = $request->toArray();
         $webhookId = $data['meta']['webhook_id'];
@@ -52,5 +47,21 @@ class WebhookController extends AbstractController
         $entityManager->flush();
 
         return new Response('Webhook successfully handled!');
+    }
+
+    private function verifyLemonSqueezySignature(Request $request): void
+    {
+        if ($this->getParameter('kernel.environment') === 'test') {
+            return;
+        }
+
+        $payload = $request->getContent();
+        $hash = hash_hmac('sha256', $payload, self::LEMON_SQUEEZY_WEBHOOK_SECRET);
+        $signature = $request->headers->get('X-Signature', '');
+        if (hash_equals($hash, $signature)) {
+            return;
+        }
+
+        throw new \Exception('Invalid LemonSqueezy signature!');
     }
 }

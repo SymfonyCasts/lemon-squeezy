@@ -499,6 +499,60 @@
 - Now the user have customer ID set and we can leverage it in our app to show
   the link to orders list.
 
+### Testing webhooks
+- Mention our testing courses for more details.
+- Install test pack: `com req test --dev`.
+- Create a `WebTestCase` test with `cl make:test`.
+- Name the test as `Controller\WebhookContoller`.
+- Open that `WebhookContollerTest` just created.
+- It already has some boilerplate code.
+- Keep only  `assertResponseIsSuccessful()`.
+- Let's add a nice error message `assertResponseIsSuccessful('Webhook failed!')`.
+- Now let's see if it works.
+- Run `bin/phpunit` - en error!
+- We need to create test DB.
+- Run `bin/console doctrine:database:create --env=test`.
+- And `bin/console doctrine:schema:create --env=test`.
+- Rerun again - it pass now.
+- Ok, now let's write this test.
+- We can leverage Foundry to create a user.
+- Add `$user = UserFactory::new()->create([`.
+- Let's pass some data.
+- Add `'email' => 'test@example.com',`.
+- And `'plainPassword' => 'testpass',`.
+- And `'firstName' => 'Test',`.
+- Now `$client = static::createClient();`.
+- Next add `$client->request('POST', '/webhook/lemon-squeezy', [], [], [], $json);`.
+- We need to pass the JSON payload - go grab it from Ngrok, or you can find it
+  from the Webhook page of LS dashboard.
+- For convenience, let's create a new file: `tests/fixtures/order_created.json`.
+- Paste the payload there.
+- Back to the test, before the request.
+- Get the content with `$json = file_get_contents(__DIR__.'/../fixtures/order_created.json');`.
+- Let's finish the test.
+- After `assertResponseIsSuccessful()`.
+- Add `self::assertNotNull($user->getLsCustomerId(), 'LemonSqueezy customer ID not set!');`.
+- And `self::assertEquals(1000001, $user->getLsCustomerId(), 'LemonSqueezy customer ID mismatch!');`.
+- Run the test. Ah, failed signature error!
+- It comes from the `WebhookController`.
+- Yeah, we add this `verifyLemonSqueezySignature()` to protect app from fake
+  webhook requests. But now we're those who need to send fake requests.
+- We can sing the request and set the signature in the headers.
+- But easier would be just to disable signature checking in test mode.
+- In the beginning, add: `if ($this->getParameter('kernel.environment') === 'test') {`.
+- Then return.
+- Try again - it works! Well, it's another error, but this is a good sign.
+- We need to use the correct `user_id` and `customer_id` in the payload.
+- Replace their values with placeholders: `%user_id%` & `%customer_id%`.
+- And process `$json = strtr($json, [`.
+- Where replace `'%user_id%' => $user->getId(),`.
+- And `'%customer_id%' => 1000001,`.
+- Run the test to see an error about duplicated user email.
+- We need to clean up the DB after each test.
+- And there's a bundle that can help with it.
+- Install `com req dama/doctrine-test-bundle --dev`.
+- Run again - it passes!
+
 ### Render LS Orders
 - How can your customers see their orders? Let's render the orders for them
   on the account page.
@@ -786,5 +840,3 @@
 - Now it's safe to set the customer as we know for sure it relates to the current user.
 - Go to the DB, set customer ID to null, no Ngrok tunnel running.
 - Checkout, check the DB - here's our customer ID again, it works!
-
-### Testing webhooks
