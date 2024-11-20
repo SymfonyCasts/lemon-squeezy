@@ -11,7 +11,6 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Core\Authorization\Voter\AuthenticatedVoter;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class OrderController extends AbstractController
@@ -48,16 +47,40 @@ class OrderController extends AbstractController
     #[Route('/checkout', name: 'app_order_checkout')]
     public function checkout(
         LemonSqueezyApi $lsApi,
-        #[CurrentUser] ?User $user,
+        #[CurrentUser] User $user,
     ): Response {
-        $this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('You must be logged in to checkout!');
-        }
-
         $checkoutUrl = $lsApi->createCheckoutUrl($user);
 
         return $this->redirect($checkoutUrl);
+    }
+
+    #[Route('/checkout/create', name: 'app_order_checkout_create', methods: ['POST'])]
+    public function createCheckout(
+        LemonSqueezyApi $lsApi,
+        #[CurrentUser] User $user,
+    ): Response {
+        return $this->json([
+            'targetUrl' => $lsApi->createCheckoutUrl($user, true),
+        ]);
+    }
+
+    #[Route('/checkout/handle', name: 'app_order_checkout_handle', methods: ['POST'])]
+    public function handleCheckout(
+        Request $request,
+        EntityManagerInterface $entityManager,
+        #[CurrentUser] User $user,
+    ): Response {
+        $userId = $request->request->get('userId');
+        if ($userId !== (string) $user->getId()) {
+            throw $this->createAccessDeniedException(sprintf('Current user ID "%s" does not match the user ID "%s" of the order!', $user->getId(), $userId));
+        }
+
+        $lsCustomerId = $request->request->get('lsCustomerId');
+        $user->setLsCustomerId($lsCustomerId);
+
+        $entityManager->flush();
+
+        return $this->json([]);
     }
 
     #[Route('/checkout/success', name: 'app_order_success')]
@@ -77,43 +100,5 @@ class OrderController extends AbstractController
         $this->addFlash('success', 'Thanks for your order!');
 
         return $this->redirectToRoute('app_homepage');
-    }
-
-    #[Route('/checkout/create', name: 'app_order_checkout_create', methods: ['POST'])]
-    public function createCheckout(
-        LemonSqueezyApi $lsApi,
-        #[CurrentUser] ?User $user,
-    ): Response {
-        $this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('You must be logged in to checkout!');
-        }
-
-        return $this->json([
-            'targetUrl' => $lsApi->createCheckoutUrl($user, true),
-        ]);
-    }
-
-    #[Route('/checkout/handle', name: 'app_order_checkout_handle', methods: ['POST'])]
-    public function handleCheckout(
-        Request $request,
-        EntityManagerInterface $entityManager,
-        #[CurrentUser] ?User $user,
-    ): Response {
-        if (!$user instanceof User) {
-            throw $this->createAccessDeniedException('You must be logged in to handle checkout!');
-        }
-
-        $userId = $request->request->get('userId');
-        if ($userId !== (string) $user->getId()) {
-            throw $this->createAccessDeniedException(sprintf('Current user ID "%s" does not match the user ID "%s" of the order!', $user->getId(), $userId));
-        }
-
-        $lsCustomerId = $request->request->get('lsCustomerId');
-        $user->setLsCustomerId($lsCustomerId);
-
-        $entityManager->flush();
-
-        return $this->json([]);
     }
 }

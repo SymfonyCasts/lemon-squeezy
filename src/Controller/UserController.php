@@ -50,7 +50,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/account', name: 'app_user_account')]
-    public function account(LemonSqueezyApi $api, #[CurrentUser] $user): Response
+    public function account(LemonSqueezyApi $api, #[CurrentUser] User $user): Response
     {
         $orders = $api->listOrders($user);
 

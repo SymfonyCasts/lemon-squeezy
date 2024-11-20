@@ -47,7 +47,6 @@ export default class extends Controller {
             },
         })
             .then(response => {
-                console.log(window.location);
                 // console.log(response);
                 if (!response.ok) {
                     throw new Error("Network response was not ok " + response.statusText);
