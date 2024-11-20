@@ -481,9 +481,7 @@
   `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
 - This should be enough, but PhpStorm is not happy at this line:
   `$lsCheckout = $lsApi->createCheckout($user);`.
-- That's why above add: `if (!$user instanceof User)`.
-- And inside: `throw $this->createAccessDeniedException('You must be logged in to checkout!');`.
-- Just a sanity check, but it will help to suppress that warning.
+- That's why above add make User required arg: `#[CurrentUser] User $user,`.
 - Back to the webhook, above `switch`, add:
  `$userId = $data['meta']['custom_data']['user_id'] ?? null;`.
 - Then: `if (!$userId)`.
@@ -520,7 +518,7 @@
 - Mention our testing courses for more details.
 - Install test pack: `com req test --dev`.
 
-### Create a Test
+### Create an Integration Webhook Test
 - Create a `WebTestCase` test with `cl make:test`.
 - Name the test as `Controller\WebhookContoller`.
 - Open that `WebhookContollerTest` just created.
@@ -790,7 +788,22 @@
 - Now in `OrderController::createCheckout()`, pass `true` to the `createCheckout()`.
 - Go checkout again to make sure everything still works.
 
-## Fix Checkout Button for Non-Authenticated Users 
+### Dynamically Include Lemon.js Script
+- So right now if we want our Stimulus controller to work properly - we should
+  remember to include that LS `script`. Can we make it automatically included
+  when we use our Stimulus controller? Yes, we can!
+- Add `connect()`.
+- Let's check if there's no LS script tag yet:
+  `let script = window.document.querySelector('script[src="https://assets.lemonsqueezy.com/lemon.js"]');`.
+- Then `if (!script)`.
+- Create script tag: `script = window.document.createElement('script');`.
+- Set `script.src = 'https://app.lemonsqueezy.com/js/lemon.js';`.
+- Set `script.defer = true;`.
+- Set `window.document.head.appendChild(script);`.
+- Done! Now celebrate by removing the whole javascript block from the `cart.html.twig`.
+- Go checkout again - it still works!
+
+### Fix Checkout Button for Non-Authenticated Users 
 - But we still have a problem for non-authed users.
 - Go log out, add something to the cart, and try to check out.
 - It just fails silently and nothing happens.
@@ -811,21 +824,6 @@
 - Then `return new RedirectResponse($targetPath);`.
 - Try again - now it works!
 
-### Dynamically Include Lemon.js Script
-- So right now if we want our Stimulus controller to work properly - we should
-  remember to include that LS `script`. Can we make it automatically included
-  when we use our Stimulus controller? Yes, we can!
-- Add `connect()`.
-- Let's check if there's no LS script tag yet:
-  `let script = window.document.querySelector('script[src="https://assets.lemonsqueezy.com/lemon.js"]');`.
-- Then `if (!script)`.
-- Create script tag: `script = window.document.createElement('script');`.
-- Set `script.src = 'https://app.lemonsqueezy.com/js/lemon.js';`.
-- Set `script.defer = true;`.
-- Set `window.document.head.appendChild(script);`.
-- Done! Now celebrate by removing the whole javascript block from the `cart.html.twig`.
-- Go checkout again - it still works!
-
 ## Listen to LS JS Events
 - So we have to configure webhooks locally every time we want to save corresponding
   LS customer ID to our user. But we can do it an alternative way  - listen to
@@ -844,8 +842,7 @@
 - Now we need to add an endpoint to save the LS customer ID to the current user.
 - Open OrderController and add a new action: `handleCheckout()`.
 - Route it as: `#[Route('/checkout/handle', name: 'app_order_checkout_handle', methods: ['POST'])]`.
-- Inject `#[CurrentUser] ?User $user,`
-- Inside let's keep our `if (!$user instanceof User) { throw $this->createAccessDeniedException`.
+- Inject `#[CurrentUser] User $user,`.
 - Inject `Request $request,`.
 - Fetch the ID: `$lsCustomerId = $request->request->get('lsCustomerId');`.
 - Set it on the current: `$user->setLsCustomerId($lsCustomerId);`.
