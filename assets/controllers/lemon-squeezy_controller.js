@@ -41,14 +41,22 @@ export default class extends Controller {
 
         fetch(this.checkoutCreateUrlValue, {
             method: 'POST',
-            redirect: 'manual', // TODO
+            // redirect: 'manual',
             headers: {
                 'Content-Type': 'application/json',
             },
         })
             .then(response => {
+                console.log(window.location);
+                // console.log(response);
                 if (!response.ok) {
                     throw new Error("Network response was not ok " + response.statusText);
+                }
+                if (response.redirected) {
+                    window.location.href = response.url+'?_target_path='+window.location.pathname;
+
+                    // Stop further execution
+                    return Promise.reject("User is not authenticated!");
                 }
 
                 return response.json();

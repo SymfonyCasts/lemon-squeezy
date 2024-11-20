@@ -790,10 +790,26 @@
 - Now in `OrderController::createCheckout()`, pass `true` to the `createCheckout()`.
 - Go checkout again to make sure everything still works.
 
-## TODO 
+## Fix Checkout Button for Non-Authenticated Users 
 - But we still have a problem for non-authed users.
-- Log out, to something to the cart, and try to check out - nothing happen.
-- In the WDT we see that the request was redirected to the login page.
+- Go log out, add something to the cart, and try to check out.
+- It just fails silently and nothing happens.
+- Open the Chrome dev tools - aha, it has JS error.
+- And in Network we can see that the request is redirected to login page.
+- That makes sense for direct request, but not for our AJAX requests.
+- OK, let's debug: `console.log(response);`.
+- Aha, we can add one more check: `if (response.redirected) {`.
+- Then `window.location.href = response.url`.
+- Let's also add `return Promise.reject("User is not authenticated!");`.
+- Try again - great, we're redirected to the login page!
+- Log in - ah, it does not redirect us back to cart page.
+- Let's try to fix it.
+- I will fix it simple, change the redirect URL to:
+  `window.location.href = response.url+'?_target_path='+window.location.pathname;`.
+- And in `onAuthenticationSuccess()` I will add:
+  `if ($targetPath = $request->query->get('_target_path')) {`.
+- Then `return new RedirectResponse($targetPath);`.
+- Try again - now it works!
 
 ### Dynamically Include Lemon.js Script
 - So right now if we want our Stimulus controller to work properly - we should
