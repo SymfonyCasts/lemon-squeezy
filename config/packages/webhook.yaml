@@ -1,0 +1,6 @@
+framework:
+  webhook:
+    routing:
+      lemon-squeezy:
+        service: App\Webhook\LemonSqueezyRequestParser
+        secret: '%env(LEMON_SQUEEZY_API_KEY)%'
