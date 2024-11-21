@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Tests\Controller;
+namespace App\Tests\Webhook;
 
 use App\Factory\UserFactory;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class WebhookControllerTest extends WebTestCase
+class LemonSqueezyRequestParserTest extends WebTestCase
 {
-    public function testSomething(): void
+    public function testOrderCreatedWebhook(): void
     {
         $client = static::createClient();
 

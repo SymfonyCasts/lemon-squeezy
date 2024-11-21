@@ -384,12 +384,16 @@
   https://docs.lemonsqueezy.com/guides/developer-guide/webhooks
 - There are only few events about Orders, and to sync customer with app user
   we need to listen to the `order_created` event.
-- Let's create a `WebhookController`, extend `AbstractController`.
-- Add base route about it: `#[Route('/webhook')]`.
-- Now create `lemonSqueezy(): Response` action.
-- Declare route as `#[Route('/lemon-squeezy', name: 'app_webhook_lemon_squeezy')]`.
-- Inside, let's just `throw new \Exception('Not implemented yet!');`
-- Go to Settings > Webhooks > +:
+- We could create a `WebhookController` manually and configure route to that,
+  but hey, Symfony now has a new Webhook Component that can help us to handle this!
+- Let's install it: `composer require webhook` - it brings us some important deps.
+- And Maker now have a command that helps to start!
+- Run `bin/console make:webhook`.
+- Name it `lemon-squeezy`.
+- Let's choose: `PathRequestMatcher`, `MethodRequestMatcher`, and since LS
+  sends us data in JSON format - `IsJsonRequestMatcher`.
+- Great, it generates us parser and consumer.
+- Now go to Settings > Webhooks > +:
   https://app.lemonsqueezy.com/settings/webhooks
 - For callback, we need to set https://127.0.0.1:8000/webhook/lemon-squeezy - but
   it will not work as it's not a public URL!
@@ -408,15 +412,17 @@
   `Forwarding https://fa09-89-64-51-130.ngrok-free.app -> http://localhost:8000`
 - If you open that https://fa09-89-64-51-130.ngrok-free.app - you will see our
   website under a public URL!
+- The Webhook component added a new `/webhook` route - you can see it in routes.
+- And because we created `lemon-squeezy` webhook - it will be added to the route.
+- So, the final URL will be `/webhook/lemon-squeezy` - open it to see an error.
 - Copy that URL and paste it to the LS webhook callback URL, but add:
   https://fa09-89-64-51-130.ngrok-free.app/webhook/lemon-squeezy
 - For Signing secret - generate a random string. You can save it as env var,
-  but I will simplify it and hardcode in the `WebhookController` as a private const.
-- Add `WEBHOOK_SECRETLEMON_SQUEEZY_WEBHOOK_SECRET = 'lEm0n-5qUeEzY';` - I will use
-  some numbers and register, but I bet you can have a better randomness with
-  any password generation tool.
+  but I will simplify and hardcode it in `webhook.yaml` as a `secret`.
+- I will use some numbers and register: `lEm0n-5qUeEzY` - but I bet you can
+  have a better randomness with any password generation tool.
 - And of course you want to keep it secret!
-- Now cope that and paste into the Signing secret.
+- Now cope that and paste into the "Signing secret" field.
 - For events - select `order_created` and save.
 
 ### Ngrok Web Interface for Traffic Inspection
@@ -445,31 +451,44 @@
 - Here's one failed: https://app.lemonsqueezy.com/settings/webhooks - and here's
   the Resend button. We can even see the response body here - so convenient.
 - Now let's focus on implementing it.
-- First of all, all webhooks are sent as JSON with POST request - let's fix it
-  in the route:
-  `#[Route('/lemon-squeezy', name: 'app_webhook_lemon_squeezy', methods: ['POST'])]`
-- Now drop throwing the exception.
-- Let's inject `lemonSqueezy(Request $request)`.
+- Let's start with the parser - open it.
+- First of all, all webhooks are sent as JSON with POST request to that
+  `/webhook/lemon-squeezy` URL - let's fix it.
+- We have `return new ChainRequestMatcher([`.
+- Inside, `new PathRequestMatcher('/webhook/lemon-squeezy'),`.
+- Then `new MethodRequestMatcher(Request::METHOD_POST),`.
+- And `new IsJsonRequestMatcher(),`.
+- I think we're good to go - down next in the `doParse`.
 
 ### Verify Webhook Signature
-- Create `private function verifyLemonSqueezySignature(Request $request): void`.
-- Inside, add: `$payload = $request->getContent();`.
-- Compute hash of the payload: `$hash = hash_hmac('sha256', $payload, self::LEMON_SQUEEZY_WEBHOOK_SECRET);`.
-- Fetch request signature: `$signature = $request->headers->get('X-Signature', '');`.
+- For convenience, let's create a separate method for this. 
+- Create `private function verifySignature(Request $request, string $secret): void`.
+- Inside, get the `$payload = $request->getContent();`.
+- Now, compute the `$hash = hash_hmac('sha256', $payload, $secret);`.
+- And fetch the signature: `$signature = $request->headers->get('X-Signature', '');`.
 - Check for match: `if (hash_equals($hash, $signature))` - then return.
-- At the end: `throw new \Exception('Invalid LemonSqueezy signature!');`.
-- Call it from `WebhookController::lemonSqueezy()`.
+- At the end: `throw new RejectWebhookException(Response::HTTP_UNAUTHORIZED, 'Invalid LemonSqueezy signature!');`.
+- Now call it from `doParse()`: `$this->verifySignature($request, $secret);`.
+- Below, let's validate the payload.
 
-### Handle the Webhook Event
-- Below, get the response data: `$data = $request->toArray();`.
-- Get event name: `$eventName = $data['meta']['event_name'];`.
-- Add a switch-case: `switch ($eventName)`.
-- Inside: `case 'order_created': break;`.
-- Let's also add: `default: throw new \Exception(sprintf('Unsupported LemonSqueezy event: "%s"', $eventName));`.
-- Inside the case, get customer ID: `$customerId = $data['data']['attributes']['customer_id'];`.
-- And we need to set it on the user. But `$this->getUser()` will not work, we're
-  handling a webhook, i.e. a completely separate request that does not have access
-  to the session of the user who made this order. We need to somehow find the
+### Parse the Webhook Event
+- Fetch the `$payload = $request->toArray();`.
+- Get the `$eventName = $payload['meta']['event_name'];`.
+- And `$webhookId = $payload['meta']['webhook_id'];`.
+- Now `if (!$eventName || !$webhookId) {`.
+- Then `throw new RejectWebhookException(Response::HTTP_BAD_REQUEST, 'Request payload does not contain required fields.');`.
+- Below, let's make sure it's a supported event: `if ($eventName !== 'order_created') {`.
+- Then `throw new RejectWebhookException(Response::HTTP_BAD_REQUEST, sprintf('Unsupported event type: %s', $eventName));`.
+- And finally just `return new RemoteEvent($eventName, $webhookId, $payload);`.
+- Parser done!
+- Next, implement the consumer!
+
+### Handle the Webhook Event in the Consumer
+- Go to `consume()`.
+- We don't have access to the current user because it's a different session,
+  so we can't just inject `Security` service and fetch user from there.
+  We're handling a webhook, i.e. a completely separate request that does not have access
+  to the session of the user who made this order. But we need to somehow find the
   corresponding user. Thankfully, LS allow us to add custom data on a Checkout creation.
 - Go to the `createCheckout()`.
 - Add: `$attributes['checkout_data']['custom']['user_id'] = $user->getId();`.
@@ -482,23 +501,33 @@
 - This should be enough, but PhpStorm is not happy at this line:
   `$lsCheckout = $lsApi->createCheckout($user);`.
 - That's why above add make User required arg: `#[CurrentUser] User $user,`.
-- Back to the webhook, above `switch`, add:
- `$userId = $data['meta']['custom_data']['user_id'] ?? null;`.
-- Then: `if (!$userId)`.
-- Inside: `throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $webhookId));`.
-- Above add that var name: `$webhookId = $data['meta']['webhook_id'];`.
-- Inject `EntityManagerInterface $entityManager`.
-- Fetch the user: `$user = $entityManager->getRepository(User::class)->find($userId);`.
-- Next add: `if (!$user)`.
-- Inside: `throw new \Exception(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $webhookId));`.
-- Now we have the User, but we also need a new property on it.
+- Back to the consumer.
+- Let's get `$payload = $event->getPayload();`.
+- Below `$userId = $payload['meta']['custom_data']['user_id'] ?? null;`.
+- Next `if (!$userId) {`.
+- Then `throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $event->getId()));`.
+- We don't have access to the EntityManager yet, but consumer is a Symfony service!
+- Create `public function __construct(`.
+- Inject `private readonly EntityManagerInterface $entityManager,`.
+- Back, add `$user = $this->entityManager->getRepository(User::class)->find($userId);`.
+- And `if (!$user) {`.
+- Again `throw new \Exception(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId()));`.
+- Below, let's use `match ($event->getName()) {`.
+- And in it write the event we're listening to:
+  `'order_created' => $this->handleOrderCreatedEvent($event, $user),`.
+- Here we should already have only supported events, but let's add a default
+  just in case we're missing something, it will be definitely LogicException:
+  `default => throw new \LogicException(sprintf('Unsupported LemonSqueezy event: %s', $event->getName())),`..
+- Now create that `handleOrderCreatedEvent(RemoteEvent $event, User $user): void`.
+- We need `$payload = $event->getPayload();`.
+- Then fetch the `$customerId = $payload['data']['attributes']['customer_id'];`.
+- Now we have the customer ID, but we need a new property on User to save it.
 - Add: `private ?string $lsCustomerId = null;`.
 - Map it as: `#[ORM\Column(length: 255, unique: true, nullable: true)]`.
 - Add setters and getters.
 - Create a migration and migrate.
-- Finally, inside the case: `$user->setLsCustomerId($customerId);`.
-- After the switch, save everything: `$entityManager->flush();`.
-- And return 200 response: `return new Response('Webhook successfully handled!');`.
+- Back to `handleOrderCreatedEvent()`, set it on the `$user->setLsCustomerId($customerId);`.
+- And don't forget to save it, call `$this->entityManager->flush();`.
 
 ### Retry the failed Webhook
 - Time to retry the webhook, and we can do it either in LS dashboard, or directly
@@ -514,17 +543,25 @@
 - Now the user have customer ID set, and we can leverage it in our app to show
   the link to orders list.
 
-## Testing webhooks
+## Testing Webhooks
 - Mention our testing courses for more details.
 - Install test pack: `com req test --dev`.
+- You can unit test the parser and consumer PhpUnit
+- But I will leave it to you as a homework.
+- If you don't know PhpUnit - we have several courses about it!
+- I would strongly suggest you start testing your project at least with PhpUnit,
+  because you know, it's scary ecommerce stuff!
 
 ### Create an Integration Webhook Test
+- Instead, I will show you more complex thing - how to write an integration test
+  for the webhook.
 - Create a `WebTestCase` test with `cl make:test`.
-- Name the test as `Controller\WebhookContoller`.
-- Open that `WebhookContollerTest` just created.
+- Name the test as `Webhook\LemonSqueezyRequestParser`.
+- Open that `LemonSqueezyRequestParserTest` just created.
 - It already has some boilerplate code.
+- Rename method to `testOrderCreatedWebhook()`.
 - Keep only  `assertResponseIsSuccessful()`.
-- Let's add a nice error message `assertResponseIsSuccessful('Webhook failed!')`.
+- Let's add a nicer error message `assertResponseIsSuccessful('Webhook failed!')`.
 - Now let's see if it works.
 - Run `bin/phpunit` - en error!
 
@@ -557,13 +594,18 @@
 - Add `self::assertNotNull($user->getLsCustomerId(), 'LemonSqueezy customer ID not set!');`.
 - And `self::assertEquals(1000001, $user->getLsCustomerId(), 'LemonSqueezy customer ID mismatch!');`.
 - Run the test. Ah, failed signature error!
-- It comes from the `WebhookController`.
-- Yeah, we add this `verifyLemonSqueezySignature()` to protect app from fake
-  webhook requests. But now we're those who need to send fake requests.
+- It comes from the `LemonSqueezyRequestParser`.
+- Yeah, we add this `verifySignature()` to protect app from fake
+  webhook requests. But now we're those who need to send fake requests!
 - We can sing the request and set the signature in the headers.
 - But easier would be just to disable signature checking in test mode.
-- In the beginning, add: `if ($this->getParameter('kernel.environment') === 'test') {`.
-- Then return.
+- Let's inject the env value.
+- Add `public function __construct()`.
+- Inject `#[Autowire('%kernel.environment%')] private readonly string $env,`.
+- Now back to the `verifySignature()`.
+- In the beginning, add: `if ($this->env === 'test') {`.
+- Then just return.
+- It completely disables the signature check in the test environment.
 
 ### Make Data Dynamic in Test Payload 
 - Try again - it works! Well, it's another error, but this is a good sign.

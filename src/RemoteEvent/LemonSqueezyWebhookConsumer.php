@@ -37,7 +37,7 @@ final class LemonSqueezyWebhookConsumer implements ConsumerInterface
 
         match ($event->getName()) {
             'order_created' => $this->handleOrderCreatedEvent($event, $user),
-            default => throw new \Exception(sprintf('Unsupported LemonSqueezy event: %s', $event->getName())),
+            default => throw new \LogicException(sprintf('Unsupported LemonSqueezy event: %s', $event->getName())),
         };
     }
 
