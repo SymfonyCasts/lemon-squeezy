@@ -17,8 +17,6 @@ use Symfony\Component\Webhook\Exception\RejectWebhookException;
 
 final class LemonSqueezyRequestParser extends AbstractRequestParser
 {
-    private const WEBHOOK_SECRET = 'lEm0n-5qUeEzY';
-
     public function __construct(
         #[Autowire('%kernel.environment%')] private readonly string $env,
     ) {
@@ -38,7 +36,7 @@ final class LemonSqueezyRequestParser extends AbstractRequestParser
      */
     protected function doParse(Request $request, #[\SensitiveParameter] string $secret): ?RemoteEvent
     {
-        $this->verifySignature($request);
+        $this->verifySignature($request, $secret);
 
         // Validate the request payload.
         $payload = $request->toArray();
@@ -55,14 +53,14 @@ final class LemonSqueezyRequestParser extends AbstractRequestParser
         return new RemoteEvent($eventName, $webhookId, $payload);
     }
 
-    private function verifySignature(Request $request): void
+    private function verifySignature(Request $request, string $secret): void
     {
         if ($this->env === 'test') {
             return;
         }
 
         $payload = $request->getContent();
-        $hash = hash_hmac('sha256', $payload, self::WEBHOOK_SECRET);
+        $hash = hash_hmac('sha256', $payload, $secret);
         $signature = $request->headers->get('X-Signature', '');
         if (hash_equals($hash, $signature)) {
             return;
