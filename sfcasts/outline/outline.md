@@ -505,13 +505,13 @@
 - Let's get `$payload = $event->getPayload();`.
 - Below `$userId = $payload['meta']['custom_data']['user_id'] ?? null;`.
 - Next `if (!$userId) {`.
-- Then `throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $event->getId()));`.
+- Then `throw new \\InvalidArgumentException(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $event->getId()));`.
 - We don't have access to the EntityManager yet, but consumer is a Symfony service!
 - Create `public function __construct(`.
 - Inject `private readonly EntityManagerInterface $entityManager,`.
 - Back, add `$user = $this->entityManager->getRepository(User::class)->find($userId);`.
 - And `if (!$user) {`.
-- Again `throw new \Exception(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId()));`.
+- Again `throw new \EntityNotFoundException(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId()));`.
 - Below, let's use `match ($event->getName()) {`.
 - And in it write the event we're listening to:
   `'order_created' => $this->handleOrderCreatedEvent($event, $user),`.

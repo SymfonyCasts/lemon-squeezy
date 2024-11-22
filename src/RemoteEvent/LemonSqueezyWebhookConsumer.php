@@ -4,6 +4,7 @@ namespace App\RemoteEvent;
 
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityNotFoundException;
 use Symfony\Component\RemoteEvent\Attribute\AsRemoteEventConsumer;
 use Symfony\Component\RemoteEvent\Consumer\ConsumerInterface;
 use Symfony\Component\RemoteEvent\RemoteEvent;
@@ -26,13 +27,13 @@ final class LemonSqueezyWebhookConsumer implements ConsumerInterface
         // $this->getUser() will not work in webhooks as no authenticated user in that process
         $userId = $payload['meta']['custom_data']['user_id'] ?? null;
         if (!$userId) {
-            throw new \Exception(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $event->getId()));
+            throw new \InvalidArgumentException(sprintf('User ID not found in LemonSqueezy webhook "%s"!', $event->getId()));
         }
 
         $user = $this->entityManager->getRepository(User::class)
             ->find($userId);
         if (!$user) {
-            throw new \Exception(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId()));
+            throw new EntityNotFoundException(sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId()));
         }
 
         match ($event->getName()) {
