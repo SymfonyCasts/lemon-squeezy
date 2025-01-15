@@ -566,9 +566,11 @@
 - Run `bin/phpunit` - en error!
 
 ### Create Test DB
-- We need to create test DB.
-- Run `bin/console doctrine:database:create --env=test`.
-- And `bin/console doctrine:schema:create --env=test`.
+- We need to create test DB. We can leverage doctrine commands in console,
+  but better let's leverage Foundry library that we already have installed.
+- Open the `LemonSqueezyRequestParserTest`
+- Add the trait: `use ResetDatabase;` - it will clean up the DB after each
+  test for us, so we will not need to worry about duplicated emails in tests, etc.
 - Rerun again - it pass now.
 - Ok, now let's write this test.
 - We can leverage Foundry to create a user.
@@ -614,11 +616,7 @@
 - And process `$json = strtr($json, [`.
 - Where replace `'%user_id%' => $user->getId(),`.
 - And `'%customer_id%' => 1000001,`.
-- Run the test to see an error about duplicated user email.
-- We need to clean up the DB after each test.
-- And there's a bundle that can help with it.
-- Install `com req dama/doctrine-test-bundle --dev`.
-- Run again - it passes!
+- Run tests -it passes!
 
 ## Render LS Orders
 - How can your customers see their orders? Let's render the orders for them
