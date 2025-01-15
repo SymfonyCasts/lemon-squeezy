@@ -421,11 +421,13 @@
 - So, the final URL will be `/webhook/lemon-squeezy` - open it to see an error.
 - Copy that URL and paste it to the LS webhook callback URL, but add:
   https://fa09-89-64-51-130.ngrok-free.app/webhook/lemon-squeezy
-- For Signing secret - generate a random string. You can save it as env var,
-  but I will simplify and hardcode it in `webhook.yaml` as a `secret`.
+- For Signing secret - generate a random string. We can simplify and hardcode it
+  in `webhook.yaml` as a `secret`, but let's be consistent and save it as env var.
 - I will use some numbers and register: `lEm0n-5qUeEzY` - but I bet you can
   have a better randomness with any password generation tool.
+- Open `.env` and set `LEMON_SQUEEZY_SIGNING_SECRET=lEm0n-5qUeEzY`
 - And of course you want to keep it secret!
+- Now in `webhook.yaml`: `secret: '%env(LEMON_SQUEEZY_SIGNING_SECRET)%'`
 - Now cope that and paste into the "Signing secret" field.
 - For events - select `order_created` and save.
 
