@@ -344,9 +344,13 @@
 - We also need a service to generate URLs.
 - Inject it as: `UrlGeneratorInterface $urlGenerator`.
 - Replace `$this->generateUrl()` with the service.
-- Also, we need a service to get access to the parameters.
-- Inject it as `ParameterBagInterface $parameterBag` 
-- Replace `$this->getParameter()` with the service.
+- Also, we need a way to get access to the parameters.
+- We could inject `ParameterBagInterface $parameterBag` from which we can
+  access any parameters, but since we only need storeId one - let's inject
+  it directly.
+- In the constructor, add: `private readonly string $storeId,`.
+- Above add PHP attribute: `#[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')]`.
+- Replace `$this->getParameter()` with the `$this->storeId` in all places.
 - Now back to `OrderController::checkout()` - drop current dependencies and
   inject `LemonSqueezyApi $lsApi` instead.
 - Use the service: `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`

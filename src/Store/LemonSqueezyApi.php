@@ -3,8 +3,8 @@
 namespace App\Store;
 
 use App\Entity\User;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\Target;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -17,7 +17,8 @@ class LemonSqueezyApi
         private readonly HttpClientInterface $client,
         private readonly ShoppingCart $cart,
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly ParameterBagInterface $parameterBag,
+        #[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')]
+        private readonly string $storeId,
     ) {
     }
 
@@ -89,7 +90,7 @@ class LemonSqueezyApi
                             'data' => [
                                 'type' => 'stores',
 //                                'id' => '132127', // TODO Convert to env var
-                                'id' => $this->getStoreId(),
+                                'id' => $this->storeId,
                             ],
                         ],
                         'variant' => [
@@ -122,7 +123,7 @@ class LemonSqueezyApi
 
         $queryString = http_build_query([
             'filter' => [
-                'store_id' => $this->getStoreId(),
+                'store_id' => $this->storeId,
 //                'user_email' => $user->getEmail(),
                 'user_email' => $userEmail,
             ],
@@ -141,14 +142,9 @@ class LemonSqueezyApi
 
     public function retrieveStoreUrl(): string
     {
-        $lsStore = $this->request(Request::METHOD_GET, 'stores/' . $this->getStoreId());
+        $lsStore = $this->request(Request::METHOD_GET, 'stores/' . $this->storeId);
 
         return $lsStore['data']['attributes']['url'];
-    }
-
-    private function getStoreId(): string
-    {
-        return $this->parameterBag->get('env(LEMON_SQUEEZY_STORE_ID)');
     }
 
     private function request(string $method, string $url, array $options = []): array
