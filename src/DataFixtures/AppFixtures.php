@@ -31,14 +31,24 @@ class AppFixtures extends Fixture
             'lsVariantId' => '586559',
         ]);
         ProductFactory::new()->create([
-            'name' => 'Strawberry Lemonade',
+            'name' => 'Apple Lemonade',
             'price' => 299,
+            'slug' => 'apple-lemonade',
+        ]);
+        ProductFactory::new()->create([
+            'name' => 'Strawberry Lemonade',
+            'price' => 399,
             'slug' => 'strawberry-lemonade',
         ]);
         ProductFactory::new()->create([
-            'name' => 'Mango Lemonade',
+            'name' => 'Orange Lemonade',
             'price' => 399,
-            'slug' => 'mango-lemonade',
+            'slug' => 'orange-lemonade',
+        ]);
+        ProductFactory::new()->create([
+            'name' => 'Cherry Lemonade',
+            'price' => 399,
+            'slug' => 'cherry-lemonade',
         ]);
 
         $manager->flush();

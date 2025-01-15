@@ -3,6 +3,9 @@
     <head>
         <meta charset="UTF-8">
         <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Chewy&family=Poppins:wght@400;700&display=swap" rel="stylesheet">
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         {% block stylesheets %}
         {% endblock %}
@@ -11,7 +14,7 @@
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
+    <body class="text-[#50272B]">
         {% block body %}
             {% for label, messages in app.flashes %}
                 {% for message in messages %}
@@ -20,23 +23,74 @@
                     </div>
                 {% endfor %}
             {% endfor %}
-            <div>
-                <ul>
-                    <li><a href="{{ path('app_homepage') }}">Squeeze the Day Store</a></li>
-                    <li><a href="{{ path('app_pricing') }}">Pricing</a></li>
-                    {% if app.user %}
-                        <li><a href="{{ path('app_user_account') }}">Account</a></li>
-                        <li><a href="{{ path('app_logout') }}">Logout</a></li>
-                    {% else %}
-                        <li><a href="{{ path('app_login') }}">Login</a></li>
-                        <li><a href="{{ path('app_user_register') }}">Register</a></li>
-                    {% endif %}
-                    {% if not cart().empty %}
-                        <li><a href="{{ path('app_order_cart') }}">Cart 🛒</a></li>
-                    {% endif %}
-                </ul>
-                {% block content %}{% endblock %}
-            </div>
+                <nav class="flex items-center justify-between flex-wrap py-6 max-w-screen-xl mx-auto px-4">
+                    <div class="flex items-center flex-shrink-0 mr-6">
+                        <a href="{{ path('app_homepage') }}" class="font-semibold text-xl tracking-tight hover:text-[#6cc7cd]">
+                            <img class="max-h-[60px]" src="{{ asset('images/squeeze-day-logo.png') }}" alt="Squeeze the Day Logo">
+                        </a>
+                    </div>
+                    <div>
+                        <div class="block lg:hidden">
+                            <button class="flex items-center px-3 py-2 border rounded border-white hover:text-[#6cc7cd]">
+                            <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+                            </button>
+                        </div>
+                        <div class="hidden w-full flex-grow lg:flex lg:items-center lg:w-auto">
+                            <div class="font-bold uppercase lg:flex-grow poppins-bold">
+                                <a href="{{ path('app_pricing') }}" class="block mt-4 lg:inline-block lg:mt-0 hover:text-[#370E12] mr-6">
+                                    Pricing
+                                </a>
+                                {% if not cart().empty %}
+                                    <a href="{{ path('app_order_cart') }}">Cart</a>
+                                {% endif %}
+                                {% if app.user %}
+                                    <a href="{{ path('app_user_account') }}">Account</a>
+                                    <a href="{{ path('app_logout') }}">Logout</a>
+                                {% else %}
+                                    <a href="{{ path('app_login') }}" class="mt-4 mr-6 lg:mt-0 hover:text-[#370E12] cursor-pointer">Login</a>
+                                    <a href="{{ path('app_user_register') }}" class="mt-4 lg:mt-0 p-2.5 rounded-[44px] w-16 lg:w-[101px] text-center border-2 border-[#50272B] bg-[#FFD809] shadow-inner">Signup</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+                <div class="max-w-screen-xl mx-auto px-4">
+                    {% block content %}{% endblock %}
+                </div>
+                 <div class="mt-32 p-4 bg-[#FFE500] border-t-2 border-[#50272B]">
+                    <footer class="max-w-screen-xl mx-auto">
+                        <div class="flex justify-center">
+                            <a href="{{ path('app_homepage') }}">
+                                <img class="max-h-[60px]" src="{{ asset('images/squeeze-day-logo.png') }}" alt="Squeeze the Day Logo">
+                            </a>
+                        </div>
+                        <div class="items-center flex justify-center mt-5">
+                            <div class="flex gap-4 poppins-bold">
+                                <a href="#" class="hover:text-[#370E12]">About</a>
+                                <div>|</div>
+                                <a href="#" class="hover:text-[#370E12]">FAQ</a>
+                                <div>|</div>
+                                <a href="#" class="hover:text-[#370E12]">Blog</a>
+                                <div>|</div>
+                                <a href="#" class="hover:text-[#370E12]">Support</a>
+                            </div>
+                        </div>
+                        <p class="text-center mt-4 poppins-regular">Made with love by your friends at <a href="https://symfonycasts.com" class="underline hover:text-[#370E12]">SymfonyCasts</a></p>
+                        <div class="items-center flex justify-center">
+                            <div class="flex gap-4 mt-4">
+                                <a href="https://www.facebook.com/SymfonyCasts/" class="w-7 h-7 fill-[#50272B] hover:fill-[#370E12]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg>
+                                </a>
+                                <a href="https://twitter.com/symfonycasts" class="w-7 h-7 fill-[#50272B] hover:fill-[#370E12]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64zm297.1 84L257.3 234.6 379.4 396H283.8L209 298.1 123.3 396H75.8l111-126.9L69.7 116h98l67.7 89.5L313.6 116h47.5zM323.3 367.6L153.4 142.9H125.1L296.9 367.6h26.3z"/></svg>
+                                </a>
+                                <a href="https://github.com/SymfonyCasts" class="w-7 h-7 fill-[#50272B] hover:fill-[#370E12]">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
         {% endblock %}
     </body>
 </html>

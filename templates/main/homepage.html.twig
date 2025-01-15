@@ -3,19 +3,23 @@
 {% block title %}Welcome to "Squeeze the Day" store!{% endblock %}
 
 {% block content %}
+    <div class="flex justify-center mb-20">
+        <img class="max-h-[500px]" src="{{ asset('images/squeeze-day-hero.png') }}" alt="Squeeze the Day Logo">
+    </div>
     <div>
-        <h1>Welcome to our lemonade stand!</h1>
-        Lemonade Flavors:
+        <h1 class="chewy-regular text-4xl text-center mb-8">Squeeze the day with our fresh lemonade</h1>
         {% if products|length %}
-            <ul>
+            <div class="grid grid-cols-3">
                 {% for product in products %}
-                    <li>
-                        <h3><a href="{{ path('app_product_show', {'slug': product.slug}) }}">{{ product.name }}</a></h3>
-                        <div><img src="#{{ product.slug }}" alt="{{ product.name }}"></div>
-                        <p>Price: {{ product.price|price_format }}</p>
-                    </li>
+                    <div class="flex justify-center items-center mb-20">
+                        <a href="{{ path('app_product_show', {'slug': product.slug}) }}">
+                            <div class="flex justify-center"><img class="max-h-[200px]" src="{{ asset('images/'~product.slug~'.png') }}" alt="{{ product.name }}"></div>
+                            <h3 class="chewy-regular text-[30px]">{{ product.name }}</h3>
+                            <p class="chewy-regular text-center">{{ product.price|price_format }}</p>
+                        </a>
+                    </div>
                 {% endfor %}
-            </ul>
+            </div>
         {% else %}
             <div>
                 We have run out of lemonade! Please check back later.
