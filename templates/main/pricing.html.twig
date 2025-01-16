@@ -3,13 +3,18 @@
 {% block title %}Pricing{% endblock %}
 
 {% block content %}
-    <h1>Free lemonade delivery right to your door!</h1>
-    <div>
-        Subscribe today - we will ship you 10 lemonades each week!
-    </div>
-    <div>
-        A few options for you:
-        <a href="#weekly">Weekly</a> |
-        <a href="#monthly">Monthly</a>
+    <h1 class="chewy-regular text-6xl text-center mb-28">Lemonade delivered right to<br> your door! <span class="underline text-[#4EA844]">Free of charge!</span></h1>
+    
+    <div class="flex justify-center gap-4">
+        <div class="rounded-2xl border-4 border-[#4F272B] text-center w-[400px] py-10 px-12">
+            <p class="chewy-regular text-4xl mb-10">Weekly</p>
+            <div class="flex justify-center mb-10"><img class="max-h-[200px]" src="{{ asset('images/weekly-lemonade.png') }}" alt="weekly lemonade"></div>
+            <a href="#weekly" class="rounded-[60px] border-2 border-[#50272B] bg-[#50272B] shadow-inner poppins-bold py-2 px-12 text-white">Subscribe</a>
+        </div>
+        <div class="rounded-2xl border-4 border-[#4F272B] bg-[#4F272B] text-center w-[400px] py-10 px-12">
+            <p class="chewy-regular text-4xl text-white mb-10">Monthly</p>
+            <div class="flex justify-center mb-10"><img class="max-h-[200px]" src="{{ asset('images/monthly-lemonade.png') }}" alt="monthly lemonade"></div>
+            <a href="#monthly" class="rounded-[60px] border-2 border-[#50272B] bg-white shadow-inner poppins-bold py-2 px-12">Subscribe</a>
+        </div>
     </div>
 {% endblock %}
