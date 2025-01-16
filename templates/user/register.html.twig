@@ -9,11 +9,28 @@
 
     {{ form_start(registrationForm) }}
         {{ form_row(registrationForm.firstName) }}
+
+        {% if field_errors(registrationForm.firstName) is not empty %}
+
+{% for error in  field_errors(registrationForm.firstName) %}
+
+{{ error }}
+{% endfor %}
+{% endif %}
+
+
+        <input
+        type="email"
+        value="{{ field_value(registrationForm.firstName) }}"
+        name="{{ field_name(registrationForm.firstName) }}"
+        id="{{ field_name(registrationForm.firstName) }}"
+        >
         {{ form_row(registrationForm.email) }}
         {{ form_row(registrationForm.plainPassword, {
             label: 'Password'
         }) }}
         {{ form_row(registrationForm.agreeTerms) }}
+
 
         <button type="submit" class="btn">Register</button>
     {{ form_end(registrationForm) }}
