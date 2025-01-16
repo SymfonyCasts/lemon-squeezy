@@ -2,7 +2,6 @@
 
 namespace App\Webhook;
 
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\ChainRequestMatcher;
 use Symfony\Component\HttpFoundation\Exception\JsonException;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,11 +16,6 @@ use Symfony\Component\Webhook\Exception\RejectWebhookException;
 
 final class LemonSqueezyRequestParser extends AbstractRequestParser
 {
-    public function __construct(
-        #[Autowire('%kernel.environment%')] private readonly string $env,
-    ) {
-    }
-
     protected function getRequestMatcher(): RequestMatcherInterface
     {
         return new ChainRequestMatcher([
@@ -55,10 +49,6 @@ final class LemonSqueezyRequestParser extends AbstractRequestParser
 
     private function verifySignature(Request $request, string $secret): void
     {
-        if ($this->env === 'test') {
-            return;
-        }
-
         $payload = $request->getContent();
         $hash = hash_hmac('sha256', $payload, $secret);
         $signature = $request->headers->get('X-Signature', '');

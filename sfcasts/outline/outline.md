@@ -605,15 +605,14 @@
 - It comes from the `LemonSqueezyRequestParser`.
 - Yeah, we add this `verifySignature()` to protect app from fake
   webhook requests. But now we're those who need to send fake requests!
-- We can sing the request and set the signature in the headers.
-- But easier would be just to disable signature checking in test mode.
-- Let's inject the env value.
-- Add `public function __construct()`.
-- Inject `#[Autowire('%kernel.environment%')] private readonly string $env,`.
-- Now back to the `verifySignature()`.
-- In the beginning, add: `if ($this->env === 'test') {`.
-- Then just return.
-- It completely disables the signature check in the test environment.
+- We can just to disable signature checking in test mode using Sf env check,
+  e.g. inject Sf env and do `if ($this->env === 'test') {` 
+- But better to sing the request in tests manually, i.e. generate signing hash
+  and set the signature in headers.
+- Copy the hash algorithm from the parser and paste it in the test updating it:
+  `$hash = hash_hmac('sha256', $json, $_ENV['LEMON_SQUEEZY_SIGNING_SECRET']);`
+- And set it on the request as the 5th param: `['HTTP_X-Signature' => $hash]`
+- Notice that `HTTP_` prefix - that's the way to pass headers in the test request. 
 
 ### Make Data Dynamic in Test Payload 
 - Try again - it works! Well, it's another error, but this is a good sign.
