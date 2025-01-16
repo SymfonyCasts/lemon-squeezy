@@ -635,12 +635,10 @@
 - Inside `listOrders`, add return `$this->request(Request::METHOD_GET, 'orders');`.
 - And we want to filter the orders by our store ID and user email - that can be
   done as a query string.
-- Let's create a `$queryString = http_build_query([]);`.
+- Let's add 3rd param to the `request(['query' => [])`.
 - Inside add `'filter' => []`.
 - Then inside: `'store_id' => $this->getStoreId(),`.
 - And `'user_email' => $user->getEmail(),`.
-- Add it to the API endpoint URL as:
-  `request(Request::METHOD_GET, 'orders?' . $queryString);`.
 - Inside `account()` action, inject `LemonSqueezyApi $lsApi`.
 - Also, we will need user `#[CurrentUser] $user`.
 - Now call that `$orders = $api->listOrders($user);`.

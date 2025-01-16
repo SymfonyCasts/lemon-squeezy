@@ -121,18 +121,18 @@ class LemonSqueezyApi
             $userEmail = $lsCustomer['data']['attributes']['email'];
         }
 
-        $queryString = http_build_query([
-            'filter' => [
-                'store_id' => $this->storeId,
-//                'user_email' => $user->getEmail(),
-                'user_email' => $userEmail,
-            ],
-            'page' => [
-                'size' => 5, // @see https://docs.lemonsqueezy.com/api/getting-started/requests#pagination
+        return $this->request(Request::METHOD_GET, 'orders', [
+            'query' => [
+                'filter' => [
+                    'store_id' => $this->storeId,
+//                    'user_email' => $user->getEmail(),
+                    'user_email' => $userEmail,
+                ],
+                'page' => [
+                    'size' => 5, // @see https://docs.lemonsqueezy.com/api/getting-started/requests#pagination
+                ],
             ],
         ]);
-
-        return $this->request(Request::METHOD_GET, 'orders?' . $queryString);
     }
 
     public function retrieveCustomer(string $customerId): array
