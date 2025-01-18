@@ -18,11 +18,11 @@
         <h1 class="chewy-regular text-5xl mt-[88px] mb-6">Login</h1>
         <div class="mb-2">
             <label class="sr-only" for="inputEmail">Email</label>
-            <input  type="email" value="{{ last_username }}" name="email" placeholder="Email" id="inputEmail" class=" w-[400px] form-control pl-3 py-2 rounded-xl border-2 border-[#4F272B]" autocomplete="email" required autofocus>
+            <input  type="email" value="{{ last_username }}" name="email" placeholder="Email" id="inputEmail" class="w-[400px] form-control pl-3 py-2 rounded-xl border-2 border-[#4F272B]" autocomplete="email" required autofocus>
         </div>
         <div>
             <label class="sr-only" for="inputPassword">Password</label>
-            <input type="password" name="password" placeholder="Password" id="inputPassword" class=" w-[400px] form-control pl-3 py-2 rounded-xl border-2 border-[#4F272B]" autocomplete="current-password" required>
+            <input type="password" name="password" placeholder="Password" id="inputPassword" class="w-[400px] form-control pl-3 py-2 rounded-xl border-2 border-[#4F272B]" autocomplete="current-password" required>
         </div>
         <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
