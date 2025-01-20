@@ -29,7 +29,7 @@ class OrderController extends AbstractController
         $quantity = $request->request->getInt('quantity', 1);
         $cart->addProduct($product, $quantity);
 
-        $this->addFlash('success', 'Product added to yours cart!');
+        $this->addFlash('success', 'Yummy lemonade has been added to your cart!');
 
         return $this->redirectToRoute('app_order_cart');
     }
