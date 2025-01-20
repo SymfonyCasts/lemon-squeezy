@@ -3,40 +3,61 @@
 {% block title %}Checkout!{% endblock %}
 
 {% block content %}
-    <div>
-        <h1>Checkout</h1>
-        {% if not cart().empty %}
-            <ul>
-                {% for product in cart.products %}
-                    <li>
-                        <a href="{{ path('app_product_show', {'slug': product.slug}) }}">{{ product.name }}</a>
-                        for {{ product.price|price_format }}
-                        x {{ cart.productQuantity(product) }}
-                    </li>
-                {% endfor %}
-            </ul>
-            <div>
-                <strong>Total: {{ cart.total|price_format }}</strong>
-            </div>
-            <form action="{{ path('app_cart_clear') }}" method="post">
-                <button type="submit">Clear cart</button>
-            </form>
-            <div>
-                <a data-controller="lemon-squeezy"
-                   data-action="lemon-squeezy#openOverlay"
-                   data-lemon-squeezy-checkout-create-url-value="{{ path('app_order_checkout_create') }}"
-                   data-lemon-squeezy-checkout-handle-url-value="{{ path('app_order_checkout_handle') }}"
-                   class="_lemonsqueezy-button"
-                   href="{{ path('app_order_checkout') }}"
-                >
-                    Checkout with LemonSqueezy
-                </a>
-            </div>
-        {% else %}
-            <div>
-                Your cart is empty! :(
-                Go grab some lemonade in the <a href="{{ path('app_homepage') }}">store</a>!
-            </div>
-        {% endif %}
+    <div class="flex justify-center">
+        <div>
+            {% if not cart().empty %}
+                <h1 class="chewy-regular text-[40px]">Cart</h1>
+                <div>
+                    {% for product in cart.products %}
+                        <div class="rounded-2xl py-3 px-7 border-2 border-[#4F272B] w-[400px]">
+                            <div class="flex justify-between">
+                                <div class="flex">
+                                    <img class="max-h-[50px]" src="{{ asset('images/'~product.slug~'.png') }}" alt="{{ product.name }}">
+                                    <div class="pl-2">
+                                        <a class="chewy-regular text-xl" href="{{ path('app_product_show', {'slug': product.slug}) }}">{{ product.name }}</a>
+                                        <div class="chewy-regular text-lg">
+                                            {{ product.price|price_format }}
+                                            x {{ cart.productQuantity(product) }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="items-center flex pl-4">
+                                    <svg class="fill-[#4F272B]" height="25" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M135.2 17.7L128 32 32 32C14.3 32 0 46.3 0 64S14.3 96 32 96l384 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-96 0-7.2-14.3C307.4 6.8 296.3 0 284.2 0L163.8 0c-12.1 0-23.2 6.8-28.6 17.7zM416 128L32 128 53.2 467c1.6 25.3 22.6 45 47.9 45l245.8 0c25.3 0 46.3-19.7 47.9-45L416 128z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <div class="mt-9">
+                    <h2 class="chewy-regular text-3xl">Order Summary</h2>
+                    <p>Subtotal: {{ cart.total|price_format }}</p>
+                    <p>Tax: calculated at checkout</p>
+
+                </div>
+                <form action="{{ path('app_cart_clear') }}" method="post">
+                    <button type="submit">Clear cart</button>
+                </form>
+                <div>
+                    <a data-controller="lemon-squeezy"
+                    data-action="lemon-squeezy#openOverlay"
+                    data-lemon-squeezy-checkout-create-url-value="{{ path('app_order_checkout_create') }}"
+                    data-lemon-squeezy-checkout-handle-url-value="{{ path('app_order_checkout_handle') }}"
+                    class="_lemonsqueezy-button ml-2 rounded-3xl border border-[#50272B] bg-[#4F272B] hover:bg-[#1C0000] shadow-inner poppins-bold text-white py-3 px-5 uppercase"
+                    href="{{ path('app_order_checkout') }}"
+                    >
+                        Checkout with LemonSqueezy
+                    </a>
+                </div>
+            {% else %}
+                <div class="flex justify-center">
+                        <img class="max-h-[100px]" src="{{ asset('images/empty-lemonade.png') }}" alt="Squeeze the Day Logo">
+                </div>
+                <div class="text-center poppins-bold text-2xl mt-8">
+                    Your cart is empty!
+                </div>
+                <div class="text-center poppins-regular text-2xl">Go grab some lemonade in the <a  class="underline hover:text-[#370E12]" href="{{ path('app_homepage') }}">store</a>!
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% endblock %}

@@ -44,8 +44,8 @@
                                     <a href="{{ path('app_order_cart') }}">Cart</a>
                                 {% endif %}
                                 {% if app.user %}
-                                    <a href="{{ path('app_user_account') }}">Account</a>
-                                    <a href="{{ path('app_logout') }}">Logout</a>
+                                    <a class="mt-4 mr-6 lg:mt-0 hover:text-[#370E12] cursor-pointer" href="{{ path('app_user_account') }}">Account</a>
+                                    <a class="mt-4 mr-6 lg:mt-0 hover:text-[#370E12] cursor-pointer" href="{{ path('app_logout') }}">Logout</a>
                                 {% else %}
                                     <a href="{{ path('app_login') }}" class="mt-4 mr-6 lg:mt-0 hover:text-[#370E12] cursor-pointer">Login</a>
                                     <a href="{{ path('app_user_register') }}" class="mt-4 lg:mt-0 p-2.5 rounded-[44px] w-16 lg:w-[101px] text-center border-2 border-[#50272B] bg-[#FFD809] shadow-inner">Signup</a>
