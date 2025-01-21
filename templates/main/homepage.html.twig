@@ -9,7 +9,7 @@
     <div>
         <h1 class="chewy-regular text-4xl text-center mb-8">Squeeze the day with our fresh lemonade</h1>
         {% if products|length %}
-            <div class="grid grid-cols-3">
+            <div class="grid grid-cols-1 md:grid-cols-3">
                 {% for product in products %}
                     <div class="flex justify-center items-center mb-20">
                         <a href="{{ path('app_product_show', {'slug': product.slug}) }}">
