@@ -4,7 +4,6 @@
 
 {% block content %}
 <div class="flex justify-center">
-    
 
     {{ form_errors(registrationForm) }}
 
@@ -23,7 +22,7 @@
                     >
                 </div>
                 {% if field_errors(registrationForm.firstName) is not empty %}
-                    <div class="py-2 px-4 bg-red-600 text-white rounded-md">
+                    <div class="mb-5 py-2 px-4 bg-red-600 text-white rounded-md">
                         {% for error in  field_errors(registrationForm.firstName) %}
                             {{ error }}
                         {% endfor %}
@@ -42,7 +41,7 @@
                     >
                 </div>
                  {% if field_errors(registrationForm.email) is not empty %}
-                    <div class="py-2 px-4 bg-red-600 text-white rounded-md">
+                    <div class="mb-5 py-2 px-4 bg-red-600 text-white rounded-md">
                         {% for error in field_errors(registrationForm.email) %}
                             {{ error }}
                         {% endfor %}
@@ -61,7 +60,7 @@
                     >
                 </div>
                 {% if field_errors(registrationForm.plainPassword) is not empty %}
-                    <div class="py-2 px-4 bg-red-600 text-white rounded-md">
+                    <div class="mb-5 py-2 px-4 bg-red-600 text-white rounded-md">
                         {% for error in field_errors(registrationForm.plainPassword) %}
                             {{ error }}
                         {% endfor %}

@@ -5,10 +5,6 @@
 {% block content %}
 <div class="flex justify-center">
    <form method="post">
-        {% if error %}
-            <div class="alert alert-danger">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
-        {% endif %}
-
         {% if app.user %}
             <div class="mb-3">
                 You are logged in as {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}">Logout</a>
@@ -16,6 +12,11 @@
         {% endif %}
 
         <h1 class="chewy-regular text-5xl mt-[88px] mb-6">Login</h1>
+       {% if error %}
+           <div class="mb-2 py-2 px-4 bg-red-600 text-white rounded-md">
+               {{ error.messageKey|trans(error.messageData, 'security') }}
+           </div>
+       {% endif %}
         <div class="mb-2">
             <label class="sr-only" for="inputEmail">Email</label>
             <input  type="email" value="{{ last_username }}" name="email" placeholder="Email" id="inputEmail" class="w-[400px] form-control pl-3 py-2 rounded-xl border-2 border-[#4F272B]" autocomplete="email" required autofocus>
