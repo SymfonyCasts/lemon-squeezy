@@ -34,6 +34,16 @@ class OrderController extends AbstractController
         return $this->redirectToRoute('app_order_cart');
     }
 
+    #[Route('/cart/product/{slug:product}/delete', name: 'app_cart_product_delete', methods: ['POST'])]
+    public function deleteProductFromCart(Product $product, ShoppingCart $cart): Response
+    {
+        $cart->deleteProduct($product);
+
+        $this->addFlash('success', 'Yummy lemonade has been deleted from your cart! Too sour?');
+
+        return $this->redirectToRoute('app_order_cart');
+    }
+
     #[Route('/cart/clear', name: 'app_cart_clear', methods: ['POST'])]
     public function clearCart(ShoppingCart $cart): Response
     {
