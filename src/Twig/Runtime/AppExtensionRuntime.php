@@ -5,10 +5,10 @@ namespace App\Twig\Runtime;
 use App\Store\ShoppingCart;
 use Twig\Extension\RuntimeExtensionInterface;
 
-class AppExtensionRuntime implements RuntimeExtensionInterface
+final readonly class AppExtensionRuntime implements RuntimeExtensionInterface
 {
     public function __construct(
-        private readonly ShoppingCart $cart
+        private ShoppingCart $cart
     ) {
         // Inject dependencies if needed
     }

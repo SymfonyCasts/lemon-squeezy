@@ -10,15 +10,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class LemonSqueezyApi
+final readonly class LemonSqueezyApi
 {
     public function __construct(
         #[Target('lemonSqueezyClient')]
-        private readonly HttpClientInterface $client,
-        private readonly ShoppingCart $cart,
-        private readonly UrlGeneratorInterface $urlGenerator,
+        private HttpClientInterface $client,
+        private ShoppingCart $cart,
+        private UrlGeneratorInterface $urlGenerator,
         #[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')]
-        private readonly string $storeId,
+        private string $storeId,
     ) {
     }
 

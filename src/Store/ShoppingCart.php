@@ -7,7 +7,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
-class ShoppingCart
+final class ShoppingCart
 {
     private const SESSION_KEY = '_shopping_cart';
 
