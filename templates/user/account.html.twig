@@ -3,28 +3,62 @@
 {% block title %}My Account{% endblock %}
 
 {% block content %}
-    <div>
-        <h1>My Account</h1>
-        <p>Email: {{ app.user.email }}</p>
-        <p>Name: {{ app.user.firstName }}</p>
+    <div class="mt-14 overflow-auto">
+        <p class="chewy-regular text-4xl md:text-6xl">Hello, {{ app.user.firstName }}</p>
+        <p>{{ app.user.email }}</p>
+        
 
         {% if app.user.lsCustomerId %}
-            <table>
-                {% for order in orders.data %}
-                    <tr>
-                        <td>#{{ order.attributes.order_number }}</td>
-                        <td>{{ order.attributes.created_at|date('d M Y, H:i') }}</td>
-                        <td>{{ order.attributes.total_formatted }}</td>
-                        <td><a href="{{ order.attributes.urls.receipt }}" target="_blank">View</a></td>
-                    </tr>
-                {% endfor %}
-            </table>
-
+        <div class="absolute"></div>
+            <div class="relative overflow-x-auto rounded-2xl border-2 border-[#4F272B] mt-7">
+                <table class="table-fixed w-full text-sm text-left rtl:text-right">
+                    <thead class="poppins-bold uppercase">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 border-b border-[#4F272B]">
+                                Order
+                            </th>
+                            <th scope="col" class="px-6 py-3 border-b border-[#4F272B]">
+                                Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 border-b border-[#4F272B]">
+                                Amount
+                            </th>
+                            <th scope="col" class="px-6 py-3 border-b border-[#4F272B]">
+                                Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders.data %}
+                        <tr class="hover:bg-gray-50 text-lg poppins-regular">
+                            <td class="px-6 py-4">
+                                #{{ order.attributes.order_number }}
+                            </td>
+                            <td class="px-6 py-4">
+                                {{ order.attributes.created_at|date('d M Y, H:i') }}
+                            </td>
+                            <td class="px-6 py-4">
+                                {{ order.attributes.total_formatted }}
+                            </td>
+                            <td class="flex items-center px-6 py-4 text-sm">
+                                <a href="{{ order.attributes.urls.receipt }}" target="_blank" class="uppercase rounded-[60px] border-2 border-[#50272B] bg-white hover:bg-slate-100 shadow-inner poppins-bold py-1 px-4">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% if orders.meta.page.total > orders.meta.page.perPage %}
                 <p>
                     <a href="https://app.lemonsqueezy.com/my-orders/{{ latestOrder.attributes.identifier|default('') }}" target="_blank">More Orders</a>
                 </p>
             {% endif %}
+        {% else %}
+            <div class="rounded-2xl py-7 px-7 border-2 border-[#4F272B] w-[450px] mt-7 flex flex-col justify-center">
+                <p class="text-center mb-5 poppins-regular text-lg">No orders yet</p>
+                <div class="mt-3 mb-3 mx-auto"><a class="rounded-[60px] border-2 border-[#50272B] bg-[#FBD509] hover:bg-[#E2BC00] shadow-inner py-3 px-5 w-full poppins-bold uppercase" href="{{ path('app_homepage') }}">View Lemonade Options</a></div>
+            </div>
         {% endif %}
     </div>
+    
 {% endblock %}
