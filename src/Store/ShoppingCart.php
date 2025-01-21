@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class ShoppingCart
 {
-    const SESSION_KEY = '_shopping_cart';
+    private const SESSION_KEY = '_shopping_cart';
 
     private array $cart = [
         'products' => [],
@@ -20,7 +20,7 @@ class ShoppingCart
         private readonly EntityManagerInterface $entityManager,
     ) {
     }
-    public function addProduct(Product $product, int $quantity = 1)
+    public function addProduct(Product $product, int $quantity = 1): void
     {
         $this->cart = $this->getSession()->get(self::SESSION_KEY, $this->cart);
 
@@ -29,6 +29,15 @@ class ShoppingCart
         } else {
             $this->cart['products'][$product->getId()] = $quantity;
         }
+
+        $this->getSession()->set(self::SESSION_KEY, $this->cart);
+    }
+
+    public function deleteProduct(Product $product): void
+    {
+        $this->cart = $this->getSession()->get(self::SESSION_KEY, $this->cart);
+
+        unset($this->cart['products'][$product->getId()]);
 
         $this->getSession()->set(self::SESSION_KEY, $this->cart);
     }
