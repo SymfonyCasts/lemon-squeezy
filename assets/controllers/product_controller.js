@@ -3,9 +3,6 @@ import { Controller } from '@hotwired/stimulus';
 export default class extends Controller {
     static targets = ['quantityInput']
 
-    connect() {
-    }
-
     incrementQuantity() {
         const value = parseInt(this.quantityInputTarget.value);
         this.quantityInputTarget.value = value > 0 ? value + 1 : 1;
