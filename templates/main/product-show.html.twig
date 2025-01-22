@@ -15,14 +15,14 @@
 
         <form class="max-w-xs mx-auto mb-8" action="{{ path('app_cart_product_add', {'slug': product.slug}) }}" method="post">
             <div class="flex">
-                <div class="relative flex items-center max-w-[8rem]">
-                    <button type="button" id="decrement-button" data-input-counter-decrement="quantity-input" class="bg-white hover:bg-[#4F272B] border border-[#50272B] hover:text-white rounded-s-lg p-3 h-11 focus:ring-gray-100 focus:ring-2 focus:outline-none">
+                <div data-controller="product" class="relative flex items-center max-w-[8rem]">
+                    <button data-action="product#decrementQuantity" type="button" id="decrement-button" data-input-counter-decrement="quantity-input" class="bg-white hover:bg-[#4F272B] border border-[#50272B] hover:text-white rounded-s-lg p-3 h-11 focus:ring-gray-100 focus:ring-2 focus:outline-none">
                         <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 2">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 1h16"/>
                         </svg>
                     </button>
-                    <input type="text" id="quantity-input" data-input-counter aria-describedby="lemonade-quantity" class="bg-white border border-x-0 border-[#50272B] h-11 text-center text-sm focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5" placeholder="" value="1" required />
-                    <button type="button" id="increment-button" data-input-counter-increment="quantity-input" class="bg-white hover:text-white hover:bg-[#4F272B] border border-[#50272B] rounded-e-lg p-3 h-11 focus:ring-gray-100 focus:ring-2 focus:outline-none">
+                    <input data-product-target="quantityInput" type="text" id="quantity-input" data-input-counter aria-describedby="lemonade-quantity" class="bg-white border border-x-0 border-[#50272B] h-11 text-center text-sm focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5" placeholder="" name="quantity" value="1" required />
+                    <button data-action="product#incrementQuantity" type="button" id="increment-button" data-input-counter-increment="quantity-input" class="bg-white hover:text-white hover:bg-[#4F272B] border border-[#50272B] rounded-e-lg p-3 h-11 focus:ring-gray-100 focus:ring-2 focus:outline-none">
                         <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
                         </svg>
