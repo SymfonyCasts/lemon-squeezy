@@ -27,6 +27,7 @@ class OrderController extends AbstractController
     public function addProductToCart(Request $request, Product $product, ShoppingCart $cart): Response
     {
         $quantity = $request->request->getInt('quantity', 1);
+        $quantity = $quantity > 0 ? $quantity : 1;
         $cart->addProduct($product, $quantity);
 
         $this->addFlash('success', 'Yummy lemonade has been added to your cart!');
