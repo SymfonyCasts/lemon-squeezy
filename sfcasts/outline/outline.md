@@ -43,7 +43,9 @@
 - If you sell files - you can attach a file to the Product and your customers
   will have access to it after the purchase. The same about Links
 - Variants are useful when you have a product with different options like taste,
-  size, color, etc. We will see it later in this course.
+  size, color, etc. We will see it later in this course. But since we want to use
+  different images for each lemonade - it makes sense to create it as different
+  products, because variants do not have images in LS.
 - If you're selling license keys - "Generate license keys" is what you may need.
 - And let's show this product on the LS storefront page - this will be convenient
   if you don't have a web store yet.
@@ -128,6 +130,8 @@
 - To send API requests let's leverage the Symfony HttpClient component - it should
   be perfect for executing HTTP requests.
 - Install it with: `com req symfony/http-client`.
+- Seems it was already installed as an indirect dependency, so Composer
+  just added it the composer.json as direct dependency.
 - Now let's create a scoped client that will help us to send requests to the LS API.
 - Create `config/packages/http_client.yaml`.
 
@@ -162,14 +166,14 @@
 - Make it route: `#[Route('/checkout', name: 'app_order_checkout')]`.
 - Set "Checkout with LemonSqueezy" link URL to `app_order_checkout` in `cart.html.twig`
 - Inject `HttpClientInterface $lsClient` and `ShoppingCart $cart`.
-- Inside, `$lsCheckoutUrl = $this->createCheckoutUrl($lsClient, $cart);`.
-- And `return $this->redirect($checkoutUrl);`.
+- Inside, `$lsCheckoutUrl = $this->createLsCheckoutUrl($lsClient, $cart);`.
+- And `return $this->redirect($lsCheckoutUrl);`.
 - Now let's implement that `createCheckoutUrl()`.
 - Inject the same dependencies: `HttpClientInterface $lsClient` and `ShoppingCart $cart`.
 - Inside, first of all, `if ($cart->isEmpty())` - `throw new \LogicException('Nothing to checkout!');`
 
 ### Make a Request to LS API
-- Next `$lsCheckout = $this->client->request(Request::METHOD_POST, 'checkouts', []);`.
+- Next `$lsCheckout = $lsClient->request(Request::METHOD_POST, 'checkouts', []);`.
 - Inside options - let's just it as : `'json' => ['data' => ['type' => 'checkouts']]`.
 - LS docs do not make it clear what option is required - let's execute this
   and see if there will be any errors.
@@ -186,8 +190,9 @@
   `#[Target('lemonSqueezyClient')]` - above the argument.
 - Update again - great, an error! I mean, a *different* error now! As you can see
 - Now we see:
-  > HTTP/2 400 returned for "https://api.lemonsqueezy.com/v1/checkouts".
-- Hm, bad request status code - let's dump the response content.
+  > HTTP/2 422 returned for "https://api.lemonsqueezy.com/v1/checkouts".
+- Hm, 422 status code indicates that the server was unable to process the request
+  because it contains invalid data - let's dump the response content.
 - Before the return, add: `dd($response->getContent());`
 - Update to see the same error - ah, we should to pass false:
   `dd($response->getContent(false));`
@@ -216,7 +221,7 @@
 - Create a migration and migrate.
 - Now in AppFixtures - set it to variant ID from the LS dashboard.
 - Run `bin/console doctrine:fixtures:load` to update the DB.
-- Inside `createCheckoutUrl()`, get `$products = $cart->getProducts();`.
+- Inside `createLsCheckoutUrl()`, get `$products = $cart->getProducts();`.
 - Let's just set `$variantId = $products[0]->getLsVariantId();`
 - And set the `variantId` on the `relationships.variant.data.id` 
 - Now let's check out - great! We're on the right product in LS checkout.
@@ -240,12 +245,12 @@
 - to check out - aha, user data is empty! Not a big deal, user can manually
   fill that... but we can do better and prefill it from our app as we know
   user email and name when they authenticated.
-- First, we will need User object - inject `?User $user = null` to the `createCheckoutUrl()`.
+- First, inside `OrderController::checkout()`, inject `#[CurrentUser] ?User $user`.
+- And pass the user to the `createLsCheckoutUrl($user)`.
+- Now, we will need User object - inject `?User $user = null` to the `createLsCheckoutUrl()`.
 - Next, below `$attributes = [];`, add `if ($user)`.
 - Inside add `$attributes['checkout_data']['email'] = $user->getEmail();`.
 - And add `$attributes['checkout_data']['name'] = $user->getFirstName();`.
-- Now, inside `OrderController::checkout()`, inject `#[CurrentUser] ?User $user`.
-- And pass the user to the `createCheckoutUrl($user)`.
 - Perfect, let's try checkout in incognito again - now user data pre-filled!
 
 ## Workaround for Multiple Products Purchase
@@ -260,8 +265,8 @@
   closer for their roadmap: https://www.lemonsqueezy.com/roadmap - there is
   a "Cart" feature that will add support for a traditional cart checkout experience
   and I hope it will solve this issue.
-- So we can either tweak our shopping card and allow to add only 1 product to it,
-  i.e. overwrite a product if it's already there with a new one.
+- So we can either tweak our shopping card business logic to allow adding only
+  1 product to it, i.e. overwrite a product if it's already there with a new one.
 - Or we can make a custom workaround - if you take a look at the API docs - LS
   allows you to set up your own price.
 - Let's do the second option because it's more fun and a good change to see
@@ -304,18 +309,6 @@
 - Then `$lsStoreUrl = 'https://squeeze-the-day.lemonsqueezy.com';`.
 - Let's check now: `if (!str_starts_with($referer, $lsStoreUrl)) {`.
 - If true `return $this->redirectToRoute('app_homepage');`.
-- Can we make that URL dynamic? We can, LS has an API endpoint to fetch that store URL.
-- Create `LemonSqueezyApi::retrieveStoreUrl()`.
-- Here's the API endpoint: https://docs.lemonsqueezy.com/api/stores/retrieve-store
-- We will need LS Store ID for that, let's simplify getting it.
-- Create `private function getStoreId(): string`.
-- Inside `return $this->parameterBag->get('env(LEMON_SQUEEZY_STORE_ID)');`.
-- Now use this method in `createCheckoutUrl()`.
-- Back to `retrieveStoreUrl()`.
-- Add `$lsStore = $this->request(Request::METHOD_GET, 'stores/' . $this->getStoreId());`.
-- Finish with `return $lsStore['data']['attributes']['url'];`
-- Back to `success()`.
-- Replace hardcoded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl();`.
 - Now inject `ShoppingCart $cart` dependency.
 - Now add `if ($cart->isEmpty())` - return redirect to homepage again.
 - Next add `$cart->clear();`
@@ -336,7 +329,8 @@
 - So let's extract LS API into a separate service for convenience - easier to test,
   easier to reuse, and easier to maintain!
 - Create a new service: `App\Store\LemonSqueezyApi`.
-- Now move there our `createCheckoutUrl()` method but make it public now.
+- Now move there our `createLsCheckoutUrl()` method but make it public now,
+  I will rename it to just `createCheckoutUrl()` - all code is related to LS here.
 - Make `$lsClient` and `$cart` as proper constructor dependencies - I
   will name it just `$client` for simplicity.
 - But here we will need our trick with `#[Target('lemonSqueezyClient')]`.
@@ -355,6 +349,17 @@
   inject `LemonSqueezyApi $lsApi` instead.
 - Use the service: `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`
 - Make sure you can still checkout.
+- Now, can we make that `$lsStoreUrl` in `success()` URL dynamic?
+  We can! LS has an API endpoint to fetch that store URL.
+- Create `LemonSqueezyApi::retrieveStoreUrl()`.
+- Here's the API endpoint: https://docs.lemonsqueezy.com/api/stores/retrieve-store
+- Inside, add `$response = $this->client->request(Request::METHOD_GET, 'stores/' . $this->storeId);`.
+- Below: `$lsStore = $response->toArray();`.
+- Finish with `return $lsStore['data']['attributes']['url'];`
+- Back to `success()`.
+- Inject `LemonSqueezyApi $lsApi,`.
+- Replace hardcoded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl();`.
+- Make sure you can still checkout.
 
 ### Always use HTTPS
 - Thanks to the way LS handles checkouts - you can see that card credentials
@@ -365,6 +370,7 @@
   That's a pretty standard lately and brings user security to the next level.
 
 ## Assign LS Customer to the Current User
+- -->
 - The problem is that when you create a Checkout - you can't specify the customer
   ID and LS will assign a customer to the order automatically behind the scene.
   On the one hand, it's convenient, but on the other hand - it complicates things
