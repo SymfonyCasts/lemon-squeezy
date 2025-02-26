@@ -370,7 +370,6 @@
   That's a pretty standard lately and brings user security to the next level.
 
 ## Assign LS Customer to the Current User
-- -->
 - The problem is that when you create a Checkout - you can't specify the customer
   ID and LS will assign a customer to the order automatically behind the scene.
   On the one hand, it's convenient, but on the other hand - it complicates things
@@ -434,7 +433,7 @@
 - Open `.env` and set `LEMON_SQUEEZY_SIGNING_SECRET=lEm0n-5qUeEzY`
 - And of course you want to keep it secret!
 - Now in `webhook.yaml`: `secret: '%env(LEMON_SQUEEZY_SIGNING_SECRET)%'`
-- Now cope that and paste into the "Signing secret" field.
+- Now copy that and paste into the "Signing secret" field.
 - For events - select `order_created` and save.
 
 ### Ngrok Web Interface for Traffic Inspection
@@ -502,17 +501,17 @@
   We're handling a webhook, i.e. a completely separate request that does not have access
   to the session of the user who made this order. But we need to somehow find the
   corresponding user. Thankfully, LS allow us to add custom data on a Checkout creation.
-- Go to the `createCheckout()`.
-- Add: `$attributes['checkout_data']['custom']['user_id'] = $user->getId();`.
+- Go to the `createCheckoutUrl()`.
 - From now on we also need to require the user to be logged in to check out
   because from now on we need to link the corresponding LS customer to it.
-- Make it required in the method signature: `createCheckout(User $user)`.
+- Make it required in the method signature: `createCheckoutUrl(User $user)`.
 - We don't need that `if ($user)` anymore.
-- In the `OrderController::checkout()`, right in the beginning, add:
-  `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
-- This should be enough, but PhpStorm is not happy at this line:
+- Add: `$attributes['checkout_data']['custom']['user_id'] = $user->getId();`.
+- Also, in the `checkout()` PhpStorm is not happy at this line:
   `$lsCheckout = $lsApi->createCheckout($user);`.
-- That's why above add make User required arg: `#[CurrentUser] User $user,`.
+- And make User required arg: `#[CurrentUser] User $user,` - it also will be enough,
+  no need to do `$this->denyAccessUnlessGranted(AuthenticatedVoter::IS_AUTHENTICATED);`.
+- Open /checkout as non-auth-ed to see you're redirected to the login page. 
 - Back to the consumer.
 - Let's get `$payload = $event->getPayload();`.
 - Below `$userId = $payload['meta']['custom_data']['user_id'] ?? null;`.
@@ -558,9 +557,9 @@
 ## Testing Webhooks
 - Mention our testing courses for more details.
 - Install test pack: `com req test --dev`.
-- You can unit test the parser and consumer PhpUnit
+- You can unit test the parser and consumer PHPUnit
 - But I will leave it to you as a homework.
-- If you don't know PhpUnit - we have several courses about it!
+- If you don't know PHPUnit - we have several courses about it!
 - I would strongly suggest you start testing your project at least with PhpUnit,
   because you know, it's scary ecommerce stuff!
 
@@ -588,6 +587,8 @@
 - We can leverage Foundry to create a user.
 
 ### Create Dummy Data in Tests
+- The `static::createClient();` call also boots kernel, so we want to keep it
+  at top, after it let's add the fixture.
 - Add `$user = UserFactory::new()->create([`.
 - Let's pass some data.
 - Add `'email' => 'test@example.com',`.
@@ -595,7 +596,6 @@
 - And `'firstName' => 'Test',`.
 
 ### Create a Request with Fake Payload
-- Now `$client = static::createClient();`.
 - Next add `$client->request('POST', '/webhook/lemon-squeezy', [], [], [], $json);`.
 - We need to pass the JSON payload - go grab it from Ngrok, or you can find it
   from the Webhook page of LS dashboard.
@@ -693,7 +693,7 @@
 - For this, let's pass the latest order to the template:
   `'latestOrder' => $orders['data'][0] ?? null,`.
 - In the template, write the link as:
-  `https://app.lemonsqueezy.com/my-orders/{{ latestOrder.attributes.identifier|default('') }}`.
+  `https://app.lemonsqueezy.com/my-orders/{{ (orders.data|first).attributes.identifier|default('') }}`.
 - I will add that `default('')` just in case we don't have any orders, it will just
   render the empty string instead.
 - Now refresh the page and click the link - great, all the past orders are shown now.
@@ -724,7 +724,7 @@
   request will fail and won't be able to update the customer.
 
 ## Better API Error Handling
-- Let's temporary remove the `(string)` typecasting for user ID in `createCheckout()`
+- Let's temporary remove the `(string)` typecasting for user ID in `createCheckoutUrl()`
 - Try to check out - an error!
 - But when we do a bad request - it throws a `ClientException`. But it hides the
   actual error from us. Let's improve the error, so we could see what went wrong
@@ -759,7 +759,7 @@
 - Go add that `(string)` typecasting for user ID again.
 
 ## LS Checkout Overlay
-- In `cart.html.twig`, add `{% block javascripts %}`.
+- In `cart.html.twigs`, add `{% block javascripts %}`.
 - Inside: `<script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>`.
 - Recommendation from the LS:
   > Please don’t self-host Lemon.js, you may miss out on new features and important security patches.
@@ -785,7 +785,7 @@
 - For this let's add a new action to the controller.
 - I will copy the `checkout()` action and duplicate it as `createCheckout()`.
 - Change route to: `#[Route('/checkout/create', name: 'app_order_checkout_create', methods: ['POST'])]`.
-- Inside, keep checking that user is logged in.
+- Inside, keep checking that user is logged in, i.e. keep `#[CurrentUser] User $user,`.
 - But then just `return $this->json(['targetUrl' => $lsApi->createCheckoutUrl($user)]);`.
 - Back to the template, add Stimulus value: `data-lemon-squeezy-checkout-create-url-value="{{ path('app_order_checkout_create') }}"`.
 - Let's also replace `href="{{ path('app_order_checkout') }}"` with `href="#"` if you
@@ -827,7 +827,7 @@
 - But if you look closer to the URL in the address bar - you will see that
   it's our https://127.0.0.1:8000/cart
 - So it kinda works!
-- But to make it better, open the `LSAPI::createCheckout()`.
+- But to make it better, open the `LSAPI::createCheckoutUrl()`.
 - Add: `$attributes['checkout_options']['embed'] = true;`
 - Go checkout again - now it's a real overlay that we can even close.
 - Let's do not hardcode it.
@@ -898,6 +898,7 @@
 - Inject `EntityManagerInterface $entityManager,`.
 - Save the changes: `$entityManager->flush();`.
 - It's enough to return a successful response: `return $this->json([]);`.
+- Let's add this URL as a Stimulus value. 
 - Back to `#handleCheckout`.
 - Let's `fetch(this.checkoutHandleUrlValue, {`.
 - Use `method: 'POST',`
@@ -945,9 +946,10 @@
 - For example, we can check if the current user ID matches the user ID set in the
   custom data of the LS event.
 - Let's do this way.
-- Inside `Checkout.Success`, you can `console.log(data)` again to see the structure.
+- Inside `Checkout.Success`, you can uncomment `console.log(data)` again to see
+  the structure.
 - Or just believe me and write: `const userId = data.data.order.meta.custom_data.user_id;`.
-- Then pass add it to the method: `this.#handleCheckout(userId, lsCustomerId);`.
+- Then pass it to the method: `this.#handleCheckout(userId, lsCustomerId);`.
 - Inside `#handleCheckout()`, pass `userId: userId,` in the request too.
 - And in `OrderController::handleCheckout()`.
 - Add `$userId = $request->request->get('userId');`.
