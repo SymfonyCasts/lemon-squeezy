@@ -1,32 +1,63 @@
 # Chapter 5: Dynamic Data
 
-OK, so far we made our first API request that generates a unique checkout URL for the customer and opens the LS checkout page so that the customer could buy the product. But we hardcoded a lot of things. It’s time to make them dynamic now!
+Okay! We made our first API request! This generates a *unique* checkout URL for our customer and opens the LemonSqueezy checkout page so they can buy the product. *But* when we set this up, we hard-coded a lot of things. It’s time to make it *dynamic*!
 
 ## Use Dynamic Data in the Checkout Object
 
-I would like to start with Store ID - it’s unique for test/live env, so it makes sense to set it as an environment variable. Open `.env` file and below the `LEMON_SQUEEZY_API_KEY` set `LEMON_SQUEEZY_STORE_ID=` with the value.
+Let's start with the Store ID. That's unique for both our test and live environments, so it makes sense to set it as an environment variable. Open the `.env` file and, below the `LEMON_SQUEEZY_API_KEY`, say `LEMON_SQUEEZY_STORE_ID=` and set that to the `id` value. You can find that in `OrderController.php`.
 
-Now in `config/services.yaml` add a new parameter `env(LEMON_SQUEEZY_STORE_ID)` set to `%env(LEMON_SQUEEZY_STORE_ID)%’`. Back to the controller, now we can get that parameter as `$this->getParameter('env(LEMON_SQUEEZY_STORE_ID)')`.
+Now, in `config/services.yaml`, under `parameters`, add a new one - `env(LEMON_SQUEEZY_STORE_ID)` - and set that to `%env(LEMON_SQUEEZY_STORE_ID)%’`. Back in our controller, replace the `id` value with `$this->getParameter('env(LEMON_SQUEEZY_STORE_ID)')`.
 
 ## Store Variant IDs in the Database
 
-For variant ID - let's create a new field on Product entity. Run `bin/console make:entity`, choose Product, name the field as `lsVariantId` string, 255, nullable - we will need to allow nullable temporarily because . Finish with one more enter. Open the Product entity now to check it - I think we need to make it unique. Looks good now. It also created getter and setter.
+For the variant, let's create a new field on the `Product` entity. At your terminal, run:
 
-Now create a migration with `bin/console make:migration` - open it to double check, a new column added, everything looks good. Now migration with `bin/console doctrine:migrations:migrate`
+```terminal
+bin/console make:entity
+```
 
-Next, go to the in `src/DataFixtures/AppFixtures.php` and set the new field to variant ID from the LS dashboard. I will create more products base on the fixtures we have. OK, now let’s reload the fixtures with `bin/console doctrine:fixtures:load`.
+update the `Product` entity, and call the new field `lsVariantId`. This will be a `string`, with a default field length, and let's make it "nullable". Press "enter" to finish and then head over to `Entity/Product.php` to see our changes. If we scroll down... ah, there it is! We should probably make this `unique` as well. Looking good! Down here, we can see that it also created a getter and setter. *Convenient*!
 
-Back to the controller, inside `createLsCheckoutUrl()`, get products in the cart with with `$products = $cart->getProducts();`. Let's just set `$variantId = $products[0]->getLsVariantId();` for now. And set the variant ID variable on the `relationships.variant.data.id`.
+Now, back in our terminal, create a migration with:
+
+```terminal
+bin/console make:migration
+```
+
+Let's check it out! Back in `migrations/`... down here... it looks like a new column was added. *Nice*! Up here, we can add a description:
+
+`Add a column to store the LS variant ID on Product`
+
+Back in our terminal, *run* the migration:
+
+```terminal
+bin/console doctrine:migrations:migrate
+```
+
+Now, in `src/DataFixtures/AppFixtures.php`, set our new field to the variant ID from the LemonSqueezy dashboard. You can find that by clicking on "Store", "Products", the three dots at the end of our product here, and selecting "Copy variant ID". Paste that and... tada! The first one is *done*! But what kind of designer lemonade stand would we be if we only had one kind of lemonade to choose from? Let's add more based on our fixtures!
+
+Copy this description and, back in our dashboard, create a new product. We'll call this one "Watermelon E-Lemonade" and *paste*. Set the price to "$1.99", add an image, and "Publish product". Copy our *new* product's variant ID and add that to our product in `AppFixtures.php`. Awesome! Let's do the same thing for the next four products. I'll speed this up a bit.
+
+
+Done! Now let’s *reload* the fixtures with:
+
+```terminal
+bin/console doctrine:fixtures:load
+```
+
+Back in the controller, inside `createLsCheckoutUrl()`, retrieve products in the shopping cart with `$products = $cart->getProducts()`. And we'll set `$variantId` to `$products[0]->getLsVariantId()` for now. Finally, below `response`, set the variant ID to `$variantId`.
 
 ## Set the Correct Quantity
 
-Now let's try to check out. Go to the homepage again, choose a new product this time. I will set 2 as the quantity, add to the cart, press checkout - great! We're on the right product in LemonSqueezy checkout.
+Okay, let's try to check out! Go back to the homepage and choose a new product this time. Set the quantity to "2", add that to the cart, then click the checkout button. *Nice*! We're on the checkout page, and this is the correct product but... *not* the correct quantity. 
 
-So the checkout works, but as you see it's missing the quantity. To fix it, under the type, we need to add `attributes`, inside `checkout_data`, `variant_quantities` - another empty array, and inside set both variant ID and quantity. Above, under the `variantId`, add `$quantity = $cart->getProductQuantity()` and as an arguments add the first product: `$prodcuts[0]`.  Now go to the Checkout again, press Checkout button - yes, we have the correct quantity and amount now!
+To fix that, back in our code, under `type`, add `attributes`... `checkout_data`... `variant_quantities`... another empty array, and inside *that*, say `variant_id => $variantId` and `quantity => $quantity`. Above, under the `variantId`, add `$quantity = $cart->getProductQuantity()` with `$prodcuts[0]` as the argument. If we go to the cart page and click the "checkout" button again... *yes*! We have the correct product *and* the correct quantity!
 
 ## Pre-fill User Data
-But if you scroll up the checkout page - where this email comes from? I'm authenticated in LS as a store owner, so they pre-fill it for me. What if I try to check out in incognito mode? Go open the incognito, log in again with  `lemon@example.com` and password `lemonpass`. Choose the product, add to the cart, press checkout - aha, user data is empty! Not a big deal, user can manually fill that in… but we can do better and pre-fill it from our app as we know user email and name when they authenticated.
+If I scroll up... hm... where did this email come from? I'm an authenticated LemonSqueezy store owner, so this is pre-filled for me. But what if I try to check out as a customer in incognito mode? I'll open a new tab in incognito mode, log in again with `lemon@example.com` as the email and `lemonpass` as the password, choose a product, quantity, and add it to the cart, click "checkout", and... aha! The user data is empty! The user can just fill this in themselves, so it's not a *big* deal, but I bet we can save them some time and pre-fill this from our app, since they already shared their name and email when they authenticated. Let's do it!
 
-First, inside `OrderController::checkout()`, let’s inject one more dependency - add 3rd argument as`#[CurrentUser] ?User $user`. And pass the user to the `createLsCheckoutUrl($user)` - add below in the function, add 3d argument as`?User $user`. Next, below the quantity, let’s add `$attributes =`, add set it to the array of attributes from the request options. And in the options just use this `$attributes` variable. Next, below `if ($user)`. Inside add `$attributes['checkout_data']['email'] = $user->getEmail();`. And below `$attributes['checkout_data']['name'] = $user->getFirstName();`. Perfect, now let's try checkout in incognito again. I will return to the homepage, cart, press the checkout button - and now user data are pre-filled!
+Over in `OrderController::checkout()`, let’s add a new argument - `#[CurrentUser] ?User $user` - and below, pass `$user` to `createLsCheckoutUrl()`. Down here in our function, add a *third* argument: `?User $user`. Below `$quantity`, add `$attributes =` and set it to the array of attributes from the request options. We can copy and paste this to make it easy.
 
-But so far we hardcoded buying only the first product from the cart - you can see it in the code . Let’s implement buying several products at once in the next chapter.
+We'll set this to `$attributes`, and up here, add `if ($user)`. Inside, say `$attributes['checkout_data']['email'] = $user->getEmail()`. And below, `$attributes['checkout_data']['name'] = $user->getFirstName()`. Perfect! Let's try checking out in incognito mode again. Go back to the homepage, click on the cart where we already have two items waiting, click the checkout button, and... the user data is pre-filled! *Awesome*!
+
+So far, we've only tried purchasing one flavor of lemonade at a time. Let's try to buy *more* than one type *next*.
