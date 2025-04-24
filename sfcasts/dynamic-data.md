@@ -1,22 +1,22 @@
-# Chapter 5: Dynamic Data
+# Dynamic Data
 
 Okay! We made our first API request! This generates a *unique* checkout URL for our customer and opens the LemonSqueezy checkout page so they can buy the product. *But* when we set this up, we hard-coded a lot of things. It’s time to make it *dynamic*!
 
 ## Use Dynamic Data in the Checkout Object
 
-Let's start with the Store ID. That's unique for both our test and live environments, so it makes sense to set it as an environment variable. Open the `.env` file and, below the `LEMON_SQUEEZY_API_KEY`, say `LEMON_SQUEEZY_STORE_ID=` and set that to the `id` value. You can find that in `OrderController.php`.
+Let's start with the Store ID. That's unique for both our test and live environments, so it makes sense to set it as an environment variable. Open the `.env` file and, below the `LEMON_SQUEEZY_API_KEY`, write `LEMON_SQUEEZY_STORE_ID=` and set that to the store ID value. You can find that in `OrderController.php`.
 
-Now, in `config/services.yaml`, under `parameters`, add a new one - `env(LEMON_SQUEEZY_STORE_ID)` - and set that to `%env(LEMON_SQUEEZY_STORE_ID)%’`. Back in our controller, replace the `id` value with `$this->getParameter('env(LEMON_SQUEEZY_STORE_ID)')`.
+Now, in `config/services.yaml`, under `parameters`, add a new one - `env(LEMON_SQUEEZY_STORE_ID)` - and set that to `%env(LEMON_SQUEEZY_STORE_ID)%’`. Back in our controller, replace the ID value with `$this->getParameter('env(LEMON_SQUEEZY_STORE_ID)')`.
 
 ## Store Variant IDs in the Database
 
-For the variant, let's create a new field on the `Product` entity. At your terminal, run:
+For the variant ID, let's create a new field on the `Product` entity. At your terminal, run:
 
 ```terminal
 bin/console make:entity
 ```
 
-update the `Product` entity, and call the new field `lsVariantId`. This will be a `string`, with a default field length, and let's make it "nullable". Press "enter" to finish and then head over to `Entity/Product.php` to see our changes. If we scroll down... ah, there it is! We should probably make this `unique` as well. Looking good! Down here, we can see that it also created a getter and setter. *Convenient*!
+Update the `Product` entity, and call the new field `lsVariantId`. This will be a `string`, with a default field length, and let's make it "nullable". Press `Enter` to finish and then head over to `src/Entity/Product.php` to see our changes. If we scroll down... ah, there it is! We should probably make this `unique` as well. Looking good! Down here, we can see that it also created a getter and setter. *Convenient*!
 
 Now, back in our terminal, create a migration with:
 
@@ -26,7 +26,7 @@ bin/console make:migration
 
 Let's check it out! Back in `migrations/`... down here... it looks like a new column was added. *Nice*! Up here, we can add a description:
 
-`Add a column to store the LS variant ID on Product`
+> Add a column to store the LS variant ID on Product.
 
 Back in our terminal, *run* the migration:
 
@@ -45,7 +45,7 @@ Done! Now let’s *reload* the fixtures with:
 bin/console doctrine:fixtures:load
 ```
 
-Back in the controller, inside `createLsCheckoutUrl()`, retrieve products in the shopping cart with `$products = $cart->getProducts()`. And we'll set `$variantId` to `$products[0]->getLsVariantId()` for now. Finally, below `response`, set the variant ID to `$variantId`.
+Back in the controller, inside `createLsCheckoutUrl()`, retrieve products in the shopping cart with `$products = $cart->getProducts()`. And we'll set `$variantId` to `$products[0]->getLsVariantId()` for now. Finally, below `$response`, set the variant ID to `$variantId`.
 
 ## Set the Correct Quantity
 
