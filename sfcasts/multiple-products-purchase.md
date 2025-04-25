@@ -1,35 +1,21 @@
 # Chapter 6: Multiple Products Purchase
 
-OK, now a single product purchase looks awesome, you can even specify the quantity of the product and it will be reflected on the LemonSqueezy checkout page. But if we add one more product to the cart, a different product, there's a problem - we purchase only the first product from our shopping cart. We hardcoded this on purpose to simplify the implementation in the beginning.
+A *single* product purchase looks *awesome*. We can even specify the *quantity* and it will be reflected on the LemonSqueezy checkout page. But what if we add *one more* product to the cart? A *different* product. Yep, there's a *problem*. We clicked the checkout button with *two* flavors of lemonade in our cart, but only *one* flavor - the first one in our cart - is on the checkout page. How can we fix this? Well... there's a *slight* problem.
 
-But now when the single product purchase implemented - let’s handle multiple purchases. And actually, there's a problem - LemonSqueezy do not allow you to buy more than 1 product during the checkout… yet… and that's a bummer. Though this may change in the future! I see they may work on a Cart feature soon - they mentioned it on their roadmap: https://www.lemonsqueezy.com/roadmap - there is a "Cart" feature that will add support for a traditional cart checkout experience and I hope it will solve this issue some day.
+LemonSqueezy currently limits the number of items we can purchase to *just one*. *Bummer*. And even though their roadmap suggests this may change in the future, that doesn't really help us right now. So what can we do? Get creative, of course!
 
-Soooo, we can let our customers wait for when LemonSqueezy finally add this feature and tweak our shopping card business logic to allow adding only 1 product to to the cart, i.e. overwrite a product if it's already there with a new one.
+If we take a look at the API docs, LemonSqueezy allows us to set our own price. So let's try something... *for science*. Over in `OrderController.php` inside `createLsCheckoutUrl()`, add `if (count($products) === 1)`. Up here, we can keep the `$attributes` variable, but set it to an empty array. And in our new `if` statement, say `$attributes[‘checkout_data’][‘variant_quantities’]`, and set that equal to the remaining array. I'll fix my spacing, close this correctly, and... done!
 
-Or we can make a custom workaround! If you take a look at the API docs - LemonSqueezy allows you to set up your own price. For the sake of science! Let's do the second option because it's more fun and a good chance to see more API options in action.
+Okay, now we need to change the `quantity`. Copy `$cart->getProductQuantity()`, remove that line, and paste it down here. Below that, add `else`, and inside, say `$attributes['custom_price'] => $cart->getTotal()` and `$attributes['product_options']` set to an array where `'name' => 'E-lemonades'`, so the name is more universal for our users.
 
-First of all, in the OrderController, let’s `if (count($products) === 1) {` - then do everything we did so far, I will move around this code a little bit. I will keep the `$attributes` variable set to an empty array. And here in the if write `$attributes[‘checkout_data’][‘variant_quantities’] =` to the remaining array. Then realign and close it correctly.
+This looks good, but I think we can make this even *better*. Between our `$attributes` here, say `$description = ''`. Below *that*, we'll iterate over our products with `foreach ($products as $product)`. Inside, set `$description .= $product->getName() . 'for $' . number_format($product->getPrice()/100, 2) . ' x ' . $cart->getProductQuantity($product)`, and we'll add a `. '<br>'` at the end. Don't forget to close this with a `;`. *Finally*, in `product_options`, let's *use* this variable with `'description' => $description,`. *Nice*.
 
-We still need to set a variantId - that's required. We can take it from the first product that was added to the cart as we did before: `$variantId = $products[0]->getLsVariantId();`.
+All right, let's test this out! Go to the cart page again and reload it, just to be safe. Click "Checkout with LemonSqueezy" and... it *works*! We can see the "E-lemonades" key for $8.97, and below that, a description with the list of products, quantity, and price. It might not be *ideal*, but it works! We don't want to force our customers to go though the full checkout process for *every* *single* product they want to buy. Just think of all the profit we'd be missing out on!
 
-But for `$quantity` variable - we don’t need that. I will copy the `$cart->getProductQuantity()` call, delete this line completely, and paste it to the “quantity” key directly.
+We could even go a step further and change things like which *image* is displayed on the checkout page - *also* possible via the API. Or better yet, we could create a *variety* "E-lemonade" product in the LemonSqueezy dashboard and use *that* `variantId` to make it even more obvious that we’re buying a mix of various e-lemonade products instead of a single, specific product.
 
-Below add else. And inside set `$attributes['custom_price'] => $cart->getTotal(),`.
+The *problem* is that, even if we changed the name and description of the product on the LemonSqueezy checkout page, LemonSqueezy will *still* use the original name and image in emails and reciepts. That may change one day, but at the moment, that's what we're working with.
 
-And `product_options` set to an array where `'name' => sprintf('E-lemonades')` to make the name more universal for users. Looks good, but we can do even better. Above set `$description = '';`. Below iterate over products, add `foreach ($products as $product)`.
+If we fill in some fake billing info and other required fields on the checkout page and click the "Pay" button... we get this order confirmation message. If we click "Continue" and check our email...*yep*, we just see info for the *first* product. Our custom name and description are missing. The same goes for the page where we view our order. So this isn't *perfect*, but it *does* keep our customers from going through the checkout process for every single product they want to purchase.
 
-And inside set `$description .= $product->getName() . 'for $' . number_format($product->getPrice()/100, 2) . ' x ' . $cart->getProductQuantity($product) . '<br>'`. Don’t forget about
-
-And finally in `product_options` use this variable, set `'description' => $description,`.
-
-OK, now looks good, go checkout again - I will reload the page just in case, press Checkout with LemonSqueezy, aaaand, it works! I see the "E-lemonades" key for $8.97. And below we have a description with the list of products with its quantity and price. Yeah, I know it’s not ideal, but I like this workaround! I don’t want my users to be force to go though the full checkout process for every product they want to buy, I love bulk purchases!
-
-We can do much more, like changing the image that’s displayed on the checkout page - it’s also possible via the API.
-
-Or probably even better to create a basic "E-lemonade" product in LemonSqueezy dashboard and use THAT variantID to make it even more clearer we’re buying not a specific strawberry lemonade but a mix of lemonades. The problem is that even if we changed the name and description of the product in the LemonSqueezy checkout - LemonSqueezy will still use the original name and image in the emails and orders. Maybe they will fix it someday, but on the moment I record it works this way. That's why probably creating a base product for multiple-purchase purpose would be even better. But I will leave it to you guys.
-
-If you will input test card credentials, fill in the required billing address, press the checkout, and check the email - you will still see the first product info - no our custom name and description. The same for the view order page. that’s displayed only on checkout page. But what is the most important here - with our workaround we avoid our users to go though the full checkout process for every product.
-
-If we return back to our checkout page and press the Continue button in the successful modal - we’re redirected to the LemonSqueezy order page.
-
-Next, let’s polish our checkout process even further with some post-checkout operations and control ourselves what we want to do with the customer after the successful purchase.
+Next: Let’s polish our checkout process even *more* with some post-checkout operations.
