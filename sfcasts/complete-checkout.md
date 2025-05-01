@@ -1,29 +1,33 @@
 # Chapter 7: Complete the Checkout
 
-Hey! I just bought another awesome product in our online store, and when I completed the checkout - LemonSqueezy showed me this successful message:
+I just bought *another* awesome product in our online store, and when I finished checking out, LemonSqueezy gave me a success message:
 
 > Thanks for your order!
 
-And you know what? It can be configured, and it's actually a product-specific configuration. Open the dashboard > Store > Products > Choose a product > and in the "Confirmation modal" section you will find the Title & Message fields. You can see the defaults there as a placeholder - the exact text we can see in the modal. I'm pretty happy with the defaults, maybe just add more exclamations because I'm super excited. Feel free to customise it for your need, but keep in mind that all these changes will apply only for this specific product, so you may need to do such changes in every product.
+It's short, sweet, and to the point, but is there a way to customize this if we need to? Yep! *And* it's product-specific.
 
-The same relates to the button - you can change its text & link here. Where it leads by default? Let’s check it. Click on it - aha, we’re on the LemonSqueezy order page.
+Over in the dashboard, click on "Store"... "Products"... "Choose a product", and in the "Confirmation modal" section down here, find the "Title" and "Message" fields. We have some default text here - the *same* text we saw in the confirmation message earlier.
+
+I'm pretty happy with the default text at the moment, even if it *could* use a few more exclamation points because I'm so excited, so I'll leave it the way it is for now. If you *do* decide to change this text, remember that the changes you make here will only apply to this specific product, so if you want *all* of your products to reflect your changes, you'll have to customize them one by one.
+
+The same goes for this button. We can change *its* text and link here. The default link looks like it goes to a my-orders page. If we click on that... yep! We're on the LemonSqueezy order page.
 
 ## Clear the Cart after Purchase
 
-But if you return to the website - we still have the product I just bought in the cart - we need to clear the cart after the purchase. For this, let's create a special action in `OrderController`, call it `success()`. Register the route as `#[Route('/checkout/success', name: 'app_order_success')]`. We will redirect customers to this route.
+Over on the website... the product we just bought is *still* in the cart. We need to make sure the cart is cleared after we make a purchase. To do that, over in `OrderController`, create a special action. We'll call it `success()`. Then, register the route with `#[Route('/checkout/success', name: 'app_order_success')]`. This will redirect customers to this route.
 
-But first, to avoid direct access to this page - let's do a little trick. Inject `Request $request`. Inside, add `$referer = $request->headers->get('referer');`. Then create a variable: `$lsStoreUrl` and set it to the store URL. For this, go to the dashboard, open the storefront, copy the URL and set it `https://squeeze-the-day.lemonsqueezy.com';`.
+*Now*, to avoid direct access to this page, we're going to use a little trick. Inject `Request $request` and, inside, add `$referer = $request->headers->get('referer')`. Then, create a variable - `$lsStoreUrl` - and set it to the store URL. For that, go to the dashboard, open the storefront, copy the URL, and paste it in our code `https://squeeze-the-day.lemonsqueezy.com'`.
 
-Below, add: `if (!str_starts_with($referer, $lsStoreUrl)) {`.If true - then someone open this URL directly, and we can just redirect to the homepage:`return $this->redirectToRoute('app_homepage');.
+Below, add `if (!str_starts_with($referer, $lsStoreUrl))`. So if this is *true*, and someone opens this URL *directly*, we can just redirect them to the homepage with `return $this->redirectToRoute('app_homepage')`. Inject `ShoppingCart $cart` and, below, continue with `if ($cart->isEmpty())`. Finally, return to the homepage again with `return $this->redirectToRoute(route: 'app_homepage')`. *Otherwise*, clear the cart with `$cart->clear()`.
 
-Now inject `ShoppingCart $cart` object. Below, continue with`if ($cart->isEmpty())` - return redirect to homepage again. Otherwise, add `$cart->clear();`.
+We *could* render a separate success page with some details if we wanted to, but for now, we'll keep it simple and just add a flash message - `$this->addFlash('success', 'Thanks for your order!')` - and `return $this->redirectToRoute(route: 'app_homepage')`.
 
-You can render a separate success page with some details if you want, but I will simplify and just add a flash message: `$this->addFlash('success', 'Thanks for your order!');`. And finally return redirect to homepage.
+Okay, now we need to add this URL to the "Button link" field for each and every product. *Bummer*. There *has* to be an easier way to do that, right? Thankfully, *yes* - with an *API option*.
 
-And now we need to set this URL in "Button link" field for every product - bummer :/ Could we do it simpler? Yes, via the API option. Open the "Create a checkout" API docs, and in `product_options` see `redirect_url`.
+In the API docs, search for "Create a checkout". Under "product_options", check out this "redirect_url": "A custom URL to redirect to after a successful purchase". *That's* what we're looking for!
 
-Open `createLsCheckoutUrl()` method, and below, add: `$attributes['product_options']['redirect_url'] = $this->generateUrl('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL),`.
+In our code, open the `createLsCheckoutUrl()` method, and below, add: `$attributes['product_options']['redirect_url'] = $this->generateUrl('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL)`.
 
-Now go checkout again, complete the payment card credentials and the billing address, press checkout, wait a bit… and here's the Confirmation modal, press Continue... yes, our success flash message "Thanks for your order!", and the cart is completely empty now.
+Okay, head over and check out again. Enter the card info and the billing address, click the "Checkout" button, and wait for the confirmation modal to pop up. Here it is! If we click "Continue"... yes! We see the "successful" flash message - "Thanks for your order!" - and the cart is completely empty now. Woohoo!
 
-Next, let’s separate LemonSqueezy business logic from the controller and centralise it in a standalone service before start writing more API requests.
+Next: Before we make *more* API requests, let’s separate LemonSqueezy's business logic from the controller and *centralize* it in a standalone service.
