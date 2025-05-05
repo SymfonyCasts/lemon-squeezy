@@ -18,13 +18,17 @@ Over on the website... the product we just bought is *still* in the cart. We nee
 
 *Now*, to avoid direct access to this page, we're going to use a little trick. Inject `Request $request` and, inside, add `$referer = $request->headers->get('referer')`. Then, create a variable - `$lsStoreUrl` - and set it to the store URL. For that, go to the dashboard, open the storefront, copy the URL, and paste it in our code `https://squeeze-the-day.lemonsqueezy.com'`.
 
-Below, add `if (!str_starts_with($referer, $lsStoreUrl))`. So if this is *true*, and someone opens this URL *directly*, we can just redirect them to the homepage with `return $this->redirectToRoute('app_homepage')`. Inject `ShoppingCart $cart` and, below, continue with `if ($cart->isEmpty())`. Finally, return to the homepage again with `return $this->redirectToRoute(route: 'app_homepage')`. *Otherwise*, clear the cart with `$cart->clear()`.
+Below, add `if (!str_starts_with($referer, $lsStoreUrl))`. So if this is *true*, and someone opens this URL *directly*, we can just redirect them to the homepage with `return $this->redirectToRoute('app_homepage')`. Inject `ShoppingCart $cart` and, below, continue with `if ($cart->isEmpty())`. Finally, return to the homepage again with `return $this->redirectToRoute('app_homepage')`. *Otherwise*, clear the cart with `$cart->clear()`.
 
-We *could* render a separate success page with some details if we wanted to, but for now, we'll keep it simple and just add a flash message - `$this->addFlash('success', 'Thanks for your order!')` - and `return $this->redirectToRoute(route: 'app_homepage')`.
+We *could* render a separate success page with some details if we wanted to, but for now, we'll keep it simple and just add a flash message - `$this->addFlash('success', 'Thanks for your order!')` - and `return $this->redirectToRoute('app_homepage')`.
 
 Okay, now we need to add this URL to the "Button link" field for each and every product. *Bummer*. There *has* to be an easier way to do that, right? Thankfully, *yes* - with an *API option*.
 
-In the API docs, search for "Create a checkout". Under "product_options", check out this "redirect_url": "A custom URL to redirect to after a successful purchase". *That's* what we're looking for!
+In the API docs, search for "Create a checkout". Under `product_options`, check out this`redirect_url`:
+
+ > A custom URL to redirect to after a successful purchase.
+ 
+*That's* what we're looking for!
 
 In our code, open the `createLsCheckoutUrl()` method, and below, add: `$attributes['product_options']['redirect_url'] = $this->generateUrl('app_order_success', [], UrlGeneratorInterface::ABSOLUTE_URL)`.
 
