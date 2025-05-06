@@ -1,25 +1,21 @@
 # Chapter 8: Centralize LemonSqueezy Business Logic
 
-So far we were coding fast focusing on making our checkout working. And we nailed it. But our code is scattered in the controller. First of all, it would be convenient to have everything related to the LemonSqueezy API in one spot in a separate class. So let's extract LemonSqueezy code from the controller into a separate service for convenience - easier to maintain, easier to reuse, and easier to test!
+So far, we've been focused on getting our checkout up and running, and we *nailed it*! But our code is kind of scattered around the controller. Wouldn't it be *much* more convenient to have everything related to LemonSqueezy's API in a separate class? *Of course* it would! So let's get to organizing!
 
-For this, let’s create a new service: `App\Store\LemonSqueezyApi`.  I will make it final read only from scratch. Now move there our `createLsCheckoutUrl()` method but make it public now. I will rename it to just `createCheckoutUrl()` - anyway all the code in this class is related to LemonSqueezy.
+We need to locate all of LemonSqueezy's code in the controller and move it into a separate service so it's easier to maintain, re-use, *and* test. To do that, in `src\Store`, create a new class called `LemonSqueezyApi`. Make this `final readonly`. Now we can move our `createLsCheckoutUrl()` method - I'll copy this big block and paste it in our new class - and *this* time, make it `public`. Since we *know* this is LemonSqueezy-related because it's in `LemonSqueezyApi`, we can just change the name to `createCheckoutUrl()` to keep it simple.
 
-Next, make `$lsClient` and `$cart` as proper constructor dependencies - I will name it just `$client` for simplicity too. But here we will need our trick with `#[Target('lemonSqueezyClient')]` above this argument. And at private before each property. Then change vars to properties in `createCheckoutUrl()`.
+Next, let's grab `$lsClient` and `$cart`, and above, turn them into consructor dependencies with `public function __construct()`. Paste, and we'll also simplify `$lsClient` and just call it `$client`. Above this argument, add `#[Target('lemonSqueezyClient')]`, add `private` before each property, and finally, change this `$cart` variable to a property with `$this->cart`. We'll do the same thing for the remaining `$cart` variables. And while we're here, we'll also change `$lsClient` to `$this->client`. *Nice*.
 
-We also need a service to generate URLs. Inject it in the constructor as: `UrlGeneratorInterface $urlGenerator`. Replace `$this->generateUrl()` with `$this->urlGenerator->generate()` service.
+Now we need a service to generate URLs. We can inject that into the constructor with `UrlGeneratorInterface $urlGenerator`. Then, replace `$this->generateUrl()` with `$this->urlGenerator->generate()`. We also need access to the parameters. We *could* inject the entire `ParameterBagInterface` service, which lets us access *any* parameter, but since we only need *one* - `storeId` - let's inject that *directly*.
 
-Also, we need a way to get access to the parameters. We could inject the whole `ParameterBagInterface` service from which we can access any parameters, but since we only need `storeId` one - let's inject it directly.
+In our constructor, add: `private readonly string $storeId,`. Above, add the PHP attribute with `#[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')]`. And finally, replace every instance of `$this->getParameter()` with `$this->storeId`. I only see it once here, so that's pretty easy.
 
-In the constructor, add: `private readonly string $storeId,`. Above, add PHP attribute: `#[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')]`. Now replace `$this->getParameter()` with the `$this->storeId` in all places.
+Now, back in `OrderController::checkout()`, let's get rid of these unused dependencies and inject `LemonSqueezyApi $lsApi` instead. Below, *use* the service with `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`.
 
-Now back to `OrderController::checkout()` - drop unused dependencies and inject `LemonSqueezyApi $lsApi` instead. Below, use the service: `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`.
+Testing time! Let's make sure we can still checkout. On our site, reload, select "Classic Lemonade", add one to the cart, and click "Checkout with LemonSqueezy". *Yes*! We're on the LemonSqueezy checkout page and everything looks great!
 
-Make sure you can still checkout… Yes, we’re on the LemonSqueezy checkout page, everything looks good.
+Okay, now that we know the checkout's working, can we make `$lsStoreUrl` and the `success()` method dynamic? *Indeed*! And LemonSqueezy has an API endpoint for *just* such an occasion! In the API docs, find the "Retrieve a store" endpoint... and check out the example response on the right here. It *looks* like we can read the URL from `attributes`, so, back in our code, in `LemonSqueezyApi`, create a new public method. Call it `retrieveStoreUrl()`, and have it return a `string`. Inside, add `$response = $this->client->request(Request::METHOD_GET, 'stores/' . $this->storeId)`. Below, say `$lsStore = $response->toArray()` and finally, `return $lsStore['data']['attributes']['url']`.
 
-Now, can we make that `$lsStoreUrl` in `success()` URL dynamic? We can! LemonSqueezy has an API endpoint to fetch that store URL. In the API docs, find the [Retrieve a store](https://docs.lemonsqueezy.com/api/stores/retrieve-store) endpoint. If you will take a look at the example response - we can read the URL from `attributes`.
+Back in the `success()` method, inject `LemonSqueezyApi $lsApi,` and replace this hard-coded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl()`. Time for another test! Back on our site, pick one of our delicious lemonades - I'll choose apple this time - and add it to the cart. On the cart page, click the "Checkout" button again and... tada! It still works!
 
-In `LemonSqueezyApi`, create a new public method, call it `retrieveStoreUrl()` - it will return `string`. Inside, add `$response = $this->client->request(Request::METHOD_GET, 'stores/' . $this->storeId);`. Below: `$lsStore = $response->toArray();`. And finish with `return $lsStore['data']['attributes']['url'];`.
-
-Back to `success()`. Inject `LemonSqueezyApi $lsApi,`. Replace hardcoded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl();`. Make sure you can still checkout.
-
-Next, let’s assign LemonSqueezy customer to the corresponding user in our system so that we could know which purchases they made.
+Next: Let’s assign a *LemonSqueezy* customer to the corresponding user in *our* system so we know which purchases they made.
