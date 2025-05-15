@@ -14,18 +14,28 @@ it `public`. Since we *know* this is LemonSqueezy-related because it's in
 `LemonSqueezyApi`, we can just change the name to `createCheckoutUrl()` to keep
 it simple.
 
+[[[ code('b9f89467cc') ]]]
+
 Next, let's grab `$lsClient` and `$cart`, and above, turn them into constructor
 dependencies with `public function __construct()`. Paste, we'll also
 simplify `$lsClient` and just call it `$client`. Above this argument, add
-`#[Target('lemonSqueezyClient')]`, add `private` before each property, and
-finally, change this `$cart` variable to a property with `$this->cart`. We'll do
+`#[Target('lemonSqueezyClient')]`, add `private` before each property.
+
+[[[ code('396ab625f1') ]]]
+
+And finally, change this `$cart` variable to a property with `$this->cart`. We'll do
 the same thing for the remaining `$cart` variables. And while we're here, we'll
 also change `$lsClient` to `$this->client`. *Nice*.
 
+[[[ code('455b73f7b6') ]]]
+
 Now we need a service to generate URLs. We can inject that into the constructor
 with `UrlGeneratorInterface $urlGenerator`. Then, replace `$this->generateUrl()`
-with `$this->urlGenerator->generate()`. We also need access to the parameters.
-We *could* inject the entire `ParameterBagInterface` service, which lets us
+with `$this->urlGenerator->generate()`. 
+
+[[[ code('30b5741180') ]]]
+
+We also need access to the parameters. We *could* inject the entire `ParameterBagInterface` service, which lets us
 access *any* parameter, but since we only need *one* - `storeId` - let's inject
 that *directly*.
 
@@ -34,9 +44,13 @@ attribute with `#[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')]`. And finally,
 replace every instance of `$this->getParameter()` with `$this->storeId`. I only
 see it once here, so that's pretty easy.
 
+[[[ code('26c651fc19') ]]]
+
 Now, back in `OrderController::checkout()`, let's get rid of these unused
 dependencies and inject `LemonSqueezyApi $lsApi` instead. Below, *use* the
 service with `$lsCheckoutUrl = $lsApi->createCheckoutUrl();`.
+
+[[[ code('5cfb4cf46d') ]]]
 
 Testing time! Let's make sure we can still checkout. On our site, reload,
 select "Classic Lemonade", add one to the cart, and click "Checkout with
@@ -54,9 +68,14 @@ have it return a `string`. Inside, add
 Below, write `$lsStore = $response->toArray()` and finally,
 `return $lsStore['data']['attributes']['url']`.
 
+[[[ code('82abf9fce8') ]]]
+
 Back in the `success()` method, inject `LemonSqueezyApi $lsApi,` and replace
-this hard-coded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl()`. Time for
-another test! Back on our site, pick one of our delicious lemonades - I'll
+this hard-coded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl()`. 
+
+[[[ code('ab9956a432') ]]]
+
+Time for another test! Back on our site, pick one of our delicious lemonades - I'll
 choose apple this time - and add it to the cart. On the cart page, click the
 "Checkout" button again, fill in our credentials and billing address, click
 "Pay", and *finally*, in the "successful" modal, click "Continue". Tada! Here's
