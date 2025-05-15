@@ -38,6 +38,6 @@ De vuelta en el método `success()`, inyecta `LemonSqueezyApi $lsApi,` y sustitu
 
 [[[ code('ab9956a432') ]]]
 
-¡Es hora de hacer otra prueba! De vuelta a nuestro sitio, elige una de nuestras deliciosas limonadas -esta vez elegiré la de manzana- y añádela al carrito. En la página del carrito, haz clic de nuevo en el botón "Realizar pedido", rellena nuestras credenciales y la dirección de facturación, haz clic en "Pagar" y, finalmente, en el modal "correcto", haz clic en "Continuar". ¡Listo! ¡Aquí está nuestro mensaje flash! ¡Sigue funcionando!
+¡Es hora de hacer otra prueba! De vuelta a nuestro sitio, elige una de nuestras deliciosas limonadas -esta vez elegiré la de manzana- y añádela al carrito. En la página del carrito, haz clic de nuevo en el botón "Realizar pedido", rellena nuestras credenciales y la dirección de facturación, haz clic en "Pagar" y, por último, en el modal "correcto", haz clic en "Continuar". ¡Listo! ¡Aquí está nuestro mensaje flash! ¡Sigue funcionando!
 
-A continuación: Vamos a asignar un cliente de LemonSqueezy al usuario correspondiente en nuestro sistema para saber qué compras ha realizado.
+A continuación: Asignemos un cliente de LemonSqueezy al usuario correspondiente en nuestro sistema para saber qué compras ha realizado.
