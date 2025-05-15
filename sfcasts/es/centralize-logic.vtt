@@ -1,0 +1,242 @@
+WEBVTT
+
+00:00:01.066 --> 00:00:05.076 align:middle
+Hasta ahora, nos hemos centrado en poner en
+marcha nuestra caja, ¡y lo hemos conseguido!
+
+00:00:05.586 --> 00:00:07.876 align:middle
+Pero nuestro código está un
+poco disperso por el controlador.
+
+00:00:08.256 --> 00:00:10.726 align:middle
+¿No sería mucho más cómodo
+tener todo lo relacionado
+
+00:00:10.726 --> 00:00:13.466 align:middle
+con la API de LemonSqueezy en una clase aparte?
+
+00:00:13.896 --> 00:00:14.806 align:middle
+¡Claro que sí!
+
+00:00:14.956 --> 00:00:16.236 align:middle
+¡Así que vamos a organizarnos!
+
+00:00:16.786 --> 00:00:20.576 align:middle
+Tenemos que localizar todo el código relacionado
+con LemonSqueezy en el controlador y trasladarlo
+
+00:00:20.576 --> 00:00:24.906 align:middle
+a un servicio independiente para que sea
+más fácil de mantener, reutilizar y probar.
+
+00:00:25.356 --> 00:00:31.246 align:middle
+Para ello, en src/Store/, crea una
+nueva clase llamada LemonSqueezyApi.
+
+00:00:33.916 --> 00:00:35.306 align:middle
+Conviértela en final readonly.
+
+00:00:36.356 --> 00:00:39.146 align:middle
+Ahora podemos mover nuestro
+método createLsCheckoutUrl().
+
+00:00:39.496 --> 00:00:42.036 align:middle
+Copiaré este gran bloque, lo eliminaré
+
+00:00:42.036 --> 00:00:46.976 align:middle
+y lo pegaré en nuestra nueva clase,
+y esta vez lo llamaré public.
+
+00:00:48.196 --> 00:00:52.486 align:middle
+Como sabemos que está relacionado con
+LemonSqueezy porque está en LemonSqueezyApi,
+
+00:00:52.786 --> 00:00:56.106 align:middle
+podemos cambiarle el nombre a
+createCheckoutUrl() para que sea más sencillo.
+
+00:00:56.826 --> 00:01:03.006 align:middle
+A continuación, vamos a coger $lsClient y $cart, y
+encima, convertirlos en dependencias del constructor
+
+00:01:03.236 --> 00:01:05.156 align:middle
+con public function __construct().
+
+00:01:06.616 --> 00:01:10.946 align:middle
+Pega, también simplificaremos $lsClient y
+lo llamaremos simplemente $client. Encima
+
+00:01:12.126 --> 00:01:17.016 align:middle
+de este argumento, añade
+#[Target('lemonSqueezyClient')],
+
+00:01:18.196 --> 00:01:19.966 align:middle
+añade private antes de cada propiedad.
+
+00:01:20.936 --> 00:01:26.386 align:middle
+Y por último, cambia esta variable $cart
+por una propiedad con $this->cart.
+
+00:01:26.386 --> 00:01:28.846 align:middle
+Haremos lo mismo con el
+resto de variables $cart.
+
+00:01:34.056 --> 00:01:38.076 align:middle
+Y ya que estamos aquí, también
+cambiaremos $lsClient por $this->client.
+
+00:01:38.806 --> 00:01:42.146 align:middle
+Muy bien. Ahora necesitamos
+un servicio para generar URLs.
+
+00:01:42.796 --> 00:01:48.386 align:middle
+Podemos inyectarlo en el constructor
+con UrlGeneratorInterface $urlGenerator.
+
+00:01:50.156 --> 00:01:56.916 align:middle
+A continuación, sustituye $this->generateUrl()
+por $this->urlGenerator->generate().
+
+00:01:58.106 --> 00:02:00.016 align:middle
+También necesitamos acceso a los parámetros.
+
+00:02:00.326 --> 00:02:05.406 align:middle
+Podríamos inyectar todo el servicio ParameterBagInterface,
+que nos permite acceder a cualquier parámetro,
+
+00:02:05.826 --> 00:02:09.606 align:middle
+pero como sólo necesitamos uno - storeId
+- vamos a inyectarlo directamente.
+
+00:02:10.186 --> 00:02:13.676 align:middle
+En nuestro constructor, añade:
+private readonly string $storeId,.
+
+00:02:14.226 --> 00:02:22.496 align:middle
+Encima, añade el atributo PHP con
+#[Autowire('%env(LEMON_SQUEEZY_STORE_ID)%')].
+
+00:02:22.496 --> 00:02:28.256 align:middle
+Y por último, sustituye cada instancia de
+$this->getParameter() por $this->storeId.
+
+00:02:28.756 --> 00:02:30.806 align:middle
+Aquí sólo lo veo una vez,
+así que es bastante fácil.
+
+00:02:31.486 --> 00:02:36.966 align:middle
+Ahora, de vuelta en OrderController::checkout(),
+deshagámonos de estas dependencias no utilizadas
+
+00:02:36.966 --> 00:02:40.646 align:middle
+e inyectemos LemonSqueezyApi
+$lsApi en su lugar.
+
+00:02:41.256 --> 00:02:48.146 align:middle
+A continuación, utiliza el servicio con
+$lsCheckoutUrl = $lsApi->createCheckoutUrl();.
+
+00:02:49.896 --> 00:02:50.666 align:middle
+¡Hora de probar!
+
+00:02:51.066 --> 00:02:52.616 align:middle
+Asegurémonos de que aún podemos pagar.
+
+00:02:52.946 --> 00:02:58.406 align:middle
+En nuestro sitio, recarga, selecciona
+"Limonada Clásica", añade una al carrito
+
+00:02:58.636 --> 00:03:00.386 align:middle
+y haz clic en "Pagar con LemonSqueezy".
+
+00:03:01.816 --> 00:03:05.266 align:middle
+¡Sí! Estamos en la página de pago
+de LemonSqueezy y todo parece perfecto
+
+00:03:05.856 --> 00:03:08.166 align:middle
+Vale, ahora que sabemos que la compra funciona,
+
+00:03:08.356 --> 00:03:11.766 align:middle
+¿podemos hacer que $lsStoreUrl en
+el método success() sea dinámico?
+
+00:03:12.136 --> 00:03:16.366 align:middle
+¡Pues sí! Y LemonSqueezy tiene
+una ruta API precisamente para eso
+
+00:03:16.976 --> 00:03:20.206 align:middle
+En los documentos de la API, busca
+la ruta "Recuperar una tienda"...
+
+00:03:20.466 --> 00:03:22.566 align:middle
+y echa un vistazo al ejemplo
+de respuesta de la derecha.
+
+00:03:23.196 --> 00:03:27.376 align:middle
+Parece que podemos leer la URL desde attributes,
+así que, de vuelta a nuestro código,
+
+00:03:27.746 --> 00:03:31.276 align:middle
+en LemonSqueezyApi, crea
+un nuevo método público.
+
+00:03:32.156 --> 00:03:36.146 align:middle
+Llámalo retrieveStoreUrl(),
+y haz que devuelva un string.
+
+00:03:37.246 --> 00:03:45.136 align:middle
+Dentro, añade $response =
+$this->client->request(Request::METHOD_GET,
+
+00:03:45.616 --> 00:03:46.436 align:middle
+'stores/' .
+
+00:03:46.436 --> 00:03:48.786 align:middle
+$this->storeId).
+
+00:03:50.646 --> 00:03:56.436 align:middle
+A continuación, escribe $lsStore =
+$response->toArray() y, por último,
+
+00:03:56.616 --> 00:04:02.706 align:middle
+return $lsStore['data']['attributes']['url'].
+
+00:04:03.866 --> 00:04:09.106 align:middle
+De vuelta en el método success(),
+inyecta LemonSqueezyApi $lsApi,
+
+00:04:09.106 --> 00:04:17.076 align:middle
+y sustituye esta URL codificada por
+$lsStoreUrl = $lsApi->retrieveStoreUrl().
+
+00:04:17.826 --> 00:04:19.076 align:middle
+¡Es hora de hacer otra prueba!
+
+00:04:19.496 --> 00:04:22.226 align:middle
+De vuelta en nuestro sitio, elige
+una de nuestras deliciosas limonadas
+
+00:04:22.516 --> 00:04:24.896 align:middle
+-esta vez elegiré manzana-
+y añádela al carrito.
+
+00:04:25.566 --> 00:04:31.686 align:middle
+En la página del carrito, haz clic de nuevo en el
+botón "Realizar pedido", rellena nuestras credenciales
+
+00:04:31.686 --> 00:04:45.176 align:middle
+y la dirección de facturación, haz clic en "Pagar" y, por
+último, en el modal "Correcto", haz clic en "Continuar".
+
+00:04:46.406 --> 00:04:48.386 align:middle
+¡Listo! ¡Aquí está nuestro mensaje flash!
+
+00:04:48.566 --> 00:04:49.666 align:middle
+¡Sigue funcionando!
+
+00:04:50.456 --> 00:04:55.346 align:middle
+A continuación: Asignemos un cliente de LemonSqueezy
+al usuario correspondiente en nuestro sistema
+
+00:04:55.346 --> 00:04:57.236 align:middle
+para saber qué compras ha realizado.
