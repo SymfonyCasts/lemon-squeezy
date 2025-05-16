@@ -22,7 +22,7 @@ Como los webhooks son una solución flexible y robusta para producción, empecem
 
 Si nos desplazamos un poco... Sólo veo unos pocos eventos relacionados con pedidos. Para nuestros propósitos, parece que necesitaremos este evento `order_created`, que debería proporcionarnos los datos del pedido que buscamos. Si hacemos clic en él y nos desplazamos hacia abajo... ¡sí! devuelve `customer_id`! ¡Qué bien!
 
-Ahora, podríamos crear un `WebhookController` para manejar esto nosotros mismos, pero Symfony nos cubre las espaldas y ha lanzado recientemente un nuevo componente Webhook que puede ayudarnos a manejar esto ¡incluso mejor! ¡Vamos a probarlo! En tu terminal, instálalo con:
+¡Ahora, podríamos crear un `WebhookController` para manejar esto nosotros mismos, pero Symfony nos cubre las espaldas y ha lanzado recientemente un nuevo componente Webhook que puede ayudarnos a manejar esto incluso mejor! ¡Vamos a probarlo! En tu terminal, instálalo con:
 
 ```terminal
 composer require webhook
