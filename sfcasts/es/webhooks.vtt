@@ -1,0 +1,240 @@
+WEBVTT
+
+00:00:01.076 --> 00:00:04.616 align:middle
+Así que... nuestro sitio tiene usuarios,
+y LemonSqueezy tiene clientes...
+
+00:00:04.866 --> 00:00:07.996 align:middle
+pero por lo que sabe nuestro código, son unos
+completos desconocidos el uno para el otro.
+
+00:00:08.486 --> 00:00:13.036 align:middle
+Para construir cualquier integración significativa -como
+recuperar los pedidos de un usuario, depurar problemas
+
+00:00:13.226 --> 00:00:16.626 align:middle
+o simplemente tener una experiencia de soporte más fluida
+cuando los clientes se ponen en contacto con nosotros
+
+00:00:16.626 --> 00:00:18.656 align:middle
+por sus pedidos- necesitamos conectarlos.
+
+00:00:19.176 --> 00:00:22.706 align:middle
+Más concretamente, queremos almacenar
+el ID de cliente de LemonSqueezy
+
+00:00:22.966 --> 00:00:24.826 align:middle
+en la entidad correspondiente de User.
+
+00:00:25.476 --> 00:00:28.156 align:middle
+Pero aquí hay un giro: Cuando
+alguien termina de pagar,
+
+00:00:28.336 --> 00:00:31.506 align:middle
+LemonSqueezy crea un "cliente"
+para nosotros entre bastidores.
+
+00:00:31.866 --> 00:00:35.976 align:middle
+No puedes crear previamente un ID de cliente
+ni pasar uno existente durante el pago.
+
+00:00:36.376 --> 00:00:40.176 align:middle
+¡No! LemonSqueezy asigna uno en función de la
+dirección de correo electrónico que hayan introducido
+
+00:00:40.406 --> 00:00:42.966 align:middle
+y de si han iniciado sesión
+en su cuenta de LemonSqueezy.
+
+00:00:43.596 --> 00:00:47.106 align:middle
+Entonces... ¿cómo podemos coger ese ID
+de cliente y vincularlo a nuestro usuario?
+
+00:00:47.496 --> 00:00:49.486 align:middle
+¿Manualmente? Bueno, sí...
+
+00:00:49.596 --> 00:00:50.576 align:middle
+¿pero quién quiere hacer eso?
+
+00:00:50.816 --> 00:00:55.216 align:middle
+Yo no. Vamos a automatizarlo,
+utilizando unos prácticos webhooks.
+
+00:00:55.736 --> 00:01:00.286 align:middle
+Podemos enviar algunos metadatos cuando se cree el
+Pedido, como el ID de usuario de nuestro sistema,
+
+00:01:00.556 --> 00:01:04.866 align:middle
+y cuando recibamos el webhook (hablaremos de
+ello más adelante), leeremos esos metadatos,
+
+00:01:05.106 --> 00:01:09.076 align:middle
+buscaremos al usuario adecuado en nuestra base de
+datos y almacenaremos el ID de cliente con él.
+
+00:01:09.926 --> 00:01:10.836 align:middle
+Si dijeras "Espera...
+
+00:01:11.116 --> 00:01:14.016 align:middle
+¿No podemos obtener también el ID de
+cliente justo después de que pasen por caja?"
+
+00:01:14.446 --> 00:01:15.156 align:middle
+¡es correcto!
+
+00:01:15.476 --> 00:01:20.086 align:middle
+LemonSqueezy también envía un evento JavaScript
+checkout:complete en el momento del pago
+
+00:01:20.286 --> 00:01:23.966 align:middle
+que incluye el ID de cliente, lo que
+podría ser genial para el desarrollo local
+
+00:01:23.996 --> 00:01:26.056 align:middle
+cuando no quieres configurar túneles webhook.
+
+00:01:26.536 --> 00:01:27.866 align:middle
+Así que... ¡hagamos las dos cosas!
+
+00:01:28.376 --> 00:01:32.466 align:middle
+Como los webhooks son una solución flexible y
+robusta para producción, empecemos por ahí.
+
+00:01:33.036 --> 00:01:37.406 align:middle
+En la página principal de LemonSqueezy, ve
+a "Recursos", elige "Documentos de ayuda"
+
+00:01:37.806 --> 00:01:41.536 align:middle
+y, aquí abajo, en la sección "Webhooks",
+haz clic en "Tipos de eventos".
+
+00:01:42.266 --> 00:01:43.076 align:middle
+Si nos desplazamos un poco...
+
+00:01:44.236 --> 00:01:46.286 align:middle
+Sólo veo unos pocos eventos
+relacionados con pedidos.
+
+00:01:46.706 --> 00:01:50.116 align:middle
+Para nuestros propósitos, parece que
+necesitaremos este evento order_created
+
+00:01:50.536 --> 00:01:52.536 align:middle
+, que debería proporcionarnos
+los datos del pedido que buscamos.
+
+00:01:53.076 --> 00:01:54.666 align:middle
+Si hacemos clic en él y nos
+desplazamos hacia abajo...
+
+00:01:55.116 --> 00:01:57.096 align:middle
+¡sí! ¡Esto devuelve customer_id!
+
+00:01:57.446 --> 00:02:02.056 align:middle
+¡Qué bien! ¡ Ahora, podríamos crear un
+WebhookController para manejar esto nosotros mismos,
+
+00:02:02.336 --> 00:02:05.746 align:middle
+pero Symfony nos cubre las espaldas y ha lanzado
+recientemente un nuevo componente Webhook
+
+00:02:05.856 --> 00:02:07.636 align:middle
+que puede ayudarnos a manejar esto aún mejor!
+
+00:02:08.146 --> 00:02:08.926 align:middle
+¡Vamos a probarlo!
+
+00:02:09.276 --> 00:02:11.136 align:middle
+En tu terminal, instálalo con:
+
+00:02:11.456 --> 00:02:15.886 align:middle
+composer require webhook Esto nos proporciona
+algunas dependencias muy necesarias.
+
+00:02:16.326 --> 00:02:19.036 align:middle
+MakerBundle también tiene un
+comando para ayudarnos a empezar.
+
+00:02:19.526 --> 00:02:24.966 align:middle
+Ejecuta: : bin/console make:webhook
+Lo llamaremos lemon-squeezy.
+
+00:02:25.916 --> 00:02:30.076 align:middle
+Para el comparador, elijamos:
+PathRequestMatcher, que es la opción 6,
+
+00:02:30.456 --> 00:02:33.466 align:middle
+y luego MethodRequestMatcher - opción 5.
+
+00:02:33.936 --> 00:02:39.966 align:middle
+Y como LemonSqueezy nos envía los datos en formato
+JSON, seleccionemos también 4 - IsJsonRequestMatcher.
+
+00:02:40.666 --> 00:02:42.086 align:middle
+Pulsa enter una vez más, y...
+
+00:02:42.446 --> 00:02:48.086 align:middle
+¡bien! Esto generó un analizador sintáctico
+y un consumidor -más sobre ellos en un momento-
+
+00:02:48.516 --> 00:02:50.316 align:middle
+y también creó una nueva ruta.
+
+00:02:50.606 --> 00:02:55.016 align:middle
+Si ejecutamos: bin/console
+debug:router | grep webhook ...
+
+00:02:56.396 --> 00:02:59.966 align:middle
+ahí está: ¡nuestra
+nueva URL /webhook/{type}!
+
+00:03:00.576 --> 00:03:03.666 align:middle
+El {type} debería ser el nombre del webhook
+lemon-squeezy que establecimos antes.
+
+00:03:04.236 --> 00:03:07.756 align:middle
+Se trata de una URL específica que
+gestionará los webhooks de LemonSqueezy.
+
+00:03:08.216 --> 00:03:09.636 align:middle
+Si la abrimos en el navegador...
+
+00:03:10.616 --> 00:03:14.846 align:middle
+¡sí! Lanza un RejectWebhookException:
+La petición no coincide.
+
+00:03:15.246 --> 00:03:16.136 align:middle
+¡Vamos a configurarlo!
+
+00:03:16.596 --> 00:03:21.216 align:middle
+Copia esta URL y, de vuelta en el panel de control
+de LemonSqueezy, en "Configuración", "Webhooks",
+
+00:03:22.186 --> 00:03:24.096 align:middle
+haz clic en el signo más
+para editar el webhook.
+
+00:03:24.906 --> 00:03:28.666 align:middle
+En el campo "URL de devolución de llamada",
+pega la URL que hemos copiado hace un momento.
+
+00:03:29.306 --> 00:03:30.326 align:middle
+Pero... hm...
+
+00:03:30.566 --> 00:03:32.196 align:middle
+puede que ya hayas detectado el problema aquí.
+
+00:03:32.676 --> 00:03:36.996 align:middle
+Esta URL no es pública, por lo que LemonSqueezy
+no puede acceder a nuestro host local.
+
+00:03:37.406 --> 00:03:41.066 align:middle
+Tenemos que configurar correctamente nuestros
+webhooks con una herramienta como Ngrok,
+
+00:03:41.146 --> 00:03:43.726 align:middle
+para que LemonSqueezy pueda
+hablar con nuestra máquina local.
+
+00:03:44.196 --> 00:03:44.876 align:middle
+Eso a continuación.
