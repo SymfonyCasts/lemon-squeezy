@@ -46,8 +46,10 @@ status code - a 401. We'll also add a message - `Invalid LemonSqueezy signature!
 we know what happened.
 
 Once that's done, we can call this from the `doParse()` method at the beginning.
-I'll de-clutter and remove this placeholder code, and *then* we'll validate the
-payload: `$payload = $request->toArray()`. Below, write
+I'll de-clutter and remove this placeholder code. Now verify the signature
+with `$this->verifySignature($request, $secret)`. Remove the rest of this
+placeholder code and fetch the payload from the request:
+`$payload = $request->toArray()`. Below, write
 `$eventName = $payload['meta']['event_name']` and
 `$webhookId = $payload['meta']['webhook_id']`.
 
