@@ -2,17 +2,17 @@
 
 In the last chapter, we successfully set up the webhook request parser. This
 parser is designed to receive a webhook from LemonSqueezy, verify its signature,
-parse the payload, and pass the parsed data on to the webhook consumer. Now that
+parse the payload, and pass the parsed data on to a webhook consumer. Now that
 our parser's ready, we can tackle the *next* part – handling the webhook data in
 the consumer.
 
 Start by opening the `LemonSqueezyWebhookConsumer.php` file from the
 `src/RemoveEvent/` directory, and find the `consume()` method. We can get rid of
 this TODO. Our task here is to find the corresponding user to the `customer_id`
-we got from the webhook data, and *connect* them.
+we get from the webhook data, and *connect* them.
 
 We're in a different session here, and that means we can't access the current
-user directly from the `Security` service, so... how do we do this? Lucky for
+user directly from the `Security` service, so... how do we get the user? Lucky for
 us, LemonSqueezy's "Create a Checkout" API documentation explains how to add
 custom data when creating the checkout URL. This is *perfect* for passing our
 user ID, so let's get started! Head over to the `LemonSqueezyApi` in
@@ -21,16 +21,16 @@ user ID, so let's get started! Head over to the `LemonSqueezyApi` in
 Here, we'll require users to be logged in before they can check out. This is
 *crucial* because *that's* the information we need to link to the corresponding
 LemonSqueezy customer. We can do that in the method's signature. The login
-requirement means that we no longer need the `if (user)` statement below, so we
+requirement means that we no longer need the `if ($user)` statement below, so we
 can remove that and tidy up these lines. Then, add
-`$attributes['checkout_data]['custom']['user_id'] = $user->getId()`. This
-`custom` field allows us to pass any custom data we may need to LemonSqueezy.
+`$attributes['checkout_data']['custom']['user_id'] = $user->getId()`. This
+`custom` field allows us to pass any custom data we may need to LemonSqueezy
+and will be made available to us in the webhook payload.
 
 The *goal* is to share the user ID with LemonSqueezy when a customer places an
 order. If we head back to the `OrderController`, you may notice that PhpStorm
-isn't super happy about this `createCheckoutUrl()` call. That's because we still
-need to make it a requirement in that method's signature. Remove this `?` and
-that should do it - no need to call `denyAccessUnlessGranted()`.
+isn't super happy about this `createCheckoutUrl()` call. That's because `User`
+is no longer optional. Remove this `?` and that should do it.
 
 To confirm everything's working as expected, over on our site, log out... add a
 product to the cart, and try to check out. Since we're a non-authenticated user,
@@ -39,12 +39,10 @@ we *should* be redirected to the login page, and... perfect!
 ## Handling the Webhook Consumer
 
 Back in the code, in our `consume()` method, set
-`$payload = $event->getPayload()`. Below that, say
-`$userId = $payload['meta']['custom_data']['user_id'] ?? null`. We can also
-leave a comment here mentioning that `getUser()` won't work in webhooks as a
-non-authenticated user in this process.
+`$payload = $event->getPayload()`. Below that, write
+`$userId = $payload['meta']['custom_data']['user_id'] ?? null`.
 
-Now, let's conduct a sanity check with `if (!$userId)`. If this check fails,
+Now, let's have a sanity check with `if (!$userId)`. If this check fails,
 we'll `throw new InvalidArgumentException()` with a `sprintf()` inside saying
 `'User ID not found in LemonSqueezy webhook: %s', $userId`.
 
@@ -74,7 +72,7 @@ argument - `RemoteEvent $event` - but forgot the second, so we'll add
 `User $user` manually.
 
 Inside, let's fetch the payload with `$payload = $event->getPayload()`. Below
-that, fetch the customer ID from the payload:
+that, fetch the customer ID with
 `$customerId = $payload['data']['attributes']['customer_id']`. If you're
 wondering where this came from, you can find this path in the Ngrok request
 payload.
@@ -87,13 +85,13 @@ bin/console make:entity
 ```
 
 For the class name, we'll write `User`. For the property name, call it
-`lsCustomerId`. Make it a string, with a length of 255, and make it nullable.
+`lsCustomerId`. Make it a string with a length of 255, and nullable.
 Hit `Enter` one more time and... done!
 
-Back in our code, open `src/Entity/User.php`... and if we scroll down... here's
+Back in our code, open `src/Entity/User.php`... if we scroll down... here's
 our new column! Let's also set this to `unique: true`. This looks great, and if
 we scroll *way* down here, we can see that it *also* created a getter and setter
-for this field. *Sweet*!
+for the field. *Sweet*!
 
 Now we need to create a migration. We can do that with:
 
@@ -109,44 +107,45 @@ with:
 bin/console doctrine:migration:migrate
 ``` 
 
-Once that's finished, return to the `handleOrderCreatedEvent()`, and set it on
-our new column with `$user->setLsCustomerId()`. Be sure to pass the
-`$customerId` variable as an argument. To *save* it, call
+Once that's finished, return to `handleOrderCreatedEvent()` and call our new
+setter: `$user->setLsCustomerId()` with `$customerId`. To *save* it, call
 `$this->entityManager->flush()`.
 
 ## Testing the Webhook
 
-Time to test the webhook again! I'm a fan of the Ngrok inspector, so I'll use
-that. Hmm... an *error*. The webhook doesn't have a `user_id` set on custom data
-for that specific case. That makes sense. With Ngrok, we can modify the original
-webhook content and *replay* it with modifications. But to be *extra* sure our
+Time to test the webhook again! In the Ngrok inspector, replay.
+Hmm... an *error*. It's a bit hard to see but here it is:
+
+> User ID not found in LemonSqueezy webhook
+
+That makes sense - when this webhook ran originally, it didn't have the `user_id` set.
+With Ngrok, we *can* modify the original webhook content and *replay* it with
+modifications, but... to be *extra* sure our
 changes are accounted for, we'll go through the checkout process again so
 LemonSqueezy can set the `user_id` correctly.
 
 Let's log in again, add a product to the cart, and try to check out. Oops,
-*another* error. Let's head back to our code and uncomment this `dd()` to get a
-better picture of what's happening here. If we refresh our site... ah! It looks
-like the field needs to be a string, and it's pointing to the custom `user_id`
-we added. You can't pass just *anything*, so passing the whole user object
-definitely won't work. Head back to our code and comment out that `dd()`
-again... then, up here... let's specify that this user ID is a `string` and try
-this again. When we refresh... success! We're on the checkout page!
+*another* error - a 422. Jump over to `LemonSqueezyApi` and uncomment this `dd()` to
+see what's going on here. If we refresh our site... ah!
+
+> ...field must be a string...
+
+and it's pointing to the custom `user_id` we added... Head back to our code,
+comment out that `dd()` again... then, up here... cast this `$user->getId()` to
+a string. Back in our app... refresh... and success! We're on the checkout page!
 
 Let's fill in the card info... address... make the payment, and wait for the
 webhook. *Yes*! Our transaction was accepted and, over here, we have a 202
 status code.
 
-If we look at the request, we can see our `custom_data` where the `user_id`
+If we look at the request, we can see our `custom_data` and `user_id`
 equals `1`. We can also check the database with a handy dandy SQL command. At
-your terminal, run `bin/console doctrine:query:sql` and in double quotes, input
-`SELECT * FROM user WHERE id = 1`:
+your terminal, run:
 
-```terminal-silent
+```terminal
 bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 1"
 ```
 
-Since we have an ID of "1" for the current user. Hit "enter" and... *yes*! The
-`lsCustomerId` is set to this unique ID. This is what we need to create a list
-of orders made by this customer.
+This `lsCustomerId` is the unique ID from LemonSqueezy. Sweet!
 
-*But* before we do that, let's see how we can *test* our webhook. That's *next*.
+Before moving on, let's write some *tests* for our webhook setup. That's *next*!
