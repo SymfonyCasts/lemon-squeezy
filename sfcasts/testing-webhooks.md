@@ -16,7 +16,7 @@ This gives us access to PHPUnit *and* a bunch of handy tools right off the bat. 
 If you're new to PHPUnit, check out our [intro PHPUnit course](https://symfonycasts.com/screencast/phpunit) on SymfonyCasts.
 ***
 
-For now, let's dive into something a bit more complex and test the webhook integration. *Our* task is to write a full integration test for the order-created webhook we implemented earlier. 
+For now, let's dive into something a bit more complex and test the webhook integration. *Our* task is to write a full integration test for the `order_created` webhook we implemented earlier. 
 
 ## Generating a New Test
 
@@ -41,7 +41,7 @@ We got an error, but that's expected.
 Our test is failing because we need to set up a test database. We 
 *could* do this manually using Doctrine console commands, but let's take advantage of [Zenstruck Foundry](https://github.com/zenstruck/foundry), which we've already installed, to reset and manage the test database *automatically*.
 
-In the test class, add `use ResetDatabase`. This also cleans up the database between tests, so we don't have to worry about duplicate email errors. If we run the test again... it passed this time! Great! Now, let's write an *actual* test.
+In the test class, add `use ResetDatabase`. This also cleans up the database between tests, so we don't have to worry about duplicate email errors. Sweet! If we run the test again... it passed this time! Great! Now, let's write an *actual* test.
 
 ## Creating Dummy Data
 
@@ -51,7 +51,7 @@ Now that we have a user, we need to simulate an actual `POST` request to the web
 
 We can copy the JSON payload from the Ngrok web interface (if you still have that running), *or* we can copy it from the LemonSqueezy dashboard under "Webhooks". Copy the whole request block and, back in our code, in `tests/`, create a new directory. Call it `fixtures`, and inside *that*, create a new file. Call *this one* `order_created.json`, and... *paste*.
 
-In our test, above the request, say `$json = file_get_contents(__DIR__.'/../fixtures/order_created.json')`. At the end, add another assert - `$this->assertNotNull()` - and... whoops! I forgot to create a `$user` variable above, so let's fix that. Now, pass `$user->getCustomerId()` as the argument to our new assert call, and for the error message, say `LemonSqueezy customer ID not set!`. Finally, add `$this->assertEquals(1000001, $user->getCustomerId(), 'LemonSqueezy customer ID mismatch!')`. Whew! Testing time!
+In our test, above the request, say `$json = file_get_contents(__DIR__.'/../fixtures/order_created.json')`. At the end, add another assert - `$this->assertNotNull()` - and... whoops! I forgot to create a `$user` variable above, so let's fix that. Now, pass `$user->getLsCustomerId()` as the argument to our new assert call, and for the error message, say `LemonSqueezy customer ID not set!`. Finally, add `$this->assertEquals(1000001, $user->getLsCustomerId(), 'LemonSqueezy customer ID mismatch!')`. Whew! Testing time!
 
 At your terminal, run the test again:
 
@@ -67,7 +67,7 @@ Whoops! Well, that's expected. We copied and pasted the payload string, but it l
 
 If we take a look at the request parser... *yep*. We added this `verifySignature()` method to *prevent* unauthorized requests to the endpoint, but now *we're* the ones trying to send a fake request there. How the turns have tabled!
 
-We could skip the signature check here *completely* by injecting the Symfony environment, adding `if ($this-env === 'test')`, and simply returning. But I don't like this workaround. A *better* solution would be to *sign* the requests in your test so they appear to be legitimate.
+We could skip the signature check here *completely* by injecting the Symfony environment, adding `if ($this->env === 'test')`, and simply returning. But I don't like this workaround. A *better* solution would be to *sign* the requests in your test so they appear to be legitimate.
 
 Copy this hash line, paste before the request call, and for the payload, use our `$json` variable. For the secret, let's use `$_ENV['LEMON_SQUEEZY_SIGNING_SECRET']`. Then, pass this `$hash` to the *fifth* `request()` method argument. Inside the array, add `['HTTP_X-Signature' => $hash]`, and Symfony will convert that into a header.
 
