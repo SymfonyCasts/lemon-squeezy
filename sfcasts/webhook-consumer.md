@@ -1,10 +1,10 @@
-# Implementing Webhook Consumer 
+# Implementing the Webhook Consumer 
 
 In the last chapter, we successfully set up the webhook request parser. This parser is designed to receive a webhook from LemonSqueezy, verify its signature, parse the payload, and pass the parsed data on to the webhook consumer. Now that our parser's ready, we can tackle the *next* part – handling the webhook data in the consumer.
 
 Start by opening the `LemonSqueezyWebhookConsumer.php` file from the `src/RemoveEvent/` directory, and find the `consume()` method. We can get rid of this TODO. Our task here is to find the corresponding user to the `customer_id` we got from the webhook data, and *connect* them.
 
-We're in a different session here, and that means we can't access the current user directly from the `Security` service, so... how do we do this? Lucky for us, LemonSqueezy's "Create a Checkout" API documentation explains how to add custom data when creating the checkout URL. This is *perfect* for passing our user ID, so let's get started! Head over to the `LemonSqueezyApi` in `src/Store/` and find the `CreateCheckoutURL()` method.
+We're in a different session here, and that means we can't access the current user directly from the `Security` service, so... how do we do this? Lucky for us, LemonSqueezy's "Create a Checkout" API documentation explains how to add custom data when creating the checkout URL. This is *perfect* for passing our user ID, so let's get started! Head over to the `LemonSqueezyApi` in `src/Store/` and find the `createCheckoutUrl()` method.
 
 Here, we'll require users to be logged in before they can check out. This is *crucial* because *that's* the information we need to link to the corresponding LemonSqueezy customer. We can do that in the method's signature. The login requirement means that we no longer need the `if (user)` statement below, so we can remove that and tidy up these lines. Then, add `$attributes['checkout_data]['custom']['user_id'] = $user->getId()`. This `custom` field allows us to pass any custom data we may need to LemonSqueezy.
 
@@ -18,11 +18,11 @@ Back in the code, in our `consume()` method, set `$payload = $event->getPayload(
 
 Now, let's conduct a sanity check with `if (!$userId)`. If this check fails, we'll `throw new InvalidArgumentException()` with a `sprintf()` inside saying `'User ID not found in LemonSqueezy webhook: %s', $userId`.
 
-To access the `EntityManger`, in our constructor, inject `private EntityManagerInterface` as `$entityManager`.
+To access the `EntityManager`, in our constructor, inject `private EntityManagerInterface $entityManager`.
 
 Back in the `consume()` method, continue with `$user = $this->entityManager->getRepository(User::class)->find($userId)`. 
 
-Next, if `$user` doesn't exist, we'll `throw new EntityNotFoundException()` (choose the one from "Doctrine\ORM"). We'll also add `sprintf()` as an argument, stating `User "%s" not found for LemonSqueezy webhook "%s"!`, and pass `$userId` and `$event->getId()`. 
+Next, if `$user` doesn't exist, we'll `throw new EntityNotFoundException()` (choose the one from `Doctrine\ORM`). We'll also add `sprintf()` as an argument, stating `User "%s" not found for LemonSqueezy webhook "%s"!`, and pass `$userId` and `$event->getId()`. 
 
 Below that, add `match ($event->getName())`, and for `order_created`, call `$this->handleOrderCreatedEvent()`. This method doesn't exist yet, but we'll create it later. Also pass `$event` and `$user` as arguments. At this point, we should only have supported events, but on the off chance we're missing something, add a `default` that will `throw new LogicException()`, with `sprintf('Unsupported LemonSqueezy event: %s', $event->getName())`. *Nice*.
 
@@ -30,17 +30,17 @@ Below that, add `match ($event->getName())`, and for `order_created`, call `$thi
 
 Before we forget, let's circle back and create the `handleOrderCreatedEvent()`. This will be a `private function`, and it looks like PhpStorm added one argument - `RemoteEvent $event` - but forgot the second, so we'll add `User $user` manually.
 
-Inside, let's fetch the payload with `$payload = $event->getPayload()`. Below that, fetch the customer ID from the payload: `$customerId = $payload['data']['attributes']['customer_id']`. If you're wondering where this came from, you can find this path in the Ngrok request summary.
+Inside, let's fetch the payload with `$payload = $event->getPayload()`. Below that, fetch the customer ID from the payload: `$customerId = $payload['data']['attributes']['customer_id']`. If you're wondering where this came from, you can find this path in the Ngrok request payload.
 
-Okay, we have the `customer_id` now, but we still need a new property on the user to save it. At your terminal, create a new tab and run:
+Okay, we have the `customer_id` now, but we still need a new property on the `User` to save it. At your terminal, create a new tab and run:
 
 ```terminal
 bin/console make:entity
 ```
 
-We'll call this `User`. For the property name, call it `lsCustomerId`. Make it a string, with a length of 255, and make it nullable. Hit "enter" one more time and... done!
+For the class name, we'll write `User`. For the property name, call it `lsCustomerId`. Make it a string, with a length of 255, and make it nullable. Hit `Enter` one more time and... done!
 
-Back in our code, open `Entity/User.php`... and if we scroll down... here's our new column! Let's also set this to `unique: true`. This looks great, and if we scroll *way* down here, we can see that it *also* created a getter and setter for this field. *Sweet*! 
+Back in our code, open `src/Entity/User.php`... and if we scroll down... here's our new column! Let's also set this to `unique: true`. This looks great, and if we scroll *way* down here, we can see that it *also* created a getter and setter for this field. *Sweet*! 
 
 Now we need to create a migration. We can do that with:
 
