@@ -66,9 +66,9 @@ like we can read the URL from `attributes`, so, back in our code, in
 have it return a `string`. Inside, add
 `$response = $this->client->request(Request::METHOD_GET, 'stores/' . $this->storeId)`.
 Below, write `$lsStore = $response->toArray()` and finally,
-`return $lsStore['data']['attributes']['url']`.
+`return $lsStore['data']['attributes']['url']`:
 
-[[[ code('82abf9fce8') ]]]
+[[[ code('9cfba88b53') ]]]
 
 Back in the `success()` method, inject `LemonSqueezyApi $lsApi,` and replace
 this hard-coded URL with `$lsStoreUrl = $lsApi->retrieveStoreUrl()`. 
