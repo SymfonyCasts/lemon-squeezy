@@ -30,14 +30,14 @@ Ahora, de vuelta en `OrderController::checkout()`, deshagámonos de estas depend
 
 ¡Hora de probar! Asegurémonos de que aún podemos pagar. En nuestro sitio, recarga, selecciona "Limonada Clásica", añade una al carrito y haz clic en "Pagar con LemonSqueezy". ¡Sí! Estamos en la página de pago de LemonSqueezy y todo parece perfecto
 
-Vale, ahora que sabemos que la compra funciona, ¿podemos hacer que `$lsStoreUrl` en el método`success()` sea dinámico? ¡Pues sí! Y LemonSqueezy tiene una ruta API precisamente para eso En los documentos de la API, busca la ruta "Recuperar una tienda"... y mira la respuesta de ejemplo de la derecha. Parece que podemos leer la URL desde `attributes`, así que, de vuelta a nuestro código, en`LemonSqueezyApi`, crea un nuevo método público. Llámalo `retrieveStoreUrl()`, y haz que devuelva un `string`. Dentro, añade`$response = $this->client->request(Request::METHOD_GET, 'stores/' . $this->storeId)`. Debajo, escribe `$lsStore = $response->toArray()` y, por último,`return $lsStore['data']['attributes']['url']`.
+Vale, ahora que sabemos que la compra funciona, ¿podemos hacer que `$lsStoreUrl` en el método`success()` sea dinámico? ¡Pues sí! Y LemonSqueezy tiene una ruta API precisamente para eso En los documentos de la API, busca la ruta "Recuperar una tienda"... y mira la respuesta de ejemplo de la derecha. Parece que podemos leer la URL desde `attributes`, así que, de vuelta a nuestro código, en`LemonSqueezyApi`, crea un nuevo método público. Llámalo `retrieveStoreUrl()`, y haz que devuelva un `string`. Dentro, añade`$response = $this->client->request(Request::METHOD_GET, 'stores/' . $this->storeId)`. Debajo, escribe `$lsStore = $response->toArray()` y, por último,`return $lsStore['data']['attributes']['url']`:
 
-[[[ code('82abf9fce8') ]]]
+[[[ code('9cfba88b53') ]]]
 
 De vuelta en el método `success()`, inyecta `LemonSqueezyApi $lsApi,` y sustituye esta URL codificada por `$lsStoreUrl = $lsApi->retrieveStoreUrl()`. 
 
 [[[ code('ab9956a432') ]]]
 
-¡Es hora de hacer otra prueba! De vuelta a nuestro sitio, elige una de nuestras deliciosas limonadas -esta vez elegiré la de manzana- y añádela al carrito. En la página del carrito, haz clic de nuevo en el botón "Realizar pedido", rellena nuestras credenciales y la dirección de facturación, haz clic en "Pagar" y, por último, en el modal "correcto", haz clic en "Continuar". ¡Listo! ¡Aquí está nuestro mensaje flash! ¡Sigue funcionando!
+¡Es hora de hacer otra prueba! De vuelta en nuestro sitio, elige una de nuestras deliciosas limonadas -esta vez elegiré manzana- y añádela al carrito. En la página del carrito, haz clic de nuevo en el botón "Realizar pedido", rellena nuestras credenciales y la dirección de facturación, haz clic en "Pagar" y, finalmente, en el modal "correcto", haz clic en "Continuar". ¡Listo! ¡Aquí está nuestro mensaje flash! ¡Sigue funcionando!
 
 A continuación: Asignemos un cliente de LemonSqueezy al usuario correspondiente en nuestro sistema para saber qué compras ha realizado.
