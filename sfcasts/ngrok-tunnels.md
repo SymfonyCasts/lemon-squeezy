@@ -53,6 +53,10 @@ this is a *secret*, so pretend you never saw mine! Now, in the `webhook.yaml`
 file, set the secret to `%env(LEMON_SQUEEZY_SIGNING_SECRET)%` and wrap it in
 single quotes.
 
+[[[ code('6e15c51d2a') ]]]
+
+[[[ code('c0eba37073') ]]]
+
 ## Selecting Events and Saving the Webhook
 
 Back on the dashboard, select the "order_created" event. Right now, that's the
