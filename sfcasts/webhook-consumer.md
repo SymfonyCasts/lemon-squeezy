@@ -73,7 +73,7 @@ bin/console doctrine:query:sql
 and in double quotes, input
 
 ```terminal-silent
-SELECT * FROM user WHERE id = 1
+bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 1"
 ```
 
 since we have an ID of "1" for the current user. Hit "enter" and... *yes*! The `lsCustomerId` is set to this unique ID. This is what we need to create a list of orders made by this customer.
