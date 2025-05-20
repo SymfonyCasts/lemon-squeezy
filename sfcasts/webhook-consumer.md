@@ -64,18 +64,12 @@ Let's log in again, add a product to the cart, and try to check out. Oops, *anot
 
 Let's fill in the card info... address... make the payment, and wait for the webhook. *Yes*! Our transaction was accepted and, over here, we have a 202 status code.
 
-If we look at the request, we can see our `custom_data` where the `user_id` equals `1`. We can also check the database with a handy dandy SQL command. At your terminal, run
-
-```terminal
-bin/console doctrine:query:sql
-```
-
-and in double quotes, input
+If we look at the request, we can see our `custom_data` where the `user_id` equals `1`. We can also check the database with a handy dandy SQL command. At your terminal, run `bin/console doctrine:query:sql` and in double quotes, input `SELECT * FROM user WHERE id = 1`:
 
 ```terminal-silent
 bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 1"
 ```
 
-since we have an ID of "1" for the current user. Hit "enter" and... *yes*! The `lsCustomerId` is set to this unique ID. This is what we need to create a list of orders made by this customer.
+Since we have an ID of "1" for the current user. Hit "enter" and... *yes*! The `lsCustomerId` is set to this unique ID. This is what we need to create a list of orders made by this customer.
 
 *But* before we do that, let's see how we can *test* our webhook. That's *next*.
