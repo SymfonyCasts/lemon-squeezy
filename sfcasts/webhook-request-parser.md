@@ -21,17 +21,23 @@ make it cooler, use the `Request::METHOD_POST` constant, which is just a fancy
 way of saying "POST". This `IsJsonRequestMatcher` is fine as is and doesn't need
 any arguments.
 
+[[[ code('e66723714b') ]]]
+
 Okay, we're ready to move on to the next method: `doParse()`. The first order of
 business here is to verify the webhook signature. To keep things neat, we'll
 create a separate method for this. Add `private function verifySignature()`...
 and this function will take *two* arguments: `Request $request` and
 `string $secret`. The return type is `void`.
 
+[[[ code('e490c9c895') ]]]
+
 Next, we have to calculate the request payload's hash using LemonSqueezy's
 algorithm: `$payload = $request->getContent()`. We'll start with a hash
 variable: `$hash = hash_hmac('sha256', $payload, $secret)`. Then we need to
 fetch the signature from the request header with
 `$signature = $request->headers->get('X-Signature', '')`.
+
+[[[ code('fd27cc281e') ]]]
 
 Now it's time to see if the hash matches the signature. If it *does*
 (`if (hash_equals($hash, $signature))`), then we're good to go. If *not*, we'll
@@ -44,6 +50,8 @@ I'll de-clutter and remove this placeholder code, and *then* we'll validate the
 payload: `$payload = $request->toArray()`. Below, write
 `$eventName = $payload['meta']['event_name']` and
 `$webhookId = $payload['meta']['webhook_id']`.
+
+[[[ code('82fa32dd43') ]]]
 
 We'll also add a sanity check to confirm the presence of the `$eventName` and
 `webhookId` with `if (!$eventName || !$webhookId) {`. Inside,
@@ -59,6 +67,8 @@ tracking `order_created`. If it's *not*, we'll throw another exception -
 To pull it all together, return a
 `new RemoteEvent($eventName, $webhookId, $payload)`. *That's it*! Our parser
 should be good to go!
+
+[[[ code('7e45194fc1') ]]]
 
 If we've done this correctly, LemonSqueezy *should* receive a 200 successful
 status code. We can test this by either *resending* the webhook from
