@@ -1,10 +1,10 @@
 # Túneles Ngrok
 
-En el capítulo anterior, nos ensuciamos las manos con el componente Webhook de Symfony. Creamos una ruta única para gestionar nuestros webhooks, pero... hay una pega: LemonSqueezy no puede acceder directamente a nuestra máquina local. Parece un problema, ¿verdad? ¡No te preocupes! ¡Tenemos una solución! Vamos a utilizar una herramienta inteligente llamada "Ngrok" para crear un túnel a nuestra máquina local. Eso nos dará una URL pública que reenviará todas las peticiones a nuestra máquina local. Es muy fácil de usar y, aunque el plan gratuito tiene algunas limitaciones, es más que suficiente para empezar. ¡Manos a la obra!
+En el capítulo anterior, nos ensuciamos las manos con el componente Webhook de Symfony. Creamos una ruta única para gestionar nuestros webhooks, pero... hay una pega: LemonSqueezy no puede acceder directamente a nuestra máquina local. Parece un problema, ¿verdad? ¡No te preocupes! ¡Tenemos una solución! Vamos a utilizar una herramienta inteligente llamada "Ngrok" para crear un túnel. Eso nos dará una URL pública que reenviará todas las peticiones a nuestra máquina local. Es muy fácil de usar y, aunque el plan gratuito tiene algunas limitaciones, es más que suficiente para empezar. ¡Manos a la obra!
 
 ## Instalar Ngrok
 
-Lo primero es lo primero: Instala Ngrok en tu sistema operativo desde el sitio web oficial. Yo uso un Mac, así que lo instalaré utilizando el gestor de paquetes Homebrew. En realidad, ya lo tengo instalado, así que me saltaré este paso y lo iniciaré desde mi terminal. Cuando estés listo, ejecuta:
+Lo primero es lo primero: Instala Ngrok en tu sistema operativo desde el sitio web oficial. Yo uso un Mac, así que lo instalaré utilizando el gestor de paquetes Homebrew. En realidad, ya lo tengo instalado, así que me saltaré este paso. Cuando estés listo, ejecuta:
 
 ```terminal
 ngrok http 8000
@@ -24,7 +24,11 @@ Esto nos da un error, pero podemos ignorarlo por ahora, copiar la URL y pegarla 
 
 ## Generar un secreto de firma
 
-Bien, ahora necesitamos algo llamado "secreto de firma", que básicamente es una cadena aleatoria. Podríamos escribirla directamente en `webhook.yaml`, pero para mantener las cosas ordenadas, vamos a guardarla también como una variable de entorno. Utilizaré una mezcla de letras y números en distintos casos para mi secreto. Puedes utilizar cualquier herramienta de generación de contraseñas para obtener una cadena más aleatoria. Una vez hayas generado tu secreto, cópialo. Yo estoy de acuerdo con enviar esto al repositorio, así que abriré mi archivo `.env` y lo estableceré como `LEMON_SQUEEZY_SIGNING_SECRET`. Pero recuerda, esto es un secreto, ¡así que haz como si nunca hubieras visto el mío! Ahora, en el archivo `webhook.yaml`, establece el secreto como `%env(LEMON_SQUEEZY_SIGNING_SECRET)%` y enciérralo entre comillas simples.
+Bien, ahora necesitamos algo llamado "secreto de firma", que básicamente es una cadena aleatoria. Podríamos escribirla directamente en `webhook.yaml`, pero para mantener las cosas ordenadas, vamos a guardarla como una variable de entorno. Utilizaré una mezcla de letras y números en distintos casos para mi secreto. Puedes utilizar cualquier herramienta de generación de contraseñas para obtener una cadena más aleatoria. Una vez que hayas generado tu secreto, cópialo. Yo estoy de acuerdo con enviar esto al repositorio, así que abriré mi archivo `.env` y lo estableceré como `LEMON_SQUEEZY_SIGNING_SECRET`. Pero recuerda, esto es un secreto, ¡así que haz como si nunca hubieras visto el mío! Ahora, en el archivo `webhook.yaml`, establece el secreto como `%env(LEMON_SQUEEZY_SIGNING_SECRET)%` y enciérralo entre comillas simples.
+
+[[[ code('6e15c51d2a') ]]]
+
+[[[ code('c0eba37073') ]]]
 
 ## Seleccionar eventos y guardar el Webhook
 
@@ -42,7 +46,7 @@ Ahora que tenemos todo esto configurado, vamos a activar un webhook. Vuelve a nu
 
 De vuelta en el inspector web de Ngrok, notarás algunas peticiones fallidas. Y si esperamos un momento... veremos otra petición fallida. Se trata de la misma petición que LemonSqueezy intentó entregar y falló. Cada vez, devolvemos un código de estado `406 Not Acceptable`, por lo que LemonSqueezy piensa que no se ha procesado correctamente y vuelve a intentarlo. ¿Por qué ocurre esto?
 
-Cada vez que nuestro servidor no responde con un código de estado correcto, LemonSqueezy intenta entregarlo de nuevo transcurridos 5 segundos, luego 25 segundos y, finalmente, 125 segundos. Si falla tres veces, LemonSqueezy tira la toalla porque no puede seguir intentando entregarlo eternamente. Eso significa que tenemos que reintentarlo manualmente desde el panel de control de LemonSqueezy.
+Cada vez que nuestro servidor no responde con un código de estado correcto, LemonSqueezy intenta entregarlo de nuevo transcurridos 5 segundos, luego 25 segundos y, finalmente, 125 segundos. Si sigue fallando, LemonSqueezy tira la toalla porque no puede seguir intentando entregarlo eternamente. Eso significa que tenemos que reintentarlo manualmente desde el panel de control de LemonSqueezy.
 
 ## Para terminar
 
