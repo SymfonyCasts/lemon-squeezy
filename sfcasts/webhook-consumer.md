@@ -72,7 +72,7 @@ bin/console doctrine:query:sql
 
 and in double quotes, input
 
-```terminal
+```terminal-silent
 SELECT * FROM user WHERE id = 1
 ```
 
