@@ -11,8 +11,13 @@ Start by opening the `LemonSqueezyWebhookConsumer.php` file from the
 this TODO. Our task here is to find the corresponding user to the `customer_id`
 we get from the webhook data, and *connect* them.
 
-We're in a different request here, and that means we can't access the current
-user directly from the `Security` service, so... how do we get the user? Lucky for
+One thing to note is the consumer is triggered by a totally separate
+request - the webhook from LemonSqueezy. Not only that,
+but consumers are handled by Symfony Messenger. It's possible they'll be processed by
+a background worker. The point is, we have no access to the original user object like we do
+in the checkout controller.
+
+So... how do we get the user in the consumer? Lucky for
 us, LemonSqueezy's "Create a Checkout" API documentation explains how to add
 custom data when creating the checkout URL. This is *perfect* for passing our
 user ID, so let's get started! Head over to the `LemonSqueezyApi` in
@@ -20,8 +25,8 @@ user ID, so let's get started! Head over to the `LemonSqueezyApi` in
 
 Here, we need to make the user *not* optional. This is
 *crucial* because *that's* the information we need to link to the corresponding
-LemonSqueezy customer. Remove the `?` from the `User` type-hint and remove
-the now unnecessary `if ($user)` below. Now, add
+LemonSqueezy customer. Remove the `?` from the `User` type-hint and
+the now unnecessary `if ($user)` statement below. Now, add
 `$attributes['checkout_data']['custom']['user_id'] = $user->getId()`. This
 `custom` field allows us to pass any custom data we may need to LemonSqueezy
 and will be made available to us in the webhook payload.
@@ -41,19 +46,13 @@ we *should* be redirected to the login page, and... perfect!
 Back in the `LemonSqueezyWebhookConsumer::consume()` method, set
 `$payload = $event->getPayload()`.
 
-One thing to remember here is the consumer is triggered by a totally separate
-request - the webhook from LemonSqueezy. Not only that,
-but consumers are handled by Messenger. It's possible they'll be processed by
-a background worker. The point is, we have no access to the original user object like we do
-in the checkout controller. That's why we're setting the `user_id` as custom
-data in the checkout URL.
-
-To access the `id`, write
-`$userId = $payload['meta']['custom_data']['user_id'] ?? null`.
+To access the `user_id` we set in `createCheckoutUrl()`, write
+`$userId = $payload['meta']['custom_data']['user_id'] ?? null`. I'll add a quick
+comment to explain we can't get the user by "traditional means".
 
 Now, write a sanity check with `if (!$userId)`. If this check fails,
 we'll `throw new InvalidArgumentException()` with 
-`sprintf('User ID not found in LemonSqueezy webhook: %s', $userId)`.
+`sprintf('User ID not found in LemonSqueezy webhook: %s', $event->getId())`.
 
 We now have the `$userId`, but how do we get the user object? From the database!
 In our constructor, inject `private EntityManagerInterface $entityManager`.
