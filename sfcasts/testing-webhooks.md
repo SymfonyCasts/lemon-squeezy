@@ -23,9 +23,8 @@ Ideally, we'd *unit test* the request parser *and* the consumer, but
 since we're not focusing on testing in this course, just think of that as a fun
 homework assignment.
 
-***SEEALSO If you're new to PHPUnit, check out
-our [intro PHPUnit course](https://symfonycasts.com/screencast/phpunit) on
-SymfonyCasts.
+***SEEALSO
+If you're new to PHPUnit, check out our [intro to PHPUnit course](https://symfonycasts.com/screencast/phpunit).
 ***
 
 For now, let's dive into something a bit more complex and test the webhook
