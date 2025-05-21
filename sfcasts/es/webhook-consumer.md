@@ -4,9 +4,11 @@ En el último capítulo, configuramos con éxito el analizador de peticiones de 
 
 Empieza abriendo el archivo `LemonSqueezyWebhookConsumer.php` del directorio`src/RemoveEvent/`, y busca el método `consume()`. Podemos deshacernos de este TODO. Nuestra tarea aquí es encontrar el usuario correspondiente al `customer_id`que obtenemos de los datos del webhook, y conectarlos.
 
-Aquí estamos en una petición diferente, y eso significa que no podemos acceder al usuario actual directamente desde el servicio `Security`, así que... ¿cómo obtenemos el usuario? Por suerte para nosotros, la documentación de la API "Crear una caja" de LemonSqueezy explica cómo añadir datos personalizados al crear la URL de la caja. Esto es perfecto para pasar nuestro ID de usuario, ¡así que empecemos! Dirígete a `LemonSqueezyApi` en`src/Store/` y busca el método `createCheckoutUrl()`.
+Una cosa a tener en cuenta es que el consumidor es activado por una petición totalmente independiente: el webhook de LemonSqueezy. No sólo eso, sino que los consumidores son gestionados por Symfony Messenger. Es posible que sean procesados por un trabajador en segundo plano. La cuestión es que no tenemos acceso al objeto usuario original como en el controlador de pago.
 
-Aquí, tenemos que hacer que el usuario no sea opcional. Esto es crucial porque es la información que necesitamos para enlazar con el cliente LemonSqueezy correspondiente. Elimina el `?` de la sugerencia de tipo `User` y elimina el ahora innecesario `if ($user)` de abajo. Ahora, añade`$attributes['checkout_data']['custom']['user_id'] = $user->getId()`. Este campo`custom` nos permite pasar cualquier dato personalizado que necesitemos a LemonSqueezy y se pondrá a nuestra disposición en la carga útil del webhook.
+Entonces... ¿cómo obtenemos el usuario en el consumidor? Por suerte para nosotros, la documentación de la API "Crear una compra" de LemonSqueezy explica cómo añadir datos personalizados al crear la URL de la compra. Esto es perfecto para pasar nuestro ID de usuario, ¡así que empecemos! Dirígete a `LemonSqueezyApi` en`src/Store/` y busca el método `createCheckoutUrl()`.
+
+Aquí, tenemos que hacer que el usuario no sea opcional. Esto es crucial porque es la información que necesitamos para enlazar con el cliente LemonSqueezy correspondiente. Elimina el `?` de la sugerencia de tipo `User` y la declaración `if ($user)` que ahora es innecesaria. Ahora, añade`$attributes['checkout_data']['custom']['user_id'] = $user->getId()`. Este campo`custom` nos permite pasar cualquier dato personalizado que necesitemos a LemonSqueezy y se pondrá a nuestra disposición en la carga útil del webhook.
 
 El objetivo es compartir el ID de usuario con LemonSqueezy cuando un cliente realiza un pedido. Para ello, es necesario que el usuario haya iniciado sesión. Volviendo a`OrderController::checkout()`, todo lo que hay que hacer para que esta ruta requiera autenticación es eliminar el `?` de la sugerencia de tipo `User`. Muy bonito, ¿verdad?
 
@@ -16,11 +18,9 @@ Para confirmar que todo funciona según lo esperado, en nuestro sitio, cierra la
 
 De vuelta en el método `LemonSqueezyWebhookConsumer::consume()`, establece`$payload = $event->getPayload()`.
 
-Una cosa que hay que recordar aquí es que el consumidor es activado por una petición totalmente independiente: el webhook de LemonSqueezy. No sólo eso, sino que los consumidores son gestionados por Messenger. Es posible que sean procesados por un trabajador en segundo plano. La cuestión es que no tenemos acceso al objeto usuario original como en el controlador de pago. Por eso establecemos el `user_id` como dato personalizado en la URL de la caja.
+Para acceder al `user_id` que establecimos en `createCheckoutUrl()`, escribe`$userId = $payload['meta']['custom_data']['user_id'] ?? null`. Añadiré un comentario rápido para explicar que no podemos obtener el usuario por "medios tradicionales".
 
-Para acceder a `id`, escribe`$userId = $payload['meta']['custom_data']['user_id'] ?? null`.
-
-Ahora, escribe una comprobación de sanidad con `if (!$userId)`. Si esta comprobación falla, escribiremos `throw new InvalidArgumentException()` con`sprintf('User ID not found in LemonSqueezy webhook: %s', $userId)`.
+Ahora, escribe una comprobación de cordura con `if (!$userId)`. Si esta comprobación falla, escribiremos `throw new InvalidArgumentException()` con`sprintf('User ID not found in LemonSqueezy webhook: %s', $event->getId())`.
 
 Ahora tenemos el `$userId`, pero ¿cómo obtenemos el objeto usuario? En nuestro constructor, inyecta `private EntityManagerInterface $entityManager`.
 
@@ -44,7 +44,7 @@ bin/console make:entity
 
 Para la clase, escribe `User` para coger la entidad existente. Para el nombre de la propiedad, llámala`lsCustomerId`. Haz que sea una cadena con una longitud de 255, y anulable. Pulsa `Enter` una vez más y... ¡listo!
 
-De vuelta a nuestro código, abre `src/Entity/User.php`... si nos desplazamos hacia abajo... ¡aquí está nuestra nueva columna! Establécela en `unique: true`. Esto tiene muy buena pinta, y si nos desplazamos hacia abajo, podemos ver que también ha creado un getter y un setter para el campo. ¡Genial!
+De vuelta a nuestro código, abre `src/Entity/User.php`... si nos desplazamos hacia abajo... ¡aquí está nuestra nueva columna! Establécela en `unique: true`. Tiene muy buena pinta, y si nos desplazamos hacia abajo, veremos que también ha creado un getter y un setter para el campo. ¡Estupendo!
 
 Ahora tenemos que crear una migración. Hazlo con:
 
