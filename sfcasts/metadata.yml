@@ -12,3 +12,5 @@ chapters:
     - webhook-request-parser
     - webhook-consumer
     - testing-webhooks
+    - list-orders
+    - api-error-handling
