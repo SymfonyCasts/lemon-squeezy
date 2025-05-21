@@ -1,0 +1,272 @@
+WEBVTT
+
+00:00:01.076 --> 00:00:05.096 align:middle
+En el capítulo anterior, nos ensuciamos las
+manos con el componente Webhook de Symfony.
+
+00:00:05.476 --> 00:00:08.656 align:middle
+Creamos una ruta única para
+gestionar nuestros webhooks, pero...
+
+00:00:08.896 --> 00:00:12.636 align:middle
+hay una pega: LemonSqueezy no puede acceder
+directamente a nuestra máquina local.
+
+00:00:12.636 --> 00:00:14.446 align:middle
+Parece un problema, ¿verdad?
+
+00:00:14.856 --> 00:00:15.646 align:middle
+¡No te preocupes!
+
+00:00:15.716 --> 00:00:16.766 align:middle
+¡Tenemos una solución!
+
+00:00:17.216 --> 00:00:20.566 align:middle
+Vamos a utilizar una herramienta inteligente
+llamada "Ngrok" para crear un túnel.
+
+00:00:21.126 --> 00:00:25.286 align:middle
+Eso nos dará una URL pública que reenviará
+todas las peticiones a nuestra máquina local.
+
+00:00:25.286 --> 00:00:29.506 align:middle
+Es muy fácil de usar y, aunque el plan
+gratuito tiene algunas limitaciones,
+
+00:00:29.506 --> 00:00:31.066 align:middle
+es más que suficiente para empezar.
+
+00:00:31.546 --> 00:00:32.266 align:middle
+¡Manos a la obra!
+
+00:00:32.266 --> 00:00:37.176 align:middle
+Lo primero es lo primero: Instala Ngrok en tu
+sistema operativo desde el sitio web oficial.
+
+00:00:37.536 --> 00:00:41.096 align:middle
+Yo uso un Mac, así que lo instalaré
+utilizando el gestor de paquetes Homebrew.
+
+00:00:41.476 --> 00:00:43.886 align:middle
+En realidad, ya lo tengo instalado,
+así que me saltaré este paso.
+
+00:00:44.416 --> 00:00:54.606 align:middle
+Cuando estés listo, ejecuta: ngrok http 8000 Como la
+dirección de nuestro sitio web local utiliza 127.0.0.1:8000
+
+00:00:54.926 --> 00:00:57.276 align:middle
+, es crucial que utilicemos
+el puerto 8000 aquí.
+
+00:00:57.276 --> 00:01:00.106 align:middle
+Si utilizas un puerto diferente,
+utiliza ese en su lugar.
+
+00:01:00.106 --> 00:01:05.536 align:middle
+Después de ejecutarlo, aquí abajo, verás
+esta línea de "Reenvío" con una URL aleatoria.
+
+00:01:06.026 --> 00:01:10.386 align:middle
+Eso es lo que está reenviando peticiones
+a nuestro http://localhost:8000.
+
+00:01:10.876 --> 00:01:14.846 align:middle
+Estoy en un Mac, así que mantendré pulsado Cmd
+y haré clic en la nueva URL para abrirla, y...
+
+00:01:15.206 --> 00:01:16.866 align:middle
+¡tachán! ¡Estamos en nuestro sitio web!
+
+00:01:16.866 --> 00:01:20.576 align:middle
+Está vivito y coleando, y
+ahora tiene una URL pública.
+
+00:01:20.826 --> 00:01:21.936 align:middle
+¡Qué locura!
+
+00:01:22.646 --> 00:01:26.976 align:middle
+El componente Webhook añadió una nueva ruta
+/webhook, que puedes ver en la lista de rutas.
+
+00:01:26.976 --> 00:01:32.416 align:middle
+Como hemos creado un webhook lemon-squeezy,
+se añade a la ruta como webhook "{tipo}".
+
+00:01:32.806 --> 00:01:34.946 align:middle
+La URL final tendrá este aspecto:
+
+00:01:34.946 --> 00:01:45.006 align:middle
+https://0787-5-154-3-6.ngrok-free.app/webhook/lemon-squeezy
+Esto nos da un error, pero
+
+00:01:45.006 --> 00:01:49.166 align:middle
+podemos ignorarlo por ahora, copiar la URL y pegarla en
+el campo " URL de devolución de llamada" de LemonSqueezy
+
+00:01:49.596 --> 00:01:50.996 align:middle
+que vimos antes. Bien,
+
+00:01:50.996 --> 00:01:53.096 align:middle
+ahora necesitamos algo llamado
+"secreto de firma", que
+
+00:01:53.096 --> 00:01:55.686 align:middle
+básicamente es una cadena aleatoria.
+
+00:01:55.686 --> 00:02:00.036 align:middle
+Podríamos escribirla directamente en webhook.yaml,
+pero para mantener las cosas ordenadas, vamos a
+
+00:02:00.036 --> 00:02:02.446 align:middle
+guardarla como una variable de entorno.
+
+00:02:02.446 --> 00:02:07.406 align:middle
+Utilizaré una mezcla de letras y números
+en distintos casos para mi secreto.
+
+00:02:07.406 --> 00:02:11.636 align:middle
+Puedes utilizar cualquier herramienta de generación
+de contraseñas para obtener una cadena más aleatoria.
+
+00:02:11.636 --> 00:02:14.316 align:middle
+Una vez que hayas generado tu
+secreto, cópialo. Yo estoy
+
+00:02:14.316 --> 00:02:21.756 align:middle
+de acuerdo con enviar esto al repositorio, así
+que abriré mi archivo .env y lo estableceré como
+
+00:02:21.756 --> 00:02:24.606 align:middle
+LEMON_SQUEEZY_SIGNING_SECRET. Pero
+
+00:02:24.606 --> 00:02:29.486 align:middle
+recuerda, esto es un secreto, ¡así que haz
+como si nunca hubieras visto el mío! Ahora,
+
+00:02:29.486 --> 00:02:31.376 align:middle
+en el archivo webhook.yaml,
+establece el secreto como
+
+00:02:31.376 --> 00:02:37.236 align:middle
+%env(LEMON_SQUEEZY_SIGNING_SECRET)% y
+enciérralo entre comillas simples. De vuelta
+
+00:02:37.236 --> 00:02:41.516 align:middle
+en el panel de control, selecciona
+el evento "pedido_creado".
+
+00:02:41.516 --> 00:02:45.526 align:middle
+De momento, es el único que
+nos interesa. Haz clic en
+
+00:02:45.526 --> 00:02:46.496 align:middle
+"Guardar Webhook" y... ¡perfecto!
+
+00:02:46.496 --> 00:02:48.726 align:middle
+¡Nuestra configuración
+del webhook está lista! Si
+
+00:02:48.726 --> 00:02:52.496 align:middle
+echas un vistazo al terminal
+donde ejecutamos el comando Ngrok
+
+00:02:52.536 --> 00:02:55.966 align:middle
+, verás otra URL local para la "Interfaz Web".
+
+00:02:55.966 --> 00:02:58.496 align:middle
+Mantendré pulsado Cmd y haré clic en la URL
+para abrirla en una nueva pestaña. ¡ Bienvenido
+
+00:02:58.496 --> 00:03:01.466 align:middle
+a la Interfaz Web de Ngrok! Aquí
+
+00:03:01.466 --> 00:03:05.266 align:middle
+puedes ver todas las peticiones
+que llegan a tu URL pública. Esto
+
+00:03:05.266 --> 00:03:14.216 align:middle
+es increíblemente útil para depurar y hacer un
+seguimiento de lo que ocurre con tus webhooks. Ahora
+
+00:03:14.256 --> 00:03:21.906 align:middle
+que tenemos esto configurado,
+vamos a activar un webhook.
+
+00:03:21.996 --> 00:03:27.596 align:middle
+Vuelve a nuestro sitio utilizando
+la URL local, selecciona
+
+00:03:27.596 --> 00:03:35.626 align:middle
+una limonada (esta vez elegiré sandía)
+y añádela a nuestro carrito. Haz clic en
+
+00:03:35.626 --> 00:03:36.706 align:middle
+el botón "Pagar"...
+
+00:03:36.706 --> 00:03:42.016 align:middle
+rellena la información de pago, la dirección
+de facturación y, al final, haz clic en
+
+00:03:42.126 --> 00:03:44.476 align:middle
+"Pagar" para completar la compra. ¡Éxito!
+
+00:03:44.476 --> 00:03:47.786 align:middle
+LemonSqueezy debería habernos enviado ese
+webhook, así que vamos a comprobarlo. De vuelta
+
+00:03:47.786 --> 00:03:52.016 align:middle
+en el inspector web de Ngrok, observarás
+unas cuantas peticiones fallidas. Y
+
+00:03:52.016 --> 00:03:53.746 align:middle
+si esperamos un momento...
+
+00:03:53.746 --> 00:03:55.126 align:middle
+veremos otra petición fallida.
+
+00:03:55.126 --> 00:03:58.666 align:middle
+Todas ellas son la misma petición que
+LemonSqueezy intentó entregar y falló. Cada
+
+00:03:58.666 --> 00:04:02.896 align:middle
+vez, devolvemos un código de estado
+406 Not Acceptable, por lo que
+
+00:04:02.896 --> 00:04:05.526 align:middle
+LemonSqueezy piensa que no se ha procesado
+correctamente y vuelve a intentarlo. ¿Por qué
+
+00:04:05.556 --> 00:04:06.006 align:middle
+ocurre esto? Cada vez
+
+00:04:06.036 --> 00:04:08.226 align:middle
+que nuestro servidor no responde con un código
+de estado correcto, LemonSqueezy intenta
+
+00:04:08.256 --> 00:04:11.136 align:middle
+entregarlo de nuevo transcurridos 5 segundos,
+luego 25 segundos y, finalmente, 125 segundos. Si
+
+00:04:11.166 --> 00:04:12.456 align:middle
+sigue fallando, LemonSqueezy
+tira la toalla porque
+
+00:04:12.486 --> 00:04:13.746 align:middle
+no puede seguir intentando
+entregarlo eternamente. Eso
+
+00:04:13.776 --> 00:04:15.696 align:middle
+significa que tenemos que reintentarlo manualmente
+desde el panel de control de LemonSqueezy. Ahora
+
+00:04:15.726 --> 00:04:17.436 align:middle
+que LemonSqueezy puede chatear con nuestro
+sitio web local en tiempo real, estamos
+
+00:04:17.466 --> 00:04:18.786 align:middle
+listos para implementar el
+manejo de un webhook real.
+
+00:04:18.816 --> 00:04:19.326 align:middle
+Hagámoslo a continuación.
