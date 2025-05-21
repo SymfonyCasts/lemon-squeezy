@@ -1,0 +1,238 @@
+WEBVTT
+
+00:00:01.166 --> 00:00:04.526 align:middle
+En el último capítulo, vimos cómo
+LemonSqueezy enviaba su primer webhook
+
+00:00:04.526 --> 00:00:06.926 align:middle
+a nuestro sitio web local
+a través del túnel Ngrok.
+
+00:00:07.306 --> 00:00:09.396 align:middle
+Pero no dio en el clavo, porque aún
+
+00:00:09.396 --> 00:00:11.296 align:middle
+tenemos que configurar el
+manejo real del webhook.
+
+00:00:11.296 --> 00:00:13.416 align:middle
+Así que, ¡manos a la obra!
+
+00:00:14.336 --> 00:00:16.206 align:middle
+Cuando ejecutamos el comando make:webhook,
+
+00:00:16.326 --> 00:00:19.896 align:middle
+generó dos archivos: un analizador
+de peticiones y un consumidor.
+
+00:00:20.286 --> 00:00:21.456 align:middle
+Empecemos por el analizador.
+
+00:00:21.766 --> 00:00:25.346 align:middle
+Abre src/Webhook/LemonSqueezyRequestParser.php.
+
+00:00:25.346 --> 00:00:31.026 align:middle
+Es importante recordar que todos los webhooks de
+LemonSqueezy se envían como una petición POST
+
+00:00:31.026 --> 00:00:32.366 align:middle
+con una carga JSON
+
+00:00:32.556 --> 00:00:36.576 align:middle
+a la ruta /webhook/lemon-squeezy que
+configuramos en el panel de control.
+
+00:00:37.176 --> 00:00:40.236 align:middle
+Teniendo esto en cuenta, tenemos que
+modificar el método getRequestMatcher().
+
+00:00:41.486 --> 00:00:44.796 align:middle
+Dentro de getRequestMatcher(),
+tenemos ChainRequestMatcher.
+
+00:00:45.076 --> 00:00:47.546 align:middle
+Esto incluye básicamente
+los otros tres comparadores.
+
+00:00:48.906 --> 00:00:52.826 align:middle
+Establece el PathRequestMatcher
+en /webhook/lemon-squeezy.
+
+00:00:53.616 --> 00:00:55.546 align:middle
+Luego tenemos que confirmar que
+se trata de una petición a POST.
+
+00:00:56.556 --> 00:00:59.596 align:middle
+Para que quede más claro, utiliza
+la constante Request::METHOD_POST
+
+00:00:59.786 --> 00:01:01.736 align:middle
+, que no es más que una forma
+elegante de decir "POST".
+
+00:01:03.096 --> 00:01:08.306 align:middle
+Este IsJsonRequestMatcher está bien
+tal cual y no necesita argumentos.
+
+00:01:08.306 --> 00:01:11.516 align:middle
+Bien, ya estamos listos para pasar
+al siguiente método: doParse().
+
+00:01:11.996 --> 00:01:15.406 align:middle
+Lo primero es verificar la firma del webhook.
+
+00:01:17.256 --> 00:01:20.376 align:middle
+Para mantener las cosas ordenadas,
+crearemos un método separado para esto.
+
+00:01:20.376 --> 00:01:23.326 align:middle
+Añade private function verifySignature()...
+
+00:01:23.736 --> 00:01:28.996 align:middle
+y esta función tomará dos argumentos:
+Request $request y string $secret.
+
+00:01:29.396 --> 00:01:30.636 align:middle
+El tipo de retorno es void.
+
+00:01:31.926 --> 00:01:36.646 align:middle
+A continuación, tenemos que calcular el hash de la carga
+útil de la petición utilizando el algoritmo de LemonSqueezy:
+
+00:01:36.646 --> 00:01:40.286 align:middle
+$payload = $request->getContent().
+
+00:01:40.886 --> 00:01:48.756 align:middle
+Empezaremos con una variable hash: $hash
+= hash_hmac('sha256', $payload, $secret).
+
+00:01:49.956 --> 00:01:52.316 align:middle
+A continuación, tenemos que obtener
+la firma de la cabecera de la petición
+
+00:01:52.316 --> 00:01:58.846 align:middle
+con $signature =
+$request->headers->get('X-Signature', '').
+
+00:01:58.846 --> 00:02:03.176 align:middle
+Ahora hay que ver si el
+hash coincide con la firma.
+
+00:02:03.176 --> 00:02:09.766 align:middle
+Si lo hace (if (hash_equals($hash,
+$signature))), entonces estamos listos.
+
+00:02:11.306 --> 00:02:14.726 align:middle
+Si no, throw new RejectWebhookException()
+
+00:02:15.416 --> 00:02:19.366 align:middle
+con un código de estado
+Response::HTTP_UNAUTHORIZED - un 401.
+
+00:02:20.196 --> 00:02:23.396 align:middle
+También añadiremos un mensaje
+- Invalid LemonSqueezy signature!
+
+00:02:23.396 --> 00:02:24.406 align:middle
+- para saber qué ha pasado.
+
+00:02:25.746 --> 00:02:29.406 align:middle
+Una vez hecho esto, podemos llamar a esto
+desde el método doParse() del principio.
+
+00:02:29.786 --> 00:02:32.096 align:middle
+Despejaré y eliminaré este
+código marcador de posición.
+
+00:02:32.516 --> 00:02:38.076 align:middle
+Ahora verifica la firma con
+$this->verifySignature($request, $secret).
+
+00:02:40.416 --> 00:02:43.036 align:middle
+Elimina el resto de este código marcador
+de posición y obtén la carga útil
+
+00:02:43.036 --> 00:02:46.906 align:middle
+de la petición: $payload
+= $request->toArray().
+
+00:02:47.496 --> 00:02:52.626 align:middle
+A continuación, escribe $eventName
+= $payload['meta']['event_name']
+
+00:02:52.626 --> 00:02:57.816 align:middle
+y $webhookId = $payload['meta']['webhook_id'].
+
+00:02:57.816 --> 00:03:03.146 align:middle
+También añadiremos una comprobación de sanidad
+para confirmar la presencia de $eventName y webhookId
+
+00:03:03.146 --> 00:03:11.456 align:middle
+con if (!$eventName || !$webhookId) {.
+Dentro, throw new RejectWebhookException(),
+
+00:03:11.916 --> 00:03:16.936 align:middle
+dale un código de estado
+Response::HTTP_BAD_REQUEST y un mensaje de error:
+
+00:03:17.046 --> 00:03:19.736 align:middle
+Request payload does not
+contain required fields..
+
+00:03:21.286 --> 00:03:23.716 align:middle
+Bien, comprobemos si es un evento admitido.
+
+00:03:24.686 --> 00:03:27.156 align:middle
+De momento, sólo estamos
+siguiendo order_created.
+
+00:03:27.156 --> 00:03:32.086 align:middle
+Si no lo es, lanzaremos otra
+excepción - RejectWebhookException() -
+
+00:03:32.086 --> 00:03:35.376 align:middle
+con el estado Response::HTTP_BAD_REQUEST
+
+00:03:36.836 --> 00:03:41.646 align:middle
+, y utilizaremos sprintf('Unsupported
+event type: %s', $eventName).
+
+00:03:43.916 --> 00:03:49.456 align:middle
+Para juntarlo todo, devuelve un new
+RemoteEvent($eventName, $webhookId, $payload).
+
+00:03:49.856 --> 00:03:50.266 align:middle
+Ya está
+
+00:03:50.266 --> 00:03:51.706 align:middle
+¡Nuestro analizador sintáctico
+debería estar listo!
+
+00:03:51.706 --> 00:03:57.006 align:middle
+Si lo hemos hecho correctamente, LemonSqueezy
+debería recibir un código de estado 200 correcto.
+
+00:03:57.386 --> 00:04:01.066 align:middle
+Podemos comprobarlo reenviando el webhook
+desde el panel de control de LemonSqueezy
+
+00:04:01.716 --> 00:04:04.816 align:middle
+o reproduciendo el webhook
+desde la interfaz web de Ngrok.
+
+00:04:04.816 --> 00:04:06.486 align:middle
+Haré clic en "Reproducir" y...
+
+00:04:06.656 --> 00:04:08.726 align:middle
+¡es un código de estado 202!
+
+00:04:08.766 --> 00:04:09.606 align:middle
+¡Sigue contando!
+
+00:04:09.726 --> 00:04:13.456 align:middle
+¡Éxito! Nuestro analizador
+funciona y ¡es hora de celebrarlo!
+
+00:04:14.286 --> 00:04:16.636 align:middle
+A continuación, vamos a implementar
+el consumidor del webhook.
