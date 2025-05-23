@@ -28,7 +28,7 @@ De vuelta al método `consume()`, recupera el usuario con`$user = $this->entityM
 
 A continuación, si `$user` no existe, escribiremos `throw new EntityNotFoundException()`(elige el de `Doctrine\ORM`). Para el mensaje escribe`sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId())`.
 
-A continuación, añade `match ($event->getName())`, y para `order_created`, llama a`$this->handleOrderCreatedEvent()`. Este método aún no existe, pero lo crearemos más adelante. Pasa también `$event` y `$user` como argumentos. Llegados a este punto, sólo deberíamos tener eventos admitidos, pero por si acaso nos falta algo, añade un `default` que `throw new LogicException()`, con`sprintf('Unsupported LemonSqueezy event: %s', $event->getName())`. Muy bien.
+A continuación, añade `match ($event->getName())`, y para `order_created`, llama a`$this->handleOrderCreatedEvent()`. Este método aún no existe, pero lo crearemos más adelante. Pasa también `$event` y `$user` como argumentos. Llegados a este punto, sólo deberíamos tener eventos admitidos, pero por si acaso nos falta algo, añade un `default` que `throw new LogicException()`, con`sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. Muy bien.
 
 ## Crear el evento ManejarOrden
 
@@ -44,7 +44,7 @@ bin/console make:entity
 
 Para la clase, escribe `User` para coger la entidad existente. Para el nombre de la propiedad, llámala`lsCustomerId`. Haz que sea una cadena con una longitud de 255, y anulable. Pulsa `Enter` una vez más y... ¡listo!
 
-De vuelta a nuestro código, abre `src/Entity/User.php`... si nos desplazamos hacia abajo... ¡aquí está nuestra nueva columna! Establécela en `unique: true`. Tiene muy buena pinta, y si nos desplazamos hacia abajo, veremos que también ha creado un getter y un setter para el campo. ¡Estupendo!
+De vuelta a nuestro código, abre `src/Entity/User.php`... si nos desplazamos hacia abajo... ¡aquí está nuestra nueva columna! Establécela en `unique: true`. Esto tiene muy buena pinta, y si nos desplazamos hacia abajo, podemos ver que también ha creado un getter y un setter para el campo. ¡Genial!
 
 Ahora tenemos que crear una migración. Hazlo con:
 
