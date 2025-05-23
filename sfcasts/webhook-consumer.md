@@ -69,7 +69,7 @@ Below, add `match ($event->getName())`, and for `order_created`, call
 create it later. Also pass `$event` and `$user` as arguments. At this point, we
 should only have supported events, but on the off chance we're missing
 something, add a `default` that will `throw new LogicException()`, with
-`sprintf('Unsupported LemonSqueezy event: %s', $event->getName())`. *Nice*.
+`sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. *Nice*.
 
 ## Creating the HandleOrder Event
 
