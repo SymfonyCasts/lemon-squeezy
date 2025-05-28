@@ -1,117 +1,62 @@
 # Rendering LemonSqueezy Orders on the Account Page
 
-In this chapter, we're going to show users their latest orders right on our
-website. With our `User` entity and LemonSqueezy customer relationship
-established, we're well-placed to make this happen. So let's get started by
-displaying these orders on the account page.
+We ordered a *ton* of digital lemonades lately, but we don't really have a convenient way to view those orders. Wouldn't it be cool if we could see a list of them on the account page of our website? Now that we've estabished a relationship between the `User` entity and LemonSqueezy customer, we *can*!
 
 ## LemonSqueezy API for fetching Orders
 
-First, navigate to the `src/Store/LemonSqueezyApi.php` file.
-Here, we'll add a new method, `public function listOrders()`,
-which will return an array. This function will fetch the
-orders from the LemonSqueezy API. 
+Start by opening `src/Store/LemonSqueezyApi.php`. Add a new method - `public function listOrders()` - and return an array. This function will fetch the orders from LemonSqueezy's API. If we head over to LemonSqueezy's docs, under "List all orders", we can see that we need to use a `GET` request to the `/orders` endpoint.
 
-To do this, find "List all Orders" in the LemonSqueezy docs. We'll use
-`GET` request to the `/orders` endpoint. Inside our new method write:
-`$response = $this->client->request();`. Inside `Request::METHOD_GET`, to
-the `orders` path.
+Back in our new method, add `$response = $this->client->request()`, and inside, `Request::METHOD_GET` to the `orders` path.
 
-But wait, we don't want to display all orders, just the ones for our store
-and for the current user. So we'll need to add some extra query parameters
-to filter this list.
+But wait... we don't want to display *all* orders - just the ones for our store and the current user - so we need to add some extra query parameters to filter this list.
 
 ## Adding Filter Query Parameters
 
-Let's add an empty array as the third argument to the `request` method.
-Inside this array, add `'query' => []`, inside `'filter' => []`, and finally
-filter by `'store_id' => $this->storeId` and `'user_email' => $user->getEmail()`.
-We'll also need to add the `User $user` argument to the `listOrders()` method above. 
+Let's add an empty array as the third argument to the `request` method, and inside, say `'query' => []`, `'filter' => []`, `'store_id' => $this->storeId`, and `'user_email' => $user->getEmail()`. We also need to add `User $user` to the `listOrders()` method above. Perfect!
 
-Perfect! Now, in the controller inside the `account()` method, open
-`UserController`. We'll
-inject `LemonSqueezyApi $lsApi` and we'll also need the current user, for
-this inject `#[CurrentUser] User $user` PHP attribute. Inside
-create the `$orders` variable. Set it to `$lsApi->listOrders()` and pass orders to the template below
+Next, open `UserController.php`. Down here, in `account()`, inject `LemonSqueezyApi $lsApi`. We also need the current user, so add `#[CurrentUser] User $user`. Below, create the `$orders` variable and set it to `$lsApi->listOrders()`. Finally, in the `return`, pass `'orders' => $orders`.
 
 ## Rendering Orders and Tailwind CSS Styling
 
-Now, let's render those orders! Open up the `account.html.twig` template.
-Somewhere below the `{{ app.user.email }}`, I will paste some boilerplate code with
-some Tailwind CSS styling. You can copy it from the code blocks below the video.
-But should we show this table to everyone? No, we should only render the order if the `app.user.lsCustomerId` is set.
-If it is, we display the order table. Otherwise, we'll just say "No orders yet". 
+Now we need to *render* those orders! Open the `account.html.twig` template... and somewhere below `{{ app.user.email }}`, paste some boilerplate code with some Tailwind CSS styling. You can copy this from the code blocks below the video.
 
-Go ahead and refresh the account page in your browser. Voila! Our dummy
-orders list table appears. We'll need to replace the dummy data with real
-ones soon, but first let's go to the `UserController::account()` action and
-dump the temporary orders variable. Refresh again, and there is our data
-holding an array of orders.
+Since we don't want *everyone* to see our orders, we need to render the list *only* if the `app.user.lsCustomerId` is set. If it *is*, the order table is displayed. If *not*, we'll just display a "No orders yet" message.
+
+Let's see what we've got so far! Back on our site, refresh the page and... *voila*! Our orders list full of dummy data is visible! We'll need to replace this dummy data with real orders soon, but first, go to `UserController::account()` and `dd()` the `$orders` variable. Refresh again, and... there's our "data" with an array of orders.
 
 ## Using Dynamic Data in Orders Table
 
-In the attributes, we'll see some fields we need for the order table.
-First, user `order.attributes.order_number` for the Order number - I will add `#`
-in front of it. For the date, we need this `created_at` date. Since this is a
-string, we'll use `|date()` Twig filter to format it in a more readable way. For the
-amount, we have several options but I'd use a value already pre-formatted by LemonSqueezy,
-in specific this `total_formatted`. For the link, we can use this `urls.receipt` one.
-
+If we click on "attributes", we see a ton of fields we can use for our order table. The first one I'll grab is `order_number`. In our code, replace `Order` with `#{{ order.attributes.order_number }}`. For `Date`, replace it with `{{ order.attributes.created_at|date('d M Y, H:i') }}`. We're using `|date()` here so the date field will be easier to read. We have several options to choose from for the `Amount` field. I'll use `total_formatted` because it's pre-formatted by LemonSqueezy. Finally, for our link, we'll say `{{ order.attributes.urls.receipt }}`. Before we test this out, head back to `UserController.php` and remove the `dd()` we added earlier.
 
 ## Paginate the Orders
 
-By default, Lemon Squeezy returns 10 orders. Want fewer? Sure!
-We can paginate it by adding `’page' => ['size' => 5]` to the query.`
-Now refresh - nothing changed, but that's because I only have 5 orders before.
-Let me quickly buy one more product behind the scene and if I update again 
-It's still five, but here's the new one in the beginning.
-So our pagination works and only last 5 are shown!
+Lemon Squeezy returns *10* orders by default. If you want to see fewer than ten at a time, we can paginate the list by adding `'page' => ['size' => 5]` to the query. If we head back and refresh... hm... nothing changed. Ah! That's because I only had *five* orders before. I'll buy another lemonade behind the scenes... refresh the page again, and... we *still* only see five, but that's because the sixth order - the oldest - is being paginated. It's working!
 
-Ideally, we should add a real pagination below to allow users to navigate over their orders without leaving our website, but for now let’s just go the extra mile and add a link to the full list of orders in LS.
+*Ideally*, we should add *real* pagination below so users can navigate through all of their orders without leaving our site, but for now, let’s just add a link to the full list of orders in LemonSqueezy.
 
-In the template, add: `<a href="https://app.lemonsqueezy.com/my-orders" target="_blank">More Orders</a>`
+In the template, add:
 
-But wait, should we always show that link? Nope. Only if the user has more orders than we rendered. Let’s dump the $orders again and inspect the dump, specifically the `meta` key. We get `total` and `perPage`.
+`<a href="https://app.lemonsqueezy.com/my-orders" target="_blank">More Orders</a>`.
 
-So wrap the link with: `{% if orders.meta.page.total > orders.meta.page.perPage %}`
+But we don't need to see this link *all the time* - only if the user has more than five orders. Let's `dd($orders)` again, go refresh, and inspect the data. In `meta` `page`, we see `total` and `perPage`, so head back, remove the `dd()`, and wrap the link with `{% if orders.meta.page.total > orders.meta.page.perPage %}`. I'll fix this spacing and add `{% endif %}` at the end.
 
-Nice! But… click the link… and wait… the page is empty? Yeah, it does not work in test mode, and I hope LemonSqueezy will fix it soon.
-That’s because LemonSqueezy only shows production orders here but we’re in test mode. Oof. Thought there’s a workaround.
+Okay, if we refresh again and click the link... wait... the page is *empty*? Yeah... *about that* - this doesn't work in test mode because LemonSqueezy only shows *production* orders here. I'm hopeful LemonSqueezy will fix that soon, but for now, we can only see this in action on production.
 
-## Refer to All Orders in LS (Even in Test Mode)
+## Preventing Leaks
 
-Let’s pass the latest order to the template: `’latestOrder' => $orders['data'][0] ?? null,`. Now update the link:
-`<a href="https://app.lemonsqueezy.com/my-orders/{{ (orders.data|first).attributes.identifier|default('') }}" target="_blank">More Orders</a>`
+Okay, now let's turn our attention to a small security issue here. At the moment, we're filtering orders by the email users have registered on their account. But, *in theory*, users can change their email to something they *don't* own. To mitigate this, we need to use the email set on the LemonSqueezy customer, *not* on our `User` entity. Inside `LemonSqueezyApi.php`, add a new `public function` and call it `retrieveCustomer()` with `string $customerId`. Inside *that*, add `$response = $this->client->request(Request::METHOD_GET, 'customers/' . $customerId)`. Below, `return $response->toArray()`.
 
-That identifier trick should make the test orders show up! Refresh... Ah an error, seems I mistype the `|default` filter. I will fix it myself and refresh again - aha, it shows us the last order, but still no order list. Hm, the last time I tried before recording this tutorial it worked, but seems LemonSqueezy changed something.
-Maybe the key is that I'm buying products as lemon@example.com while logged as store owner. If your emails matches - you may see the orders list on the left. If not, I hope LEmonSqueezy will fix it.
-
-## Avoid Possible Orders List Leaking
-
-OK, there's a small security hole here: right now we filter orders by the email
-users have set on their account. But in theory users can change their email to something they don't own. To
-mitigate this if we will use the email set on the LemonSqueezy customer, not on our User entity.
-Inside `LemonSqueezyApi`, add a new `public function`
-method and call it `retrieveCustomer()`.
-
-And inside: `return $this->request(Request::METHOD_GET, 'customers/' . $customerId);`
-Then in `listOrders()`, let's put suer email on a separate var: `$userEmail = $user->getEmail();`
-And below, add an if statement:
+Above, in `listOrders()`, let's put the user email on a separate variable with `$userEmail = $user->getEmail()` and change this to `$userEmail`. Finally, down here, add an `if` statement:
 
 `if ($user->getLsCustomerId()) {
     $lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());
     $userEmail = $lsCustomer['data']['attributes']['email'];
 }`
 
-This way, we only load orders for the email stored in LS.
-Could someone still game this? Technically, yes  but it’s much harder.
+This ensures that we only load orders for the email stored in LemonSqueezy. *Technically* someone could *still* interfere with this, but it’s much harder to do now.
 
-I would also suggest adding email verification for users to make sure they
-really own the email. We've also made `lsСustomerId` a unique field on the
-`User` entity. So the webhook request will fail and won't be able to update the
-customer in the webhook process if someone with the same customer ID exists in the DB,
-making hijacking someone's identity nearly impossible.
+I also suggest adding email verification for users, so we can be absolutely sure they own the email they're using. We've also made `lsСustomerId` a unique field on the `User` entity, so the webhook request will fail and won't be able to update the customer in the webhook process if someone with the *same* customer ID exists in the database, making hijacking someone's identity nearly impossible.
 
-And that's all there is to it! You've successfully rendered
-orders list on the account page using Symfony and the LemonSqueezy API.
-Happy coding!
+And that's all there is to it! You've successfully rendered a list of orders on the account page using Symfony and the LemonSqueezy API.
+
+Next: Let's make some improvements to our API error handling.
