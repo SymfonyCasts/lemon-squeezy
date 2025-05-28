@@ -38,7 +38,7 @@ A continuación, si `$user` no existe, escribiremos `throw new EntityNotFoundExc
 
 [[[ code('f679b1a9ce') ]]]
 
-A continuación, añade `match ($event->getName())`, y para `order_created`, llama a`$this->handleOrderCreatedEvent()`. Este método aún no existe, pero lo crearemos más adelante. Pasa también `$event` y `$user` como argumentos. Llegados a este punto, sólo deberíamos tener eventos compatibles, pero por si acaso nos falta algo, añade un `default` que `throw new LogicException()`, con`sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. Muy bien.
+A continuación, añade `match ($event->getName())`, y para `order_created`, llama a`$this->handleOrderCreatedEvent()`. Este método aún no existe, pero lo crearemos más adelante. Pasa también `$event` y `$user` como argumentos. Llegados a este punto, sólo deberíamos tener eventos admitidos, pero por si acaso nos falta algo, añade un `default` que `throw new LogicException()`, con`sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. Muy bien.
 
 [[[ code('f8940a9d35') ]]]
 
