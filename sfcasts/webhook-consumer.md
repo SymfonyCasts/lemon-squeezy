@@ -31,11 +31,15 @@ the now unnecessary `if ($user)` statement below. Now, add
 `custom` field allows us to pass any custom data we may need to LemonSqueezy
 and will be made available to us in the webhook payload.
 
+[[[ code('4985b3dbf5') ]]]
+
 The *goal* is to share the user ID with LemonSqueezy when a customer places an
 order. To achieve this, the user needs to be logged in. Back in
 `OrderController::checkout()`, all that's needed to make this route require
 authentication is to remove the `?` from the `User` type-hint.
 Pretty neat, huh?
+
+[[[ code('78ffbb30dc') ]]]
 
 To confirm everything's working as expected, over on our site, log out... add a
 product to the cart, and try to check out. Since we're a non-authenticated user,
@@ -54,8 +58,12 @@ Now, write a sanity check with `if (!$userId)`. If this check fails,
 we'll `throw new InvalidArgumentException()` with 
 `sprintf('User ID not found in LemonSqueezy webhook: %s', $event->getId())`.
 
+[[[ code('6f4cd10317') ]]]
+
 We now have the `$userId`, but how do we get the user object? From the database!
 In our constructor, inject `private EntityManagerInterface $entityManager`.
+
+[[[ code('aae9ab2d72') ]]]
 
 Back in the `consume()` method, fetch the user with
 `$user = $this->entityManager->getRepository(User::class)->find($userId)`.
@@ -64,12 +72,16 @@ Next, if `$user` doesn't exist, we'll `throw new EntityNotFoundException()`
 (choose the one from `Doctrine\ORM`). For the message write
 `sprintf('User "%s" not found for LemonSqueezy webhook "%s"!', $userId, $event->getId())`.
 
+[[[ code('f679b1a9ce') ]]]
+
 Below, add `match ($event->getName())`, and for `order_created`, call
 `$this->handleOrderCreatedEvent()`. This method doesn't exist yet, but we'll
 create it later. Also pass `$event` and `$user` as arguments. At this point, we
 should only have supported events, but on the off chance we're missing
 something, add a `default` that will `throw new LogicException()`, with
 `sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. *Nice*.
+
+[[[ code('f8940a9d35') ]]]
 
 ## Creating the HandleOrder Event
 
@@ -78,10 +90,14 @@ private function. It looks like PhpStorm added one
 argument - `RemoteEvent $event` - but forgot the second, so add
 `User $user` manually and return type: `void`.
 
+[[[ code('5310825963') ]]]
+
 Inside, fetch the payload with `$payload = $event->getPayload()`. Below
 that, fetch the customer ID with
 `$customerId = $payload['data']['attributes']['customer_id']`. If you're
 wondering where this came from, you can find it in the Ngrok inspector.
+
+[[[ code('aa62cbd1fb') ]]]
 
 Okay, we have the `customer_id` now, but we still need a new property on the
 `User` to save it. At your terminal, create a new tab and run:
@@ -99,6 +115,8 @@ our new column! Set this to `unique: true`. This looks great, and if
 we scroll *way* down here, we can see that it *also* created a getter and setter
 for the field. *Sweet*!
 
+[[[ code('61cb7888a8') ]]]
+
 Now we need to create a migration. Do that with:
 
 ```terminal
@@ -106,8 +124,11 @@ bin/console make:migration
 ```
 
 If we go check that out... looks good! We'll just add a quick description -
-`Add customer ID property to User entity` - and back in our terminal, migrate
-with:
+`Add customer ID property to User entity`.
+
+[[[ code('8045ac717e') ]]]
+
+And back in our terminal, migrate with:
 
 ```terminal
 bin/console doctrine:migration:migrate
@@ -116,6 +137,8 @@ bin/console doctrine:migration:migrate
 Once that's finished, return to the `handleOrderCreatedEvent()` and call our new
 setter: `$user->setLsCustomerId()` with `$customerId`. To *save* it, call
 `$this->entityManager->flush()`.
+
+[[[ code('607e352f6a') ]]]
 
 ## Testing the Webhook
 
@@ -132,7 +155,11 @@ LemonSqueezy can set the `user_id` correctly.
 
 Log in again, add a product to the cart, and try to check out. Oops,
 *another* error - a 422. Jump over to `LemonSqueezyApi` and uncomment this `dd()` to
-see what's going on here. If we refresh our site... ah!
+see what's going on here.
+
+[[[ code('3dc4996088') ]]]
+
+If we refresh our site... ah!
 
 > ...field must be a string...
 
@@ -140,6 +167,8 @@ and it's pointing to the custom `user_id` we added... Turns out LemonSqueezy is
 pretty strict with types. Head back to our code,
 comment out that `dd()` again... and, up here... cast this `$user->getId()` to
 a string. Back in our app... refresh... and success! We're on the checkout page!
+
+[[[ code('10f8d0d898') ]]]
 
 Let's fill in the card info... address... make the payment, and wait for the
 webhook. *Yes*! Our transaction was accepted and, over here, we have a 202
