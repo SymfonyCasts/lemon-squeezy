@@ -1,0 +1,450 @@
+WEBVTT
+
+00:00:01.076 --> 00:00:04.476 align:middle
+En el último capítulo, configuramos con
+éxito el analizador de peticiones de webhook.
+
+00:00:04.886 --> 00:00:09.336 align:middle
+Este analizador está diseñado para recibir
+un webhook de LemonSqueezy, verificar su firma,
+
+00:00:09.546 --> 00:00:13.106 align:middle
+analizar la carga útil y pasar los datos
+analizados a un consumidor de webhook.
+
+00:00:13.106 --> 00:00:16.356 align:middle
+Ahora que nuestro analizador está listo,
+podemos abordar la siguiente parte:
+
+00:00:16.486 --> 00:00:18.466 align:middle
+manejar los datos del webhook en el consumidor.
+
+00:00:18.466 --> 00:00:23.046 align:middle
+Empieza abriendo el archivo
+LemonSqueezyWebhookConsumer.php
+
+00:00:23.046 --> 00:00:26.676 align:middle
+del directorio src/RemoveEvent/,
+y busca el método consume().
+
+00:00:27.366 --> 00:00:29.446 align:middle
+Podemos deshacernos de este TODO.
+
+00:00:29.446 --> 00:00:32.696 align:middle
+Nuestra tarea aquí es encontrar el usuario
+correspondiente al customer_id que obtenemos
+
+00:00:32.696 --> 00:00:34.666 align:middle
+de los datos del webhook, y conectarlos.
+
+00:00:35.416 --> 00:00:37.306 align:middle
+Una cosa a tener en cuenta es
+que el consumidor es activado
+
+00:00:37.306 --> 00:00:40.776 align:middle
+por una petición totalmente
+independiente: el webhook de LemonSqueezy.
+
+00:00:41.276 --> 00:00:44.116 align:middle
+No sólo eso, sino que los consumidores
+son gestionados por Symfony Messenger.
+
+00:00:44.386 --> 00:00:46.906 align:middle
+Es posible que sean procesados por
+un trabajador en segundo plano.
+
+00:00:47.496 --> 00:00:50.446 align:middle
+La cuestión es que no tenemos
+acceso al objeto usuario original
+
+00:00:50.446 --> 00:00:52.066 align:middle
+como en el controlador de pago.
+
+00:00:52.066 --> 00:00:54.966 align:middle
+Entonces... ¿cómo obtenemos
+el usuario en el consumidor?
+
+00:00:55.416 --> 00:00:59.916 align:middle
+Por suerte para nosotros, la documentación de la
+API "Crear una compra" de LemonSqueezy explica cómo
+
+00:00:59.916 --> 00:01:02.806 align:middle
+añadir datos personalizados
+al crear la URL de la compra.
+
+00:01:03.196 --> 00:01:06.446 align:middle
+Esto es perfecto para pasar nuestro
+ID de usuario, ¡así que empecemos!
+
+00:01:07.056 --> 00:01:12.276 align:middle
+Dirígete a LemonSqueezyApi en src/Store/
+y busca el método createCheckoutUrl().
+
+00:01:12.956 --> 00:01:15.396 align:middle
+Aquí, tenemos que hacer que
+el usuario no sea opcional.
+
+00:01:15.756 --> 00:01:18.676 align:middle
+Esto es crucial porque es la
+información que necesitamos para enlazar
+
+00:01:18.676 --> 00:01:20.846 align:middle
+con el cliente LemonSqueezy correspondiente.
+
+00:01:21.466 --> 00:01:22.056 align:middle
+Elimina el ?
+
+00:01:22.056 --> 00:01:26.666 align:middle
+de la sugerencia de tipo User y la declaración
+if ($user) que ahora es innecesaria.
+
+00:01:30.136 --> 00:01:37.306 align:middle
+Ahora, añade $attributes['checkout_data']['custom']['user_id']
+= $user->getId(). Este
+
+00:01:38.156 --> 00:01:42.516 align:middle
+campocustom nos permite pasar cualquier dato
+personalizado que necesitemos a LemonSqueezy y estará a
+
+00:01:42.596 --> 00:01:45.216 align:middle
+nuestra disposición en la
+carga útil del webhook.
+
+00:01:45.956 --> 00:01:49.986 align:middle
+El objetivo es compartir el ID de usuario con LemonSqueezy
+cuando un cliente realiza un pedido. Para ello
+
+00:01:50.456 --> 00:01:53.036 align:middle
+, es necesario que el usuario
+haya iniciado sesión. Volviendo a
+
+00:01:53.626 --> 00:01:55.376 align:middle
+OrderController::checkout(), todo lo
+
+00:01:55.626 --> 00:01:59.366 align:middle
+que hace falta para que esta ruta requiera
+autenticación es eliminar el ? de
+
+00:01:59.366 --> 00:02:00.966 align:middle
+la sugerencia de tipo User.
+
+00:02:01.356 --> 00:02:02.036 align:middle
+Muy bonito, ¿verdad? Para
+
+00:02:02.726 --> 00:02:06.516 align:middle
+confirmar que todo funciona según lo esperado,
+en nuestro sitio, cierra la sesión... añade
+
+00:02:06.926 --> 00:02:09.646 align:middle
+un producto al carrito e
+intenta pasar por caja. Como
+
+00:02:09.646 --> 00:02:14.706 align:middle
+somos un usuario no autenticado, deberíamos ser redirigidos
+a la página de inicio de sesión, y... ¡perfecto!
+
+00:02:15.056 --> 00:02:19.776 align:middle
+De vuelta en el método
+LemonSqueezyWebhookConsumer::consume(), establece
+
+00:02:20.026 --> 00:02:23.506 align:middle
+$payload = $event->getPayload(). Para
+
+00:02:24.236 --> 00:02:27.236 align:middle
+acceder al user_id que establecimos
+en createCheckoutUrl(), escribe
+
+00:02:27.496 --> 00:02:36.016 align:middle
+$userId =
+$payload['meta']['custom_data']['user_id'] ?? null.
+
+00:02:36.016 --> 00:02:41.216 align:middle
+Añadiré un comentario rápido para explicar que no podemos
+acceder al usuario por "medios tradicionales". Ahora, escribe
+
+00:02:45.496 --> 00:02:48.576 align:middle
+una comprobación de sanidad
+con if (!$userId). Si esta
+
+00:02:48.576 --> 00:02:53.366 align:middle
+comprobación falla, throw new
+InvalidArgumentException() con sprintf (' ID de usuario
+
+00:02:53.636 --> 00:03:03.066 align:middle
+no encontrado en el webhook de LemonSqueezy:
+%s', $event->getId()). Ahora
+
+00:03:03.066 --> 00:03:07.056 align:middle
+tenemos el $userId, pero ¿cómo
+obtenemos el objeto usuario? ¡ De la
+
+00:03:07.056 --> 00:03:08.406 align:middle
+base de datos! En nuestro
+
+00:03:08.876 --> 00:03:14.706 align:middle
+constructor, inyecta private
+EntityManagerInterface $entityManager.
+
+00:03:15.356 --> 00:03:17.566 align:middle
+En el método consume(),
+busca el usuario con $user
+
+00:03:17.566 --> 00:03:27.286 align:middle
+= $this->entityManager->getRepository(User::class)->find($userId).
+A continuación, si $user
+
+00:03:28.736 --> 00:03:34.846 align:middle
+no existe, escribiremos throw new
+EntityNotFoundException() (elige el de Doctrine\ORM). Para
+
+00:03:34.846 --> 00:03:35.856 align:middle
+el mensaje
+
+00:03:35.856 --> 00:03:43.416 align:middle
+escribe sprintf('User "%s" not found for LemonSqueezy
+webhook "%s"!', $userId, $event->getId()).
+
+00:03:43.416 --> 00:03:48.176 align:middle
+A continuación, añade match
+
+00:03:49.386 --> 00:03:55.216 align:middle
+($event->getName()), y para order_created,
+llama a $this->handleOrderCreatedEvent(). Este
+
+00:03:55.756 --> 00:03:58.646 align:middle
+método
+
+00:03:59.246 --> 00:04:01.546 align:middle
+aún no existe, pero lo crearemos
+más adelante. Pasa también $event
+
+00:04:02.146 --> 00:04:04.736 align:middle
+y $user como argumentos. Llegados a este punto
+
+00:04:05.226 --> 00:04:07.776 align:middle
+, sólo deberíamos tener eventos
+admitidos, pero por si acaso
+
+00:04:08.046 --> 00:04:09.826 align:middle
+nos falta algo, añade un default
+
+00:04:09.936 --> 00:04:13.126 align:middle
+que throw new LogicException(), con
+sprintf (' Evento LemonSqueezy no admitido
+
+00:04:13.376 --> 00:04:19.606 align:middle
+: %s', $event->getId()). Bien. Ahora, crea
+
+00:04:20.286 --> 00:04:26.566 align:middle
+el método handleOrderCreatedEvent() con
+PhpStorm como una función privada. Parece que
+
+00:04:27.196 --> 00:04:32.266 align:middle
+PhpStorm añadió un argumento - RemoteEvent $event
+- pero olvidó el segundo, así que añade Usuario
+
+00:04:32.266 --> 00:04:36.176 align:middle
+$usuario manualmente y tipo de
+retorno: void. Dentro, obtén el
+
+00:04:37.056 --> 00:04:41.606 align:middle
+payload con $payload = $event->getPayload().
+A continuación, obtén
+
+00:04:42.286 --> 00:04:43.816 align:middle
+el ID del cliente con $customerId =
+
+00:04:43.816 --> 00:04:49.656 align:middle
+$payload['data']['attributes']['customer_id'].
+Si te preguntas
+
+00:04:49.656 --> 00:04:53.976 align:middle
+de dónde ha salido esto, puedes encontrarlo
+en el inspector de Ngrok. Vale, ya tenemos el
+
+00:04:54.826 --> 00:04:59.416 align:middle
+customer_id, pero aún necesitamos una nueva propiedad
+en el User para guardarlo. En tu terminal, crea
+
+00:04:59.826 --> 00:05:06.106 align:middle
+una nueva pestaña y ejecuta: bin/console
+make:entity Para la clase, escribe User para coger
+
+00:05:06.106 --> 00:05:08.216 align:middle
+la entidad existente. Para
+el nombre de la propiedad,
+
+00:05:08.216 --> 00:05:11.446 align:middle
+llámala lsCustomerId. Que sea una cadena
+
+00:05:12.266 --> 00:05:15.096 align:middle
+con una longitud de 255, y
+anulable. Pulsa Enter una
+
+00:05:15.816 --> 00:05:17.466 align:middle
+vez más y... ¡listo! De vuelta a nuestro
+
+00:05:17.826 --> 00:05:22.056 align:middle
+código, abre src/Entity/User.php...
+si nos desplazamos hacia abajo...
+
+00:05:22.056 --> 00:05:24.196 align:middle
+¡aquí está nuestra nueva columna!
+
+00:05:25.216 --> 00:05:26.096 align:middle
+Establécela como unique:
+
+00:05:26.096 --> 00:05:28.156 align:middle
+true. Esto tiene muy buena pinta, y
+
+00:05:29.236 --> 00:05:31.626 align:middle
+si nos desplazamos hacia abajo, podemos ver que
+
+00:05:31.626 --> 00:05:34.536 align:middle
+también ha creado un getter y un setter
+para el campo. ¡Genial! Ahora tenemos
+
+00:05:34.866 --> 00:05:37.636 align:middle
+que crear una migración.
+Hazlo con: bin/console
+
+00:05:37.966 --> 00:05:43.756 align:middle
+make:migration Si vamos a comprobarlo...
+¡tiene buena pinta! Sólo
+
+00:05:45.316 --> 00:05:45.906 align:middle
+añadiremos una
+
+00:05:46.286 --> 00:05:50.466 align:middle
+descripción rápida: Add customer ID
+property to User entity. Y de vuelta a nuestro
+
+00:05:51.436 --> 00:05:53.576 align:middle
+terminal, migra con: bin/console
+doctrine:migration:migrate Una vez
+
+00:05:53.856 --> 00:05:58.976 align:middle
+terminado, vuelve a handleOrderCreatedEvent()
+
+00:05:59.226 --> 00:06:02.706 align:middle
+y llama a nuestro nuevo configurador:
+$user->setLsCustomerId() con $customerId. Para
+
+00:06:02.936 --> 00:06:07.076 align:middle
+guardarlo, llama a
+
+00:06:07.906 --> 00:06:11.696 align:middle
+$this->entityManager->flush()
+. ¡ Es hora de volver a probar el
+
+00:06:12.546 --> 00:06:13.936 align:middle
+webhook! En el inspector Ngrok
+
+00:06:14.326 --> 00:06:16.086 align:middle
+, vuelve a reproducir. Hmm... un error.
+
+00:06:16.686 --> 00:06:17.956 align:middle
+Es un poco difícil
+
+00:06:19.806 --> 00:06:24.606 align:middle
+de ver, pero aquí está: No se ha encontrado el ID de
+usuario en el webhook LemonSqueezy Eso tiene sentido:
+
+00:06:24.996 --> 00:06:29.436 align:middle
+cuando este webhook se ejecutó originalmente, no
+tenía configurado el user_id. Con Ngrok, podemos
+
+00:06:30.016 --> 00:06:35.676 align:middle
+modificar el contenido del webhook original y volver a ejecutarlo
+con las modificaciones, pero... para estar más seguros de
+
+00:06:35.866 --> 00:06:40.036 align:middle
+que se tienen en cuenta nuestros cambios, volveremos a pasar
+por el proceso de compra para que LemonSqueezy pueda establecer
+
+00:06:40.036 --> 00:06:42.536 align:middle
+el user_id correctamente.
+Vuelve a iniciar sesión, añade
+
+00:06:43.096 --> 00:06:48.276 align:middle
+un producto al carrito e intenta
+pasar por caja. Uy, otro error:
+
+00:06:49.296 --> 00:06:51.716 align:middle
+un 422. Salta a LemonSqueezyApi
+
+00:06:52.266 --> 00:06:58.176 align:middle
+y descomenta este dd() para ver qué está
+pasando aquí. Si actualizamos nuestro
+
+00:06:58.176 --> 00:07:00.046 align:middle
+sitio... ¡ah! ...el campo debe ser
+
+00:07:01.086 --> 00:07:03.466 align:middle
+una cadena... y está apuntando
+
+00:07:03.896 --> 00:07:06.416 align:middle
+al user_id personalizado que
+añadimos... Resulta que LemonSqueezy es
+
+00:07:06.786 --> 00:07:09.276 align:middle
+bastante estricto con los
+tipos. Vuelve a nuestro
+
+00:07:09.866 --> 00:07:12.636 align:middle
+código, comenta de nuevo ese
+dd()... y, aquí arriba... convierte
+
+00:07:13.446 --> 00:07:14.746 align:middle
+este $user->getId()
+
+00:07:16.556 --> 00:07:19.076 align:middle
+en una cadena. De vuelta
+a nuestra aplicación...
+
+00:07:20.486 --> 00:07:21.246 align:middle
+actualiza... ¡y éxito! ¡
+
+00:07:21.326 --> 00:07:21.966 align:middle
+Estamos en
+
+00:07:22.696 --> 00:07:23.646 align:middle
+la página de pago
+
+00:07:23.646 --> 00:07:24.916 align:middle
+! Rellenemos
+
+00:07:25.376 --> 00:07:26.746 align:middle
+los datos de la tarjeta... la
+dirección... realicemos el pago,
+
+00:07:28.186 --> 00:07:28.986 align:middle
+y
+
+00:07:32.386 --> 00:07:34.486 align:middle
+esperemos al webhook. ¡Sí!
+Nuestra transacción ha sido
+
+00:07:35.786 --> 00:07:40.536 align:middle
+aceptada y, aquí, tenemos un
+código de estado 202. Si miramos
+
+00:07:41.246 --> 00:07:45.266 align:middle
+la petición, podemos ver que nuestra custom_data
+-> user_id es igual a 1. También podemos comprobar
+
+00:07:45.786 --> 00:07:48.886 align:middle
+la base de datos con un práctico
+comando SQL. En tu terminal, ejecuta:
+
+00:07:49.296 --> 00:07:56.196 align:middle
+bin/console doctrine:query:sql
+"SELECT * FROM user WHERE id = 1"
+
+00:07:56.296 --> 00:08:03.106 align:middle
+Este lsCustomerId es el ID único de
+LemonSqueezy. ¡Genial! Antes de continuar,
+
+00:08:03.386 --> 00:08:07.836 align:middle
+escribamos algunas pruebas para nuestra
+configuración de webhook. ¡Eso a continuación!
