@@ -1,0 +1,3 @@
+# Embedding the LemonSqueezy Checkout Overlay
+
+TODO...

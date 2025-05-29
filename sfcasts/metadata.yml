@@ -14,3 +14,7 @@ chapters:
     - testing-webhooks
     - list-orders
     - api-error-handling
+    - checkout-overlay
+    - embedded-overlay
+    - js-events
+    - js-events-security
