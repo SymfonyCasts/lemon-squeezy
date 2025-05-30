@@ -102,28 +102,14 @@ Inside *that*, add
 `$response = $this->client->request(Request::METHOD_GET, 'customers/' . $customerId)`.
 Below, `return $response->toArray()`.
 
-Above, in `listOrders()`, let's put the user email on a separate variable with
-`$userEmail = $user->getEmail()` and change this to `$userEmail`. Finally, down
-here, add an `if` statement:
+Above, in `listOrders()`, add `$lsCustomerId = $user->getLsCustomerId()`.
+Then, `if (!$lsCustomerId)`, `return []`. This ensures there's no way a user
+can list orders if they don't have a LemonSqueezy customer ID.
 
-`if ($user->getLsCustomerId()) {
-    $lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());
-    $userEmail = $lsCustomer['data']['attributes']['email'];
-}`
+Next, write `$lsCustomer = $this->retrieveCustomer($lsCustomerId)`. Finally,
+change the `user_email` filter to `$lsCustomer['data']['attributes']['email']`.
 
-This ensures that we only load orders for the email stored in LemonSqueezy.
-*Technically* someone could *still* interfere with this, but it’s much harder to
-do now.
-
-I also suggest adding email verification for users, so we can be absolutely sure
-they own the email they're using. And hey, you can
-leverage [SymfonyCasts/verify-email-bundle](https://github.com/SymfonyCasts/verify-email-bundle)
-for this!
-
-We've also made `lsСustomerId` a unique field on the `User` entity, so the
-webhook request will fail and won't be able to update the customer in the
-webhook process if someone with the *same* customer ID exists in the database,
-making hijacking someone's identity nearly impossible.
+Security hardened!
 
 And that's all there is to it! You've successfully rendered a list of orders on
 the account page using the LemonSqueezy API.
