@@ -30,17 +30,19 @@ If we click on "attributes", we see a ton of fields we can use for our order tab
 
 ## Paginate the Orders
 
-Lemon Squeezy returns *10* orders by default. If you want to see fewer than ten at a time, we can paginate the list by adding `'page' => ['size' => 5]` to the query. If we head back and refresh... hm... nothing changed. Ah! That's because I only had *five* orders before. I'll buy another lemonade behind the scenes... refresh the page again, and... we *still* only see five, but that's because the sixth order - the oldest - is being paginated. It's working!
+Lemon Squeezy returns *10* orders by default. If you want to see fewer than ten at a time, we can paginate the list by adding `'page' => ['size' => 5]` to the query. If we head back and refresh... now we have only 5 latest orders displayed! It's working!
 
 *Ideally*, we should add *real* pagination below so users can navigate through all of their orders without leaving our site, but for now, let’s just add a link to the full list of orders in LemonSqueezy.
 
 In the template, add:
 
-`<a href="https://app.lemonsqueezy.com/my-orders" target="_blank">More Orders</a>`.
+`<a href="https://app.lemonsqueezy.com/my-orders/{{ (orders.data|first).attributes.identifier|default('') }}" target="_blank">More Orders</a>`.
+
+That link will pre-open the latest order on that list for convenience.
 
 But we don't need to see this link *all the time* - only if the user has more than five orders. Let's `dd($orders)` again, go refresh, and inspect the data. In `meta` `page`, we see `total` and `perPage`, so head back, remove the `dd()`, and wrap the link with `{% if orders.meta.page.total > orders.meta.page.perPage %}`. I'll fix this spacing and add `{% endif %}` at the end.
 
-Okay, if we refresh again and click the link... wait... the page is *empty*? Yeah... *about that* - this doesn't work in test mode because LemonSqueezy only shows *production* orders here. I'm hopeful LemonSqueezy will fix that soon, but for now, we can only see this in action on production.
+Okay, if we refresh again and click the link... only the latest order on the list? Yeah... *about that* - this doesn't work in test mode because LemonSqueezy only shows *production* orders here. I'm hopeful LemonSqueezy will fix that soon, but for now, we can only see the orders we link directly on this page or see this in action in production mode.
 
 ## Preventing Leaks
 
