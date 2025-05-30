@@ -12,7 +12,7 @@ But wait... we don't want to display *all* orders - just the ones for our store 
 
 ## Adding Filter Query Parameters
 
-Let's add an empty array as the third argument to the `request` method, and inside, say `'query' => []`, `'filter' => []`, `'store_id' => $this->storeId`, and `'user_email' => $user->getEmail()`. We also need to add `User $user` to the `listOrders()` method above. Perfect!
+Let's add an empty array as the third argument to the `request()` method, and inside, say `'query' => []`, `'filter' => []`, `'store_id' => $this->storeId`, and `'user_email' => $user->getEmail()`. We also need to add `User $user` to the `listOrders()` method above. Perfect!
 
 Next, open `UserController.php`. Down here, in `account()`, inject `LemonSqueezyApi $lsApi`. We also need the current user, so add `#[CurrentUser] User $user`. Below, create the `$orders` variable and set it to `$lsApi->listOrders()`. Finally, in the `return`, pass `'orders' => $orders`.
 
