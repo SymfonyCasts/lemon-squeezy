@@ -59,4 +59,4 @@ I also suggest adding email verification for users, so we can be absolutely sure
 
 And that's all there is to it! You've successfully rendered a list of orders on the account page using Symfony and the LemonSqueezy API.
 
-Next: Let's make some improvements to our API error handling.
+Next: Let's make some improvements to our API error handling, because it's getting annoying to manually debug errors.
