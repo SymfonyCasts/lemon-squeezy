@@ -43,9 +43,15 @@ bin/console make:test
 Select `WebTestCase`... and we'll name our test
 `Webhook\LemonSqueezyRequestParser`. MakerBundle will give us a file with some
 boilerplate code. We can find it in
-`tests/Webhook/LemonSqueezyRequestParserTest.php`. Rename the default test
-method to something more descriptive: `testOrderCreatedWebhook()`. We'll
-keep the line that verifies the response is successful *for now*, but tweak the
+`tests/Webhook/LemonSqueezyRequestParserTest.php`. 
+
+[[[ code('9531ba0023') ]]]
+
+Rename the default test method to something more descriptive: `testOrderCreatedWebhook()`.
+
+[[[ code('b03f76e573') ]]]
+
+We'll keep the line that verifies the response is successful *for now*, but tweak the
 error message to read `Webhook failed!`. Let's try it! Over in the terminal,
 run:
 
@@ -68,6 +74,8 @@ before the first test and resets it between tests. Without this, we'd get
 lots of duplicate data errors. If we run the test again... it passes! Great!
 Now, let's write the *actual* test.
 
+[[[ code('8db07e97d6') ]]]
+
 ## Creating Dummy Data
 
 To do that, we need some dummy data. Foundry can help with that too! This
@@ -80,11 +88,15 @@ Now that we have a user, we need to simulate an actual `POST` request to the
 webhook endpoint. We can do that with
 `$client->request('POST', '/webhook/lemon-squeezy', [], [], [], $json)`.
 
+[[[ code('17743cbcc1') ]]]
+
 We can copy the JSON payload from the Ngrok web interface (if you still have
 that running), *or* we can copy it from the LemonSqueezy dashboard under
 "Webhooks". Copy the whole request body and, back in our code, in `tests/`,
 create a new directory called `fixtures`. Inside, create a new
 file. Call it `order_created.json`, and... *paste*.
+
+[[[ code('5a25ffac8c') ]]]
 
 In our test, above the request, write
 `$json = file_get_contents(__DIR__.'/../fixtures/order_created.json')`. At the
@@ -93,7 +105,9 @@ create a `$user` variable above, so let's fix that. Now, pass
 `$user->getLsCustomerId()` as the `assertNotNull()` argument, and for the
 error message, write `LemonSqueezy customer ID not set!`. Finally, add
 `$this->assertEquals(1000001, $user->getLsCustomerId(), 'LemonSqueezy customer ID mismatch!')`.
-Whew! Testing time!
+Phew! Testing time!
+
+[[[ code('a756c613fb') ]]]
 
 At your terminal, run the tests again:
 
@@ -126,14 +140,22 @@ via `$_ENV` in our test environment). For the 5th `request()` method
 argument, expand this array to include `'HTTP_X-Signature' => $hash`.
 Symfony will convert that into the `X-Signature` header needed by our parser.
 
+[[[ code('d62a5ea60e') ]]]
+
 Run the test again, and... *another* error, but this one's different. That's a
 good sign! The payload we used contains a user ID and customer ID that should be
 dynamic and *match* our dynamic test data. Let's update our `order_created.json`
 file with some placeholders. For the `user_id`, use `%user_id%`, and for
-the `customer_id`, use `%customer_id%`. Finally, replace the placeholders
+the `customer_id`, use `%customer_id%`. 
+
+[[[ code('0611073c72') ]]]
+
+Finally, replace the placeholders
 in our test by processing the `$json` variable again with
 `$json = strtr($json)`, with the array
 `['%user_id%' => $user->getId(), '%customer_id%' => 1000001]`.
+
+[[[ code('b040dc6336') ]]]
 
 Run the test again... this time... it *passes*!
 
