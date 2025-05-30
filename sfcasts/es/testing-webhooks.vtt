@@ -1,0 +1,385 @@
+WEBVTT
+
+00:00:01.056 --> 00:00:05.436 align:middle
+Anteriormente, configuramos un webhook que guarda
+el ID de cliente del usuario que realizó un pedido.
+
+00:00:05.966 --> 00:00:09.476 align:middle
+Los webhooks son a la vez increíblemente
+útiles y ligeramente aterradores.
+
+00:00:09.996 --> 00:00:14.986 align:middle
+Son un componente clave en muchas aplicaciones web
+contemporáneas, especialmente en el comercio electrónico.
+
+00:00:15.036 --> 00:00:18.686 align:middle
+Si fallan, podrían significar la pérdida
+de ventas o la rotura de funciones:
+
+00:00:18.986 --> 00:00:21.306 align:middle
+malas noticias para las
+empresas grandes y pequeñas.
+
+00:00:21.856 --> 00:00:23.746 align:middle
+Por eso es tan importante probarlas.
+
+00:00:24.156 --> 00:00:28.436 align:middle
+Como desarrolladores, no somos grandes aficionados a
+las pruebas manuales: preferimos la automatización.
+
+00:00:28.856 --> 00:00:32.176 align:middle
+Si eres nuevo en las pruebas
+en Symfony o PHP, ¡no temas!
+
+00:00:32.486 --> 00:00:36.086 align:middle
+Tenemos un montón de cursos relacionados con
+las pruebas que te guiarán a través de todo
+
+00:00:36.086 --> 00:00:38.886 align:middle
+, desde las pruebas unitarias básicas
+hasta las pruebas de navegador completas.
+
+00:00:38.886 --> 00:00:41.556 align:middle
+Para obtener más información al respecto,
+echa un vistazo a nuestro tema Pruebas.
+
+00:00:42.136 --> 00:00:43.606 align:middle
+Ahora volvamos a nuestra prueba de webhook
+
+00:00:43.606 --> 00:00:46.506 align:middle
+En primer lugar, tenemos que instalar
+las herramientas de prueba de Symfony.
+
+00:00:46.606 --> 00:00:54.296 align:middle
+En tu terminal, ejecuta: composer require test
+--dev Esto nos da acceso a PHPUnit y a un montón
+
+00:00:54.296 --> 00:00:55.976 align:middle
+de herramientas útiles.
+
+00:00:56.656 --> 00:01:01.366 align:middle
+Lo ideal sería probar unitariamente el analizador de
+peticiones y el consumidor, pero como no nos centraremos
+
+00:01:01.366 --> 00:01:04.746 align:middle
+en las pruebas en este curso,
+considéralo una tarea divertida.
+
+00:01:04.746 --> 00:01:09.536 align:middle
+Por ahora, vamos a sumergirnos en algo un poco
+más complejo y probar la integración del webhook.
+
+00:01:09.596 --> 00:01:12.436 align:middle
+Nuestra tarea consiste en escribir
+una prueba de integración completa
+
+00:01:12.436 --> 00:01:15.016 align:middle
+para el webhook order_created
+que implementamos anteriormente.
+
+00:01:15.656 --> 00:01:17.436 align:middle
+Empezaremos generando una nueva prueba.
+
+00:01:17.756 --> 00:01:19.646 align:middle
+Aquí es donde brilla el MakerBundle.
+
+00:01:20.056 --> 00:01:25.806 align:middle
+En tu terminal, ejecuta: bin/console
+make:test Selecciona WebTestCase...
+
+00:01:26.226 --> 00:01:30.336 align:middle
+y llamaremos a nuestra prueba
+Webhook\LemonSqueezyRequestParser.
+
+00:01:31.226 --> 00:01:33.966 align:middle
+MakerBundle nos proporcionará un
+archivo con código repetitivo.
+
+00:01:34.496 --> 00:01:41.406 align:middle
+Podemos encontrarlo en
+tests/Webhook/LemonSqueezyRequestParserTest.php. Cambia el nombre
+
+00:01:41.406 --> 00:01:45.936 align:middle
+del método de prueba por defecto por algo
+más descriptivo: testOrderCreatedWebhook().
+
+00:01:46.566 --> 00:01:49.496 align:middle
+Por ahora mantendremos la línea que
+verifica que la respuesta es correcta, pero
+
+00:01:50.656 --> 00:01:53.136 align:middle
+modificaremos el mensaje de error
+para que sea Webhook failed!. Vamos a
+
+00:01:53.136 --> 00:01:54.706 align:middle
+probarlo
+
+00:01:55.056 --> 00:02:00.406 align:middle
+En el terminal, ejecuta: bin/phpunit Obtenemos
+un error, pero es lo esperado. No existe
+
+00:02:00.856 --> 00:02:02.696 align:middle
+tal tabla en el entorno de prueba. Nuestra
+
+00:02:02.696 --> 00:02:06.566 align:middle
+prueba está fallando porque necesitamos
+configurar una base de datos de prueba.
+
+00:02:06.866 --> 00:02:10.776 align:middle
+Podríamos hacerlo manualmente mediante los comandos
+de la consola de Doctrine, pero vamos a aprovechar
+
+00:02:10.776 --> 00:02:13.546 align:middle
+Zenstruck Foundry, que ya tenemos instalado. En
+
+00:02:15.006 --> 00:02:18.246 align:middle
+la clase de prueba, añade
+use ResetDatabase. Esto
+
+00:02:18.726 --> 00:02:23.266 align:middle
+crea la base de datos de prueba antes de la
+primera prueba y la restablece entre pruebas. Sin
+
+00:02:23.746 --> 00:02:26.226 align:middle
+esto, tendríamos muchos
+errores de datos duplicados. Si
+
+00:02:26.226 --> 00:02:28.136 align:middle
+volvemos a ejecutar la prueba...
+
+00:02:28.906 --> 00:02:29.596 align:middle
+¡pasa! ¡Estupendo!
+
+00:02:29.916 --> 00:02:32.476 align:middle
+Ahora, escribamos la prueba real. Para
+
+00:02:33.026 --> 00:02:34.826 align:middle
+ello, necesitamos datos ficticios. ¡ Foundry
+
+00:02:34.826 --> 00:02:36.486 align:middle
+también puede ayudarnos con eso! Esta
+
+00:02:37.656 --> 00:02:40.566 align:middle
+llamada astatic::createClient() arranca
+el núcleo de Symfony, por lo que
+
+00:02:40.566 --> 00:02:43.446 align:middle
+es seguro utilizar
+UserFactory justo debajo. Crea
+
+00:02:44.526 --> 00:02:49.466 align:middle
+un nuevo usuario con UserFactory::new()->create()
+pasando un array: ['email'
+
+00:02:50.766 --> 00:02:58.866 align:middle
+=> 'test@example.com', 'plainPassword' =>
+'testpass', 'firstName' => 'Test']. Ahora
+
+00:02:58.866 --> 00:03:04.376 align:middle
+que tenemos un usuario, tenemos que simular
+una petición real POST a la ruta del webhook.
+
+00:03:04.826 --> 00:03:14.606 align:middle
+Podemos hacerlo con $client->request('POST',
+'/webhook/lemon-squeezy', [], [], [], $json).
+
+00:03:15.316 --> 00:03:19.626 align:middle
+Podemos copiar la carga útil JSON desde la interfaz
+web de Ngrok (si aún la tienes en funcionamiento), o
+
+00:03:19.996 --> 00:03:23.386 align:middle
+podemos copiarla desde el panel de control
+de LemonSqueezy en "Webhooks". Copia
+
+00:03:23.926 --> 00:03:31.366 align:middle
+todo el cuerpo de la petición y, de
+vuelta a nuestro código, en tests/,
+
+00:03:31.586 --> 00:03:33.576 align:middle
+crea un nuevo directorio
+llamado fixtures. Dentro,
+
+00:03:39.216 --> 00:03:40.536 align:middle
+crea un nuevo archivo.
+
+00:03:40.846 --> 00:03:43.506 align:middle
+Llámalo order_created.json, y... pega.
+
+00:03:43.726 --> 00:03:50.286 align:middle
+En nuestra prueba, encima de la petición, escribe $json =
+file_get_contents(__DIR__.'/../fixtures/order_created.json'). Al
+
+00:03:50.286 --> 00:03:52.636 align:middle
+final
+
+00:03:52.636 --> 00:03:56.006 align:middle
+, añade $this->assertNotNull()
+- y... ¡ups! Me olvidé
+
+00:03:56.006 --> 00:04:09.716 align:middle
+de crear una variable $user más arriba, así que vamos
+a arreglarlo. Ahora, pasa $user->getLsCustomerId()
+
+00:04:09.716 --> 00:04:18.826 align:middle
+como argumento assertNotNull(), y para el
+
+00:04:18.826 --> 00:04:23.146 align:middle
+mensaje de error, escribe LemonSqueezy customer ID not
+set!. Por último, añade $this->assertEquals (1000001,
+
+00:04:23.146 --> 00:04:33.136 align:middle
+$user->getLsCustomerId(), ' ¡No
+coincide el ID de cliente de LemonSqueezy
+
+00:04:33.396 --> 00:04:35.576 align:middle
+!'). ¡Uf! ¡Hora de probar!
+
+00:04:35.576 --> 00:04:37.536 align:middle
+En tu terminal,
+
+00:04:37.936 --> 00:04:42.016 align:middle
+vuelve a ejecutar las pruebas:
+¡Un error! Si te desplazas
+
+00:04:42.426 --> 00:04:44.916 align:middle
+un poco hacia arriba, verás el mensaje de
+excepción ¡Firma LemonSqueezy no válida!
+
+00:04:45.326 --> 00:04:47.166 align:middle
+¡Vaya! Bueno, eso
+
+00:04:47.606 --> 00:04:49.716 align:middle
+era de esperar. Estamos enviando una
+
+00:04:49.916 --> 00:04:53.066 align:middle
+carga útil válida, pero no la
+cabecera X-Signature, por lo que nuestro
+
+00:04:53.066 --> 00:04:55.536 align:middle
+analizador de peticiones nos dice
+que no es válida. Si echamos
+
+00:04:55.536 --> 00:04:58.096 align:middle
+un vistazo al analizador sintáctico
+de la petición... sí. Añadimos
+
+00:04:59.316 --> 00:05:04.346 align:middle
+este método verifySignature() para evitar peticiones
+no autorizadas a la ruta. ¡ Pero ahora somos nosotros
+
+00:05:04.666 --> 00:05:07.106 align:middle
+los que intentamos enviar allí una petición
+falsa! ¡ Cómo han cambiado las tornas
+
+00:05:07.546 --> 00:05:08.876 align:middle
+! Podríamos saltarnos
+
+00:05:09.576 --> 00:05:13.446 align:middle
+completamente la comprobación de la firma aquí inyectando
+el entorno de la aplicación, añadiendo if ($this->env
+
+00:05:13.746 --> 00:05:18.076 align:middle
+=== 'test'), y simplemente
+devolviendo. Pero... No
+
+00:05:18.436 --> 00:05:22.846 align:middle
+me gusta esta solución: se salta lógica valiosa
+que quiero que se compruebe. Una solución mejor
+
+00:05:23.566 --> 00:05:27.846 align:middle
+sería firmar las peticiones en tu prueba para
+que parezcan legítimas. Copia esta línea hash
+
+00:05:28.556 --> 00:05:31.176 align:middle
+y pégala antes de la llamada a
+request(). Para la carga útil,
+
+00:05:34.036 --> 00:05:36.186 align:middle
+utiliza nuestra variable $json. Para el secreto
+
+00:05:36.186 --> 00:05:37.506 align:middle
+, utiliza
+$_ENV['LEMON_SQUEEZY_SIGNING_SECRET'] (
+
+00:05:37.616 --> 00:05:42.176 align:middle
+tenemos acceso a todas las variables .env
+
+00:05:42.176 --> 00:05:46.126 align:middle
+a través de $_ENV en nuestro
+entorno de pruebas). Para el 5º
+
+00:05:49.036 --> 00:05:50.906 align:middle
+argumento del métodorequest(),
+amplía esta matriz
+
+00:05:51.126 --> 00:05:57.766 align:middle
+para incluir 'HTTP_X-Signature'
+=> $hash. Symfony lo convertirá
+
+00:05:58.096 --> 00:06:01.606 align:middle
+en la cabecera X-Signature que necesita nuestro
+analizador sintáctico. Ejecuta la prueba
+
+00:06:02.316 --> 00:06:05.116 align:middle
+de nuevo, y... otro error, pero
+
+00:06:05.116 --> 00:06:07.446 align:middle
+éste es diferente. ¡ Es una buena
+
+00:06:07.696 --> 00:06:08.536 align:middle
+señal! La carga útil que hemos
+
+00:06:09.046 --> 00:06:12.266 align:middle
+utilizado contiene un ID de usuario
+y un ID de cliente que deberían ser
+
+00:06:12.426 --> 00:06:15.116 align:middle
+dinámicos y coincidir con nuestros datos
+de prueba dinámicos. Actualicemos nuestro
+
+00:06:15.116 --> 00:06:19.226 align:middle
+archivoorder_created.json con algunos
+marcadores de posición. Para el user_id,
+
+00:06:19.226 --> 00:06:29.166 align:middle
+utiliza %user_id%, y para el customer_id,
+utiliza %customer_id%. Por último, sustituye los
+
+00:06:29.166 --> 00:06:34.316 align:middle
+marcadores de posición en nuestra prueba
+procesando de nuevo la variable $json con $json =
+
+00:06:35.826 --> 00:06:45.606 align:middle
+strtr($json), con la matriz ['%user_id%' =>
+$user->getId(), '%customer_id%' => 1000001].
+
+00:06:46.916 --> 00:06:52.206 align:middle
+Ejecuta
+
+00:06:53.156 --> 00:06:54.166 align:middle
+de nuevo la prueba... esta vez...
+
+00:06:55.336 --> 00:06:55.936 align:middle
+¡pasa! ¡Enhorabuena!
+
+00:06:56.056 --> 00:06:57.066 align:middle
+Acabas de
+
+00:06:58.496 --> 00:07:01.296 align:middle
+completar una prueba de integración
+completa para un webhook. Has creado un
+
+00:07:01.896 --> 00:07:05.106 align:middle
+usuario, has simulado una petición
+real de webhook y has verificado que
+
+00:07:05.206 --> 00:07:08.006 align:middle
+tu aplicación lo gestiona todo
+correctamente. ¡Buen trabajo!
+
+00:07:08.376 --> 00:07:09.106 align:middle
+A continuación,
+
+00:07:09.916 --> 00:07:15.856 align:middle
+utilizaremos el nuevo lsCustomerId en la entidad
+de usuario para mostrar sus pedidos anteriores.
