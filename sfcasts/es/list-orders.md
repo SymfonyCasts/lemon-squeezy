@@ -26,7 +26,7 @@ Veamos lo que tenemos hasta ahora Volvemos a nuestro sitio, actualizamos la pág
 
 ## Utilizar datos dinámicos en la tabla de pedidos
 
-Si hacemos clic en "atributos", veremos un montón de campos que podemos utilizar para nuestra tabla de pedidos. El primero que cogeré es `order_number`. En nuestro código, sustituye `Order`por `#{{ order.attributes.order_number }}`. Para `Date`, sustitúyelo por`{{ order.attributes.created_at|date('d M Y, H:i') }}`. Aquí utilizaremos `|date()`para que la fecha sea más fácil de leer. Tenemos varias opciones para elegir el campo `Amount`. Yo utilizaré `total_formatted` porque está preformateado por LemonSqueezy. Por último, para nuestro enlace, escribiremos`{{ order.attributes.urls.receipt }}`. Antes de probarlo, vuelve a`UserController.php` y elimina el `dd()` que añadimos antes.
+Si hacemos clic en "atributos", veremos un montón de campos que podemos utilizar para nuestra tabla de pedidos. El primero que cogeré es `order_number`. En nuestro código, sustituye `Order`por `#{{ order.attributes.order_number }}`. Para `Date`, sustitúyelo por`{{ order.attributes.created_at|date('d M Y, H:i') }}`. Aquí estamos utilizando el filtro de fecha para que la fecha sea más fácil de leer. Tenemos varias opciones para elegir el campo `Amount`. Yo utilizaré `total_formatted` porque está preformateado por LemonSqueezy. Por último, para nuestro enlace, escribiremos`{{ order.attributes.urls.receipt }}`. Antes de probarlo, vuelve a`UserController.php` y elimina el `dd()` que añadimos antes.
 
 ## Paginar los pedidos
 
@@ -36,15 +36,15 @@ Lo ideal sería añadir una paginación real a continuación para que los usuari
 
 En la plantilla, añade un enlace, con el href:`https://app.lemonsqueezy.com/my-orders/{{ (orders.data|first).attributes.identifier|default('') }}`, target: `_blank`, y text: `More Orders`.
 
-Ese enlace preabrirá el último pedido de esa lista para mayor comodidad.
+Ese enlace llevará al usuario a LemonSqueezy y mostrará todos sus pedidos, con el primer pedido preseleccionado.
 
-Pero no necesitamos ver este enlace todo el tiempo, sólo si el usuario tiene más de cinco pedidos. Volvamos a `dd($orders)`, actualicemos e inspeccionemos los datos. En `meta`, `page`, vemos `total` y `perPage`, así que volvamos atrás, eliminemos `dd()`, y envolvamos el enlace con`{% if orders.meta.page.total > orders.meta.page.perPage %}`. Arreglaré este espaciado y añadiré `{% endif %}` al final.
+Pero no necesitamos ver este enlace todo el tiempo: sólo si el usuario tiene más de cinco pedidos. Volvamos a `dd($orders)`, actualicemos e inspeccionemos los datos. En `meta`, `page`, vemos `total` y `perPage`, así que volvamos atrás, eliminemos `dd()`, y envolvamos el enlace con`{% if orders.meta.page.total > orders.meta.page.perPage %}`. Arreglaré este espaciado y añadiré `{% endif %}` al final.
 
 Bien, si actualizamos de nuevo y hacemos clic en el enlace... vemos los detalles del último pedido, pero... ¿dónde están los demás? Esto parece ser actualmente una limitación de LemonSqueezy cuando está en modo de prueba. En producción, también se mostrarían todos los pedidos del cliente.
 
 ## Evitar filtraciones
 
-Bien, ahora vamos a centrar nuestra atención en un pequeño problema de seguridad. De momento, estamos filtrando los pedidos por el correo electrónico que los usuarios han registrado en su cuenta. Pero, en teoría, los usuarios pueden cambiar su correo electrónico por otro que no posean. Para evitarlo, tenemos que utilizar el correo electrónico establecido en el cliente LemonSqueezy, no en nuestra entidad `User`. Dentro de `LemonSqueezyApi.php`, añade un nuevo`public function` y llámalo `retrieveCustomer()` con `string $customerId`. Dentro de eso, añade`$response = $this->client->request(Request::METHOD_GET, 'customers/' . $customerId)`. Debajo, `return $response->toArray()`.
+Bien, ahora vamos a centrar nuestra atención en un pequeño problema de seguridad. De momento, estamos filtrando los pedidos por el correo electrónico que los usuarios han registrado en nuestro sitio. Pero, en teoría, los usuarios podrían cambiar su correo electrónico por otro que no posean. Para evitarlo, tenemos que utilizar el correo electrónico establecido en el cliente LemonSqueezy, no en nuestra entidad `User`. Dentro de `LemonSqueezyApi.php`, añade un nuevo`public function` y llámalo `retrieveCustomer()` con `string $customerId`, devuelve `array`. Dentro, escribe`$response = $this->client->request(Request::METHOD_GET, 'customers/' . $customerId)`. Abajo, `return $response->toArray()`.
 
 Arriba, en `listOrders()`, añade `$lsCustomerId = $user->getLsCustomerId()`. Luego, `if (!$lsCustomerId)`, `return []`. Esto garantiza que no haya forma de que un usuario pueda listar pedidos si no tiene un ID de cliente de LemonSqueezy.
 
