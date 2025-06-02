@@ -1,8 +1,8 @@
 diff --git a/src/Store/LemonSqueezyApi.php b/src/Store/LemonSqueezyApi.php
-index ab91c41..6856cb6 100644
+index 2dbc70f..b9afefe 100644
 --- a/src/Store/LemonSqueezyApi.php
 +++ b/src/Store/LemonSqueezyApi.php
-@@ -131,7 +131,8 @@ final readonly class LemonSqueezyApi
+@@ -130,7 +130,8 @@ final readonly class LemonSqueezyApi
              $response = $this->client->request($method, $url, $options);
              $data = $response->toArray();
          } catch (ClientException $e) {

@@ -12,7 +12,7 @@ index fdcdbdd..7942d0d 100644
      }
  
 diff --git a/src/Store/LemonSqueezyApi.php b/src/Store/LemonSqueezyApi.php
-index 33a8d98..b1f9a12 100644
+index b764af7..f956395 100644
 --- a/src/Store/LemonSqueezyApi.php
 +++ b/src/Store/LemonSqueezyApi.php
 @@ -22,7 +22,7 @@ final readonly class LemonSqueezyApi

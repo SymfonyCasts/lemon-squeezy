@@ -1,15 +1,22 @@
 diff --git a/src/Store/LemonSqueezyApi.php b/src/Store/LemonSqueezyApi.php
-index 8595ab2..d3a47c1 100644
+index 5451799..d8189c2 100644
 --- a/src/Store/LemonSqueezyApi.php
 +++ b/src/Store/LemonSqueezyApi.php
-@@ -97,6 +97,10 @@ final readonly class LemonSqueezyApi
+@@ -96,11 +96,16 @@ final readonly class LemonSqueezyApi
+ 
      public function listOrders(User $user): array
      {
-         $userEmail = $user->getEmail();
-+        if ($user->getLsCustomerId()) {
-+            $lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());
-+            $userEmail = $lsCustomer['data']['attributes']['email'];
++        if (!$user->getLsCustomerId()) {
++            return [];
 +        }
- 
++
++        $lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());
          $response = $this->client->request(Request::METHOD_GET, 'orders', [
              'query' => [
+                 'filter' => [
+                     'store_id' => $this->storeId,
+-                    'user_email' => $user->getEmail(),
++                    'user_email' => $lsCustomer['data']['attributes']['email'],
+                 ],
+                 'page' => [
+                     'size' => 5, // @see https://docs.lemonsqueezy.com/api/getting-started/requests#pagination
