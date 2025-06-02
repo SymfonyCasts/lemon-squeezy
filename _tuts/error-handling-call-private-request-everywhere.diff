@@ -1,5 +1,5 @@
 diff --git a/src/Store/LemonSqueezyApi.php b/src/Store/LemonSqueezyApi.php
-index d16edfc..5c6cd66 100644
+index a7c5255..6e08fd4 100644
 --- a/src/Store/LemonSqueezyApi.php
 +++ b/src/Store/LemonSqueezyApi.php
 @@ -87,8 +87,7 @@ final readonly class LemonSqueezyApi
@@ -12,17 +12,17 @@ index d16edfc..5c6cd66 100644
  
          return $lsStore['data']['attributes']['url'];
      }
-@@ -100,7 +99,8 @@ final readonly class LemonSqueezyApi
+@@ -101,7 +100,8 @@ final readonly class LemonSqueezyApi
          }
  
-         $lsCustomer = $this->retrieveCustomer($user->getLsCustomerId());
+         $lsCustomer = $this->retrieveCustomer($lsCustomerId);
 -        $response = $this->client->request(Request::METHOD_GET, 'orders', [
 +
 +        return $this->request(Request::METHOD_GET, 'orders', [
              'query' => [
                  'filter' => [
                      'store_id' => $this->storeId,
-@@ -111,15 +111,11 @@ final readonly class LemonSqueezyApi
+@@ -112,15 +112,11 @@ final readonly class LemonSqueezyApi
                  ],
              ],
          ]);

@@ -1,8 +1,8 @@
 diff --git a/src/Store/LemonSqueezyApi.php b/src/Store/LemonSqueezyApi.php
-index addfed7..7846e49 100644
+index 64f5508..3916c27 100644
 --- a/src/Store/LemonSqueezyApi.php
 +++ b/src/Store/LemonSqueezyApi.php
-@@ -122,4 +122,8 @@ final readonly class LemonSqueezyApi
+@@ -123,4 +123,8 @@ final readonly class LemonSqueezyApi
  
          return $response->toArray();
      }
