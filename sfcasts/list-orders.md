@@ -9,7 +9,7 @@ relationship between the `User` entity and LemonSqueezy customer, we *can*!
 
 Start by opening `src/Store/LemonSqueezyApi.php`. Add a new method -
 `public function listOrders()` - and return an `array`. This function will fetch
-the orders from LemonSqueezy's API. If we head over to LemonSqueezy's docs,
+the orders from LemonSqueezy's API. If we head over to the LemonSqueezy docs,
 under "List all orders", we can see that we need to use a `GET` request to the
 `/orders` endpoint.
 
@@ -54,7 +54,7 @@ and... there's our "data" with an array of orders.
 If we click on "attributes", we see a ton of fields we can use for our order
 table. The first one I'll grab is `order_number`. In our code, replace `Order`
 with `#{{ order.attributes.order_number }}`. For `Date`, replace it with
-`{{ order.attributes.created_at|date('d M Y, H:i') }}`. We're using `|date()`
+`{{ order.attributes.created_at|date('d M Y, H:i') }}`. We're using date filter
 here so the date will be easier to read. We have several options to choose
 from for the `Amount` field. I'll use `total_formatted` because it's
 pre-formatted by LemonSqueezy. Finally, for our link, we'll write
@@ -76,10 +76,11 @@ In the template, add a link, with the href:
 `https://app.lemonsqueezy.com/my-orders/{{ (orders.data|first).attributes.identifier|default('') }}`,
 target: `_blank`, and text: `More Orders`.
 
-That link will pre-open the latest order in that list for convenience.
+That link will take the user to LemonSqueezy and display all their orders - with
+the first order pre-selected.
 
 But we don't need to see this link *all the time* - only if the user has more
-than five orders. Let's `dd($orders)` again, go refresh, and inspect the data.
+than five orders. Let's `dd($orders)` again, refresh, and inspect the data.
 In `meta`, `page`, we see `total` and `perPage`, so head back, remove the `dd()`,
 and wrap the link with
 `{% if orders.meta.page.total > orders.meta.page.perPage %}`. I'll fix this
@@ -93,12 +94,12 @@ list all the customer's orders.
 ## Preventing Leaks
 
 Okay, now let's turn our attention to a small security issue here. At the
-moment, we're filtering orders by the email users have registered on their
-account. But, *in theory*, users can change their email to something they
+moment, we're filtering orders by the email users have registered with our site.
+But, *in theory*, users could change their email to something they
 *don't* own. To mitigate this, we need to use the email set on the LemonSqueezy
 customer, *not* on our `User` entity. Inside `LemonSqueezyApi.php`, add a new
-`public function` and call it `retrieveCustomer()` with `string $customerId`.
-Inside *that*, add
+`public function` and call it `retrieveCustomer()` with `string $customerId`,
+return `array`. Inside, write
 `$response = $this->client->request(Request::METHOD_GET, 'customers/' . $customerId)`.
 Below, `return $response->toArray()`.
 
