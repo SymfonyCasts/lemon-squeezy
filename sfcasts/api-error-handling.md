@@ -2,8 +2,8 @@
 
 Head over to `src/Store/LemonSqueezyApi.php`. You probably remember this
 `createCheckoutUrl()` method from earlier. This cast to `string` fixed an error.
-Remove it temporarily so we can bring that error back. Back in your browser, click
-"Add to cart", then "Checkout with LemonSqueezy", and... we see our expected
+Remove it temporarily so we can bring that error back. Back in your browser,
+click "Add to cart", then "Checkout with LemonSqueezy", and... we see our expected
 `ClientException`.
 
 Previously, we used this `dd($response->getContent(false))` trick to see the
