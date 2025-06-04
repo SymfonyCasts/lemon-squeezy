@@ -18,9 +18,9 @@ Below, add a unique CSS class to the checkout link: `lemonsqueezy-button`. When 
 
 Remove the `lemonsqueezy-button` class we added earlier, and exchange it for something a bit more flexible. In `assets/controllers/`, create a new controller. We'll call it `lemon-squeezy_controller.js`. 
 
-Inside, add `import { Controller } from '@hotwired/stimulus'`, and below that, `export default class extents Controller`. In the export, add a `connect()` method, which we'll leave empty for now. Finally, add another method - `openOverlay()` - that will trigger the actual action. 
+Inside, add `import { Controller } from '@hotwired/stimulus'`, and below that, `export default class extends Controller`. Inside the class, add a `connect()` method, which we'll leave empty for now. Finally, add another method - `#openOverlay()` - that will be a Stimulus action. 
 
-Now, let's *connect* this controller in `cart.html.twig`. Add a new line to the checkout link with `data-action`, so when we click this button, it will call the `#openOverlay` action.
+Now, let's *connect* this controller in `cart.html.twig`. Add a new line to the checkout link with `data-action`, so when we click this button, it will call the `#openOverlay()` action.
 
 We also need to pass the LemonSqueezy Checkout URL, but instead of generating it every time the cart page loads, let's just generate it when the link is clicked.
 
@@ -39,9 +39,9 @@ Back in our `lemon-squeezy` controller, register a new value. Say `static values
 
 Over in the cart template, add a new data value attribute - `data-lemon-squeezy-checkout-create-url-value` - and pass `{{ path('app_order_checkout_create') }}`.
 
-You can also replace `href` with a '#' if you want to prevent clicking on this if JavaScript is disabled, but I'll keep it for legacy. *Instead*, in `openOverlay()`, we'll take the event and call `e.preventDefault()`.
+You can also replace `href` with a '#' if you want to prevent clicking on this if JavaScript is disabled, but I'll keep it for legacy. *Instead*, in `#openOverlay()`, we'll take the event and call `e.preventDefault()`.
 
-Okay, next, let's *implement* the `openOverlay()` method. Down here, grab the link element with `const linkEl = e.currentTarget`. Below that, we need to execute an AJAX request to the `checkoutCreateUrl` we passed as a value. For that, use the `fetch()` function. Inside, call `this.checkoutCreateUrlValue`, and add the options as a second argument. This AJAX request should be executed with `method: 'POST'`... and for headers, set `Content-Type` to `application/json`. 
+Okay, next, let's *implement* the `#openOverlay()` method. Down here, grab the link element with `const linkEl = e.currentTarget`. Below that, we need to execute an AJAX request to the `checkoutCreateUrl` we passed as a value. For that, use the `fetch()` function. Inside, call `this.checkoutCreateUrlValue`, and add the options as a second argument. This AJAX request should be executed with `method: 'POST'`... and for headers, set `Content-Type` to `application/json`. 
 
 Next, we'll chain this `fetch()` call with `.then()`. Inside, we expect a `response`, and we'll also add a sanity check - `if (!response.ok)`, `throw new Error()` - which will tell us that the `Network response was not OK`, followed by `response.statusText`. 
 
@@ -53,6 +53,6 @@ We're going to ask LemonSqueezy to open this URL, so call `window.LemonSqueezy.U
 
 Okay, this looks good, so let's test it out. Open our site, and *also* open the Chrome Developer Tools in the Console tab to see the JavaScript logs. Reload the page, and... here's our `lemon-squeezy` controller! 
 
-If we click the "Checkout with LemonSqueezy" button, it *loads* and... it opens the LemonSqueezy checkout page! It still works!
+If we click the "Checkout with LemonSqueezy" button, it *loads* and... it opens the LemonSqueezy checkout page under our domain! It still works!
 
 Next: Let's make this even cooler by rendering the LemonSqueezy checkout page over our cart page.
