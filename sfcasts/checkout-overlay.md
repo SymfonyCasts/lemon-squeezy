@@ -15,18 +15,18 @@ magic*.
 First, we need to add LemonSqueezy's JavaScript tool - `lemon.js` - to our cart
 page. Open `templates/order/cart.html.twig` and add a new block. Call it
 `javascripts`... and close it with `endblock`. Inside, add a `script` tag, and
-set `src` to `https://app.lemonsqueezy.com/js/lemon.js`. We'll also add the
-`defer` HTML attribute.
+set `src` to `https://app.lemonsqueezy.com/js/lemon.js`. Also add the
+`defer` attribute.
 
 LemonSqueezy advises *against* self-hosting the `lemon.js` file, since you might
-miss out on new features and crucial security patches, so we're going to link it
+miss out on new features and crucial security patches, so be sure to link it
 *directly*, to keep payment-related matters as safe as possible.
 
 We also need to call the `{{ parent() }}` function inside `javascripts` to avoid
-overriding this block. *Sweet*.
+completely overriding this block. *Sweet*.
 
 Below, add a unique CSS class to the checkout link: `lemonsqueezy-button`. When
-we head over and refresh the cart page, you'll notice that we're now loading the
+we head over and refresh the cart page, it's subtle, but you'll notice that we're now loading the
 LemonSqueezy checkout page under *our* URL. If you inspected the source code,
 you'd see that LemonSqueezy is replacing the whole page with its own content.
 That's *awesome*, but we can make this *even better*.
@@ -35,70 +35,67 @@ That's *awesome*, but we can make this *even better*.
 
 Remove the `lemonsqueezy-button` class we added earlier, and exchange it for
 something a bit more flexible. In `assets/controllers/`, create a new
-controller. We'll call it `lemon-squeezy_controller.js`.
+controller called `lemon-squeezy_controller.js`.
 
 Inside, add `import { Controller } from '@hotwired/stimulus'`, and below that,
-`export default class extends Controller`. Inside the class, add a `connect()`
-method, which we'll leave empty for now. Finally, add another method -
-`#openOverlay()` - that will be a Stimulus action.
+`export default class extends Controller`. Inside the class, add two methods:
+`connect()` and `openOverlay()`.
 
 Now, let's *connect* this controller in `cart.html.twig`. Add a new line to the
-checkout link with `data-action`, so when we click this button, it will call the
-`#openOverlay()` action.
+checkout link and set `data-controller="lemon-squeezy"`. This connects this link
+to our Stimulus controller. Below that, add `data-action="lemon-squeezy#openOverlay"`,
+which tells Stimulus to call the `openOverlay()` method when the link is clicked.
 
 We also need to pass the LemonSqueezy Checkout URL, but instead of generating it
-every time the cart page loads, let's just generate it when the link is clicked.
+every time the cart page loads, let's only generate it when the link is clicked.
 
 ### Adding a New Action to the OrderController
 
-Add a new action to the `OrderController`. Go to
-`src/Controller/OrderController.php` and, just before the `success()` action,
-add another one. We'll call it `public function createCheckout()`.
+We need a new action to on `OrderController`. Go to
+`src/Controller/OrderController.php` and, just before the `success()` method,
+add another one: `public function createCheckout()`.
 
-This will return a `Response`, and we'll add a `#[Route]` attribute above it
+This will return a `Response`. Above, add the `#[Route]` attribute
 with a path - `/checkout/create`. Name it `app_order_checkout_create` and only
 allow `POST` methods.
 
-For dependencies, we'll need `LemonSqueezyApi $lsApi`, as well as a user that's
-logged in. For this, add the `#[CurrentUser]` attribute with `User $user`.
+For dependencies, inject `LemonSqueezyApi $lsApi`, as well as the current
+user with `#[CurrentUser] User $user`.
 
-In the method, simply return the JSON with an empty array. Then, in the array,
-add a `targetUrl` key, call `$lsApi->createCheckoutUrl()` for the value, and
-pass the user. *Done*!
+Inside, `return $this->json()` with an array: `['targetUrl' => $lsApi->createCheckoutUrl($user)]`.
 
-Back in our `lemon-squeezy` controller, register a new value. Say
-`static values = {}`, and inside, add `checkoutCreateUrl: String`.
+Back in our `lemon-squeezy` Stimulus controller, register a new value. Write
+`static values = {}`, and inside, `checkoutCreateUrl: String`.
 
 Over in the cart template, add a new data value attribute -
 `data-lemon-squeezy-checkout-create-url-value` - and pass
 `{{ path('app_order_checkout_create') }}`.
 
-You can also replace `href` with a '#' if you want to prevent clicking on this
-if JavaScript is disabled, but I'll keep it for legacy. *Instead*, in
-`#openOverlay()`, we'll take the event and call `e.preventDefault()`.
+I'll leave the `href` as-is, so, if for some reason a user doesn't have JS
+enabled (is that still a thing?), they can still checkout. Back in our
+`openOverlay()` method, add `e` as a parameter, then call `e.preventDefault()`
+to stop JS-enabled browsers from following the link.
 
-Okay, next, let's *implement* the `#openOverlay()` method. Down here, grab the
+For the rest of this method, grab the
 link element with `const linkEl = e.currentTarget`. Below that, we need to
 execute an AJAX request to the `checkoutCreateUrl` we passed as a value. For
-that, use the `fetch()` function. Inside, call `this.checkoutCreateUrlValue`,
-and add the options as a second argument. This AJAX request should be executed
-with `method: 'POST'`... and for headers, set `Content-Type` to
-`application/json`.
+that, use the `fetch()` function for `this.checkoutCreateUrlValue`.
+For the options, add `method: 'POST'`, and `headers: {'Content-Type': 'application/json'}`.
 
-Next, we'll chain this `fetch()` call with `.then()`. Inside, we expect a
-`response`, and we'll also add a sanity check - `if (!response.ok)`,
-`throw new Error()` - which will tell us that the `Network response was not OK`,
+Next, chain this `fetch()` call with `.then()`. Inside, expect a
+`response`, and add a sanity check - `if (!response.ok)`,
+`throw new Error()` with `Network response was not OK`,
 followed by `response.statusText`.
 
 *Otherwise*, just `return response.json()`. That should pass the JSON data as an
-object to the next `.then()`, where we expect `data => {}`.
+object to the next `.then()`, where we expect `data`.
 
 We're going to ask LemonSqueezy to open this URL, so call
-`window.LemonSqueezy.Url.Open` and pass the `data.targetUrl`, which we'll return
+`window.LemonSqueezy.Url.Open` and pass `data.targetUrl`, which we returned
 from the `createCheckout()` action.
 
-*Finally*, we can add a `catch()` call, expecting an error. Inside, we'll just
-say `console.error()` with a `Fetch error:` message, passing `error` as the
+*Finally*, add a `catch()`, expecting an `error`. Inside,
+write `console.error()` with a `Fetch error:` message, passing `error` as the
 second argument.
 
 Okay, this looks good, so let's test it out. Open our site, and *also* open the
@@ -108,5 +105,5 @@ page, and... here's our `lemon-squeezy` controller!
 If we click the "Checkout with LemonSqueezy" button, it *loads* and... it opens
 the LemonSqueezy checkout page under our domain! It still works!
 
-Next: Let's make this even cooler by rendering the LemonSqueezy checkout page
-over our cart page.
+Again, this is subtle, so next: let's make this even cooler by rendering the
+checkout page *over* our cart page, in a modal.
