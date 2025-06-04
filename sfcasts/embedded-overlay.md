@@ -1,112 +1,54 @@
 # Embedding the LemonSqueezy Checkout Overlay
 
-In the last chapter, we got our hands dirty and built a custom
-LemonSqueezy Stimulus controller. It pulls up the LemonSqueezy Checkout
-page in an iFrame right on over domain. But hey, let's make it even
-smoother! We're going to lay the checkout page on top of our cart page,
-in order to create a *real* overlay
-But before we dive in, let's add a couple of features: prevent double
-clicks and show loading progress for the "Checkout with LemonSqueezy" button.
+In the last chapter, we got our hands dirty and built a custom LemonSqueezy Stimulus controller. It pulls up the LemonSqueezy checkout page in an iFrame right on our domain. That's pretty sweet, but what if I told you we can make it *even better*? We're going to lay the checkout page *on top* of our cart page and create a *real* overlay.
+
+But before we dive in, let's add a couple of key features to the "Checkout with LemonSqueezy" button:
+
+- Preventing double clicks
+- And showing loading progress
 
 ## Preventing Double Clicks and Showing Loading Progress
 
-To kick things off, open the `lemon-squeezy_controller`. We're
-going to create some private methods here. Start with `#disableLink()` and
-pass in a `link` argument. Then, let's add `#enableLink()` and pass `link` as
-the argument again. 
+To kick things off, open the `lemon-squeezy_controller`. We're going to create some private methods here. Start with `#disableLink()` and pass in a `link` argument. Then add `#enableLink()` and pass `link` as the argument again. 
 
-For the `#disableLink()`, we'll write some code to add the `disabled` CSS class
-to the link, disable pointer events and dim the link slightly:
+For `#disableLink()`, we'll write some code to add the `disabled` CSS class to the link, which will disable pointer events and dim the link slightly. Say `link.classList.add('disabled')`, then `link.style.pointerEvents ='none'`, and finish with `link.style.opacity = '0.5'`.
 
-`link.classList.add('disabled')`, then `link.style.pointerEvents ='none'`,
-and finish with `link.style.opacity = '0.5'`.
+In the `#enableLink()`, we'll do the opposite. Write `link.classList.remove('disabled')`, `link.style.pointerEvents = 'auto'`, and `link.style.opacity = '1'`.
 
-In the `#enableLink()`, we'll do the opposite. Write `link.classList.remove('disabled')`,
-then `link.style.pointerEvents = 'auto'`, and `link.style.opacity = '1'`.
+Okay, *now*, in the `#openOverlay()` action, right after we created `linkEl`, call `this.#disableLink(linkEl)`. *Just in case* something doesn't go to plan, in the second `.then()` after `window.LemonSqueezy.Url.Open(data.targetUrl)`, call `this.#enableLink(linkEl)`. We'll do the same thing in `.catch()` after `console.log()`.
 
-Next, in the `#openOverlay()` action, right after we created `linkEl`, we'll
-call `this.#disableLink(linkEl);`. Now, just in case something doesn't go
-to plan, we'll call `this.#enableLink(linkEl)` in the second `.then()` after
-`window.LemonSqueezy.Url.Open(data.targetUrl);` and also in the `catch()`
-after the `console.log()`.
-
-Now open the website, reload the cart page, and if I click a few times on the
-"Checkout with LemonSqueezy" button - it's slightly dimmed with the opacity 0.5
-and ignored my double clicks.
+All right, over on our site, reload the cart page, and if we click on the "Checkout with LemonSqueezy" button a few times... we can see that it's slightly dimmed and completely ignores our double clicks. Nice!
 
 ## Embedding the Checkout Page
 
-Now, onto the fun part - embedding! Open up `LemonSqueezyApi` from the `src/Store/`.
-In the `createCheckoutUrl()`, after setting the custom user ID, we'll add
-`$attributes['checkout_options']['embed'] = true;`.
+Now, onto the fun part - *embedding*! Open `src/Store/LemonSqueezyApi.php` and, in the `createCheckoutUrl()`, after setting the custom user ID, add `$attributes['checkout_options']['embed'] = true`.
 
-Refresh your cart page and click the checkout button - there it is!
-A slick LemonSqueezy overlay over our cart page! We can even see our cart page in the
-background if we click the close button. Once closed, our "Checkout with LemonSqueezy"
-button is ready to go again.
+Go refresh the cart page, click the checkout button again, and... there it is - a shiny new LemonSqueezy overlay on our cart page! We can even see our cart page in the background if we click the close button. When we close this, our "Checkout with LemonSqueezy" button is ready to go again.
 
 ## Improving `createCheckoutUrl()`
 
-At the moment, we're calling `createCheckoutUrl()` in a few places: in
-`OrderController::createCheckout()` and also in `OrderController::checkout()`.
-If we want to use embedding only for the JavaScript version - we can add an
-`$embed` boolean argument to `LemonSqueezyApi::createCheckoutUrl()` that defaults
-to `false`. Let's replace the hard-coded `true` we used earlier with this
-`$embed`variable. Back in our `OrderController`, we'll pass `true` to the
-`createCheckoutUrl()` in the `createCheckout()` action. 
+At the moment, we're calling `createCheckoutUrl()` in a couple places - in `OrderController::createCheckout()` and again in `OrderController::checkout()`. If we want to use embedding for *just* the JavaScript version, we can add an `$embed` boolean argument to `LemonSqueezyApi::createCheckoutUrl()` that defaults to `false`. We'll also replace the hard-coded `true` we used earlier with the new `$embed` variable. Back in `OrderController`, pass `true` to `createCheckoutUrl()` in the `createCheckout()` action. 
 
 ## Automating `lemon.js` Inclusion
 
-To ensure our LemonSqueezy Stimulus controller works, we need to
-include `lemon.js` on every page where we use it. A bit tedious? We can
-automate it! Inside the `connect()` method, create a `script` variable and
-set it equal to `window.document.querySelector()` and pass
-`'script[src="https://app.lemonsqueezy.com/js/lemon.js"]'` as the argument.
-If the `script` tag doesn't exist, we'll create it and append it to the DOM.
-Easy, right? Inside the `if`, write: `script = window.document.createElement()`
-and write `script` tag inside. Next, `script.src` set to `lemon.js` URL.
-And don't forget to set the defer HTML attr to true.
-End with `window.document.head.appendChild(script)`.
+To ensure our LemonSqueezy Stimulus controller works, we need to include `lemon.js` on *every* page we use it. If that sounds tedious, it *is*, so let's *automate* it.
 
-Celebrate by removing the whole `javascripts` block completely from the template
-and go checkout again. I will reload the cart page, click on the checkout button,
-it's loading... and yes, we can still see the overlay.
+In the `connect()` method, create a `script` variable, set it equal to `window.document.querySelector()`, and pass `'script[src="https://app.lemonsqueezy.com/js/lemon.js"]'` as the argument. If the `script` tag doesn't exist, we'll create and append it to the DOM. Easy, right? Inside the `if`, write `script = window.document.createElement()` with a `script` tag inside. Also set `script.src` to the `lemon.js` URL, and don't forget to set the defer HTML attribute to `true`. Finally, add `window.document.head.appendChild(script)`.
+
+Now we can celebrate by removing the whole `javascripts` block from the template, and try checking out again. Reload the cart page, click on the checkout button, we can see that it's loading, and... *yes*! We can still see the overlay!
 
 ## Debugging for Non-authenticated Users
 
-But there's a hiccup for non-authenticated users. If we log out, add a product
-to the cart, and try to checkout again - nothing happens! Open the Chrome Dev Tools
-and you'll see that the request is redirected to a login page first but our
-JavaScript logic does not follow that redirect. 
+*But* there's a hiccup for non-authenticated users. If we log out, add a product to the cart, and try to checkout again... *nothing happens*. If you open the Chrome Dev Tools, you can see that the request is redirected to a login page first, but our JavaScript logic doesn't follow that redirect. Let's fix that!
 
-Let's add a `console.log(response)` before the `response.ok` check. In the Console
-tab we can seet there's a `response.redirected` set to `true`,
-Let's add one more if, and `if (response.redirected === true)`, 
-we'll redirect the user to the login page with
-`window.location.href = response.url`.
-
-and add the current pathname to the URL. If the user isn't authenticated,
-we'll do `Promise.reject()` saying "User is not authenticated!". I will also
-add a comment above.
+In our code, add a `console.log(response)` before the `response.ok` check. Back on our site, in the "Console" tab, we can see that `response.redirected` is set to `true` for that request. Let's add one more `if` - `if (response.redirected === true)` - and we'll redirect the user to the login page with `window.location.href = response.url`. If the user *isn't* authenticated, we'll add `Promise.reject()` which will tell us that the `User is not authenticated!`. I'll also add a quick comment above.
 
 ## Redirecting Users Back to the Cart Page
 
-Now if we click on the checkout button - we're redirected
-to the login page. And if I login, Now, when users sign in, they're redirected
-to the home page instead of the cart page.
-Let's fix that too. In the LemonSqueezy Stimulus controller, after
-`response.url`, we'll add `?_target_path=` string and concatenate
-`window.location.pathname`.
+Okay, *now* if we click the checkout button when we're not logged in... we're redirected to the login page! Nice! And if we enter our credentials and log in... we're redirected to the home page instead of the cart page. Let's fix that too! In `lemon-squeezy_controller.js`, after `response.url`, add a `?_target_path=` string, and concatenate `window.location.pathname`.
 
-To make this actually work, we'll open `src/Security/LoginFormAuthenticator`,
-and at the start of the `onAuthenticationSuccess` method
-add `if ($targetPath = $request->query->get())` passing out `_target_path`
-from the query parameters. Then `return new RedirectResponse($targetPath)`.
+To *really* make this work, open `src/Security/LoginFormAuthenticator`, and at the start of the `onAuthenticationSuccess()` method, add `if ($targetPath = $request->query->get())`, passing `_target_path` from the query parameters. Finally, `return new RedirectResponse($targetPath)`.
 
-Now, when users sign in after being redirected to the login page, they're
-taken straight back to the cart page. If they click the checkout button
-again, they'll see our awesome checkout overlay. And after completing the
-checkout - success! Press continue - here's our success message. All good!
-
-Next, let's see how we can listen to the LemonSqueezy JavaScript events that
-will also allow us to sync customer ID with the current user.
+This time, if we log out and try to check out again... we're redirected to the login page. If we sign in again... boom! We're back on the cart page! Click the checkout button and... it loads our awesome checkout overlay! I'll fill in some information so we can complete the checkout... click the "Pay" button, and... tada! Here's our success message!
+*
+Next: Let's learn how to *listen* to LemonSqueezy JavaScript events and *use* those to sync customer ID with the current user in an alternative way.
