@@ -6,15 +6,15 @@
 
 Empieza abriendo `src/Store/LemonSqueezyApi.php`. Añade un nuevo método -`public function listOrders()` - y devuelve un `array`. Esta función obtendrá los pedidos de la API de LemonSqueezy. Si nos dirigimos a la documentación de LemonSqueezy, en "Listar todos los pedidos", podemos ver que necesitamos utilizar una petición `GET` a la ruta`/orders`.
 
-De vuelta a nuestro nuevo método, añadimos `$response = $this->client->request()`, y dentro,`Request::METHOD_GET` a la ruta `orders`.
+De vuelta a nuestro nuevo método, añade `$response = $this->client->request()`, y dentro,`Request::METHOD_GET` a la ruta `orders`. Ahora, devuelve `$response->toArray()`.
 
-Pero espera... no queremos mostrar todos los pedidos -sólo los correspondientes a nuestra tienda y al usuario actual-, así que tenemos que añadir algunos parámetros de consulta adicionales para filtrar esta lista.
+Pero espera... no queremos mostrar todos los pedidos -sólo los de nuestra tienda y el usuario actual-, así que tenemos que añadir algunos parámetros de consulta adicionales para filtrar esta lista.
 
 ## Añadir parámetros de consulta de filtrado
 
 Añadamos un array vacío como tercer argumento al método `request()`, y dentro escribamos `'query' => []`, `'filter' => []`, `'store_id' => $this->storeId`, y `'user_email' => $user->getEmail()`. También tenemos que añadir `User $user` al método`listOrders()` anterior. ¡Perfecto!
 
-A continuación, abre `UserController.php`. Aquí abajo, en `account()`, inyecta`LemonSqueezyApi $lsApi`. También necesitamos el usuario actual, así que añade`#[CurrentUser] User $user`. Abajo, crea la variable `$orders` y ponla en`$lsApi->listOrders()`. Por último, en `return`, pasa `'orders' => $orders`.
+A continuación, abre `UserController.php`. Aquí abajo, en `account()`, inyecta`LemonSqueezyApi $api`. También necesitamos el usuario actual, así que añade`#[CurrentUser] User $user`. Abajo, crea la variable `$orders` y ponla en`$api->listOrders()`. Por último, en `return`, pasa `'orders' => $orders`.
 
 ## Representación de pedidos y estilo CSS de Tailwind
 
