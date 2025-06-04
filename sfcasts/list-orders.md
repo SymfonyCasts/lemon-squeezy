@@ -14,7 +14,7 @@ under "List all orders", we can see that we need to use a `GET` request to the
 `/orders` endpoint.
 
 Back in our new method, add `$response = $this->client->request()`, and inside,
-`Request::METHOD_GET` to the `orders` path.
+`Request::METHOD_GET` to the `orders` path. Now, return `$response->toArray()`.
 
 But wait... we don't want to display *all* orders - just the ones for our store
 and the current user - so we need to add some extra query parameters to filter
@@ -28,9 +28,9 @@ and `'user_email' => $user->getEmail()`. We also need to add `User $user` to the
 `listOrders()` method above. Perfect!
 
 Next, open `UserController.php`. Down here, in `account()`, inject
-`LemonSqueezyApi $lsApi`. We also need the current user, so add
+`LemonSqueezyApi $api`. We also need the current user, so add
 `#[CurrentUser] User $user`. Below, create the `$orders` variable and set it to
-`$lsApi->listOrders()`. Finally, in the `return`, pass `'orders' => $orders`.
+`$api->listOrders()`. Finally, in the `return`, pass `'orders' => $orders`.
 
 ## Rendering Orders and Tailwind CSS Styling
 
