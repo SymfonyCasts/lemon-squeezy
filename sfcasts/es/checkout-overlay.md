@@ -8,7 +8,7 @@ En lugar de redirigir a los clientes a la página de pago de LemonSqueezy, podem
 
 En primer lugar, tenemos que añadir la herramienta JavaScript de LemonSqueezy - `lemon.js` - a nuestra página del carrito. Abre `templates/order/cart.html.twig` y añade un nuevo bloque. Llámalo`javascripts`... y ciérralo con `endblock`. Dentro, añade una etiqueta `script`, y establece `src` en `https://app.lemonsqueezy.com/js/lemon.js`. Añade también el atributo`defer`.
 
-LemonSqueezy desaconseja autoalojar el archivo `lemon.js`, ya que podrías perderte nuevas funciones y parches de seguridad cruciales, así que asegúrate de enlazarlo directamente, para mantener los asuntos relacionados con el pago lo más seguros posible.
+LemonSqueezy aconseja no autoalojar el archivo `lemon.js`, ya que podrías perderte nuevas funciones y parches de seguridad cruciales. Asegúrate de enlazarlo directamente, para mantener los asuntos relacionados con el pago lo más seguros posible.
 
 También tenemos que llamar a la función `{{ parent() }}` dentro de `javascripts` para evitar anular completamente este bloque. Dulce.
 
@@ -38,19 +38,19 @@ De vuelta en nuestro controlador `lemon-squeezy` Stimulus, registra un nuevo val
 
 En la plantilla del carrito, añade un nuevo atributo de valor de datos -`data-lemon-squeezy-checkout-create-url-value` - y pasa`{{ path('app_order_checkout_create') }}`.
 
-Dejaré `href` tal cual, para que, si por alguna razón un usuario no tiene JS activado (¿sigue existiendo eso?), pueda realizar el pago. De vuelta a nuestro método`openOverlay()`, añade `e` como parámetro, y luego llama a `e.preventDefault()`para impedir que los navegadores con JS habilitado sigan el enlace.
+Dejaré `href` tal cual, para que, si por alguna razón un usuario no tiene JS activado (¿sigue existiendo eso?), pueda realizar la compra. De vuelta a nuestro método`openOverlay()`, añade `e` como parámetro, y luego llama a `e.preventDefault()`para impedir que los navegadores con JS habilitado sigan el enlace.
 
 Para el resto de este método, coge el elemento enlace con `const linkEl = e.currentTarget`. A continuación, necesitamos ejecutar una petición AJAX al `checkoutCreateUrl` que pasamos como valor. Para ello, utiliza la función `fetch()` para `this.checkoutCreateUrlValue`. Para las opciones, añade `method: 'POST'`, y `headers: {'Content-Type': 'application/json'}`.
 
 A continuación, encadena esta llamada a `fetch()` con `.then()`. Dentro, espera un`response`, y añade una comprobación de sanidad - `if (!response.ok)`,`throw new Error()` con `Network response was not OK`, seguido de `response.statusText`.
 
-Si no, sólo `return response.json()`. Eso debería pasar los datos JSON como un objeto al siguiente `.then()`, donde esperamos `data`.
+Si no, `return response.json()`. Eso debería pasar los datos JSON como un objeto al siguiente `.then()`, donde esperamos `data`.
 
-Vamos a pedir a LemonSqueezy que abra esta URL, así que llama a`window.LemonSqueezy.Url.Open` y pásale `data.targetUrl`, que devolvimos de la acción `createCheckout()`.
+Vamos a pedir a LemonSqueezy que abra esta URL, así que llama a`window.LemonSqueezy.Url.Open()` y pásale `data.targetUrl`, que devolvimos de la acción `createCheckout()`.
 
 Por último, añade un `catch()`, esperando un `error`. Dentro, escribe `console.error()` con un mensaje `Fetch error:`, pasando `error` como segundo argumento.
 
-Vale, esto tiene buena pinta, así que vamos a probarlo. Abre nuestro sitio, y abre también las Herramientas para desarrolladores de Chrome en la pestaña Consola para ver los registros de JavaScript. Recarga la página y... ¡aquí está nuestro controlador `lemon-squeezy`!
+Vale, esto tiene buena pinta, así que vamos a probarlo. Abre nuestro sitio, y abre también las Herramientas del desarrollador en la pestaña Consola para ver los registros de JavaScript. Recarga la página y... ¡aquí está nuestro controlador `lemon-squeezy`!
 
 Si hacemos clic en el botón "Pago con LemonSqueezy", se carga y... ¡se abre la página de pago de LemonSqueezy bajo nuestro dominio! ¡Sigue funcionando!
 
