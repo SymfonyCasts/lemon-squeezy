@@ -19,7 +19,7 @@ set `src` to `https://app.lemonsqueezy.com/js/lemon.js`. Also add the
 `defer` attribute.
 
 LemonSqueezy advises *against* self-hosting the `lemon.js` file, since you might
-miss out on new features and crucial security patches, so be sure to link it
+miss out on new features and crucial security patches. Be sure to link it
 *directly*, to keep payment-related matters as safe as possible.
 
 We also need to call the `{{ parent() }}` function inside `javascripts` to avoid
@@ -87,11 +87,11 @@ Next, chain this `fetch()` call with `.then()`. Inside, expect a
 `throw new Error()` with `Network response was not OK`,
 followed by `response.statusText`.
 
-*Otherwise*, just `return response.json()`. That should pass the JSON data as an
+*Otherwise*, `return response.json()`. That should pass the JSON data as an
 object to the next `.then()`, where we expect `data`.
 
 We're going to ask LemonSqueezy to open this URL, so call
-`window.LemonSqueezy.Url.Open` and pass `data.targetUrl`, which we returned
+`window.LemonSqueezy.Url.Open()` and pass `data.targetUrl`, which we returned
 from the `createCheckout()` action.
 
 *Finally*, add a `catch()`, expecting an `error`. Inside,
@@ -99,7 +99,7 @@ write `console.error()` with a `Fetch error:` message, passing `error` as the
 second argument.
 
 Okay, this looks good, so let's test it out. Open our site, and *also* open the
-Chrome Developer Tools in the Console tab to see the JavaScript logs. Reload the
+Developer Tools in the Console tab to see the JavaScript logs. Reload the
 page, and... here's our `lemon-squeezy` controller!
 
 If we click the "Checkout with LemonSqueezy" button, it *loads* and... it opens
