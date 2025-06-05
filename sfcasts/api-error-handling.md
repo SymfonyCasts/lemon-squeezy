@@ -21,8 +21,7 @@ Its *first* argument will be `string $method`, followed by `string $url` and an
 array of options. Now *here's* the fun part: Open a `try-catch` block and, in
 the `try`, write `$response = $this->client->request()` and pass in all the
 variables - `$method`, `$url`, and `$options`. Create a `$data` variable that's
-equal to `$response->toArray()`. We'll `catch` `ClientException $e` and inside,
-perform some *magic*.
+equal to `$response->toArray()`. We'll `catch` `ClientException $e`.
 
 At the bottom, `return $data`, and back in the `catch`, we want the raw response
 content, so write `$data = $e->getResponse()->toArray()` and pass `false` as
@@ -57,8 +56,8 @@ Let's give it a try!
 Over on the checkout page, refresh, and... *voila*! The *generic* error message
 is now a *custom* message:
 
-> LS API Error: 422 status code: Unprocessable entity. {0} field must be a
-> string (at path data.attributes.checkout.data.custom.user_id).
+> LS API Error: 422 Unprocessable entity "The {0} field must be a
+> string" (at path "data/attributes/checkout_data/custom/user_id").
 
 That was *much* easier to understand.
 
