@@ -8,13 +8,18 @@ relationship between the `User` entity and LemonSqueezy customer, we *can*!
 ## LemonSqueezy API for fetching Orders
 
 Start by opening `src/Store/LemonSqueezyApi.php`. Add a new method -
-`public function listOrders()` - and return an `array`. This function will fetch
-the orders from LemonSqueezy's API. If we head over to the LemonSqueezy docs,
+`public function listOrders()` - and return an `array`.
+
+[[[ code('d939b52d0c') ]]]
+
+This function will fetch the orders from LemonSqueezy's API. If we head over to the LemonSqueezy docs,
 under "List all orders", we can see that we need to use a `GET` request to the
 `/orders` endpoint.
 
 Back in our new method, add `$response = $this->client->request()`, and inside,
 `Request::METHOD_GET` to the `orders` path. Now, return `$response->toArray()`.
+
+[[[ code('1eb3d7274b') ]]]
 
 But wait... we don't want to display *all* orders - just the ones for our store
 and the current user - so we need to add some extra query parameters to filter
@@ -27,10 +32,14 @@ inside, write `'query' => []`, `'filter' => []`, `'store_id' => $this->storeId`,
 and `'user_email' => $user->getEmail()`. We also need to add `User $user` to the
 `listOrders()` method above. Perfect!
 
+[[[ code('53707354cd') ]]]
+
 Next, open `UserController.php`. Down here, in `account()`, inject
 `LemonSqueezyApi $api`. We also need the current user, so add
 `#[CurrentUser] User $user`. Below, create the `$orders` variable and set it to
 `$api->listOrders()`. Finally, in the `return`, pass `'orders' => $orders`.
+
+[[[ code('0034c82147') ]]]
 
 ## Rendering Orders and Tailwind CSS Styling
 
@@ -38,6 +47,8 @@ Now we need to *render* those orders! Open the `account.html.twig` template...
 and somewhere below `{{ app.user.email }}`, paste this boilerplate code with
 some Tailwind CSS styling. You can copy this from the code blocks below the
 video.
+
+[[[ code('27ed006aa3') ]]]
 
 Since we don't want *everyone* to see our orders, we need to render the list
 *only* if the `app.user.lsCustomerId` is set. If it *is*, an order table is
@@ -58,8 +69,11 @@ with `#{{ order.attributes.order_number }}`. For `Date`, replace it with
 here so the date will be easier to read. We have several options to choose
 from for the `Amount` field. I'll use `total_formatted` because it's
 pre-formatted by LemonSqueezy. Finally, for our link, we'll write
-`{{ order.attributes.urls.receipt }}`. Before we test this out, head back to
-`UserController.php` and remove the `dd()` we added earlier.
+`{{ order.attributes.urls.receipt }}`.
+
+[[[ code('e06ba9b920') ]]]
+
+Before we test this out, head back to `UserController.php` and remove the `dd()` we added earlier.
 
 ## Paginate the Orders
 
@@ -67,6 +81,8 @@ Lemon Squeezy returns *10* orders by default. If you want to see fewer than ten
 at a time, we can paginate the list by adding `'page' => ['size' => 5]` to the
 query. If we head back and refresh... we now have only the 5 latest orders
 displayed! It's working!
+
+[[[ code('b0ad24a507') ]]]
 
 *Ideally*, we should add *real* pagination below so users can navigate through
 all of their orders without leaving our site, but for now, let’s just add a link
@@ -86,6 +102,8 @@ and wrap the link with
 `{% if orders.meta.page.total > orders.meta.page.perPage %}`. I'll fix this
 spacing and add `{% endif %}` at the end.
 
+[[[ code('af0e380bdf') ]]]
+
 Okay, if we refresh again and click the link... we see the details
 for the latest order, but... where are the others? This seems to currently be
 a LemonSqueezy limitation when in test mode. In production, this would also
@@ -103,12 +121,18 @@ return `array`. Inside, write
 `$response = $this->client->request(Request::METHOD_GET, 'customers/' . $customerId)`.
 Below, `return $response->toArray()`.
 
+[[[ code('a7f6327a7f') ]]]
+
 Above, in `listOrders()`, add `$lsCustomerId = $user->getLsCustomerId()`.
 Then, `if (!$lsCustomerId)`, `return []`. This ensures there's no way a user
 can list orders if they don't have a LemonSqueezy customer ID.
 
+[[[ code('8b26e24ad2') ]]]
+
 Next, write `$lsCustomer = $this->retrieveCustomer($lsCustomerId)`. Finally,
 change the `user_email` filter to `$lsCustomer['data']['attributes']['email']`.
+
+[[[ code('872e231fdd') ]]]
 
 Security hardened!
 
