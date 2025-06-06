@@ -20,7 +20,7 @@ En la parte inferior, `return $data`, y de vuelta en el `catch`, queremos el con
 
 [[[ code('3d1ba1dee9') ]]]
 
-A continuación, actualiza el método `createCheckoutUrl()`. En lugar de`$this->client->request()`, utiliza sólo `$this->request()`, pasando todos los mismos argumentos. Si nos dirigimos e intentamos comprobarlo de nuevo... ¡boom! Esto es un volcado correcto de la petición real a la API como una matriz.
+A continuación, actualiza el método `createCheckoutUrl()`. En lugar de`$this->client->request()`, utiliza sólo `$this->request()`, pasando todos los mismos argumentos. Si nos dirigimos e intentamos comprobarlo de nuevo... ¡boom! Esto es un volcado correcto de la petición real a la API en forma de matriz.
 
 [[[ code('fc00dc08a0') ]]]
 
