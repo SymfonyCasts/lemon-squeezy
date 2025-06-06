@@ -2,6 +2,8 @@
 
 Head over to `src/Store/LemonSqueezyApi.php`. You probably remember this
 `createCheckoutUrl()` method from earlier. This cast to `string` fixed an error.
+[[[ code('f5f6b23f02') ]]]
+
 Remove it temporarily so we can bring that error back. Back in your browser,
 click "Add to cart", then "Checkout with LemonSqueezy", and... we see our expected
 `ClientException`.
@@ -17,21 +19,29 @@ to debug, let's try wrapping the `client->request()` method in *another* method.
 At the bottom of this class, create a `private function` called `request()`
 that returns an `array`.
 
+[[[ code('4358693e85') ]]]
+
 Its *first* argument will be `string $method`, followed by `string $url` and an
 array of options. Now *here's* the fun part: Open a `try-catch` block and, in
 the `try`, write `$response = $this->client->request()` and pass in all the
 variables - `$method`, `$url`, and `$options`. Create a `$data` variable that's
 equal to `$response->toArray()`. We'll `catch` `ClientException $e`.
 
+[[[ code('2b99a00b8e') ]]]
+
 At the bottom, `return $data`, and back in the `catch`, we want the raw response
 content, so write `$data = $e->getResponse()->toArray()` and pass `false` as
 the first argument. We'll also add `dd($data)` here temporarily so we can see
 the API error response.
 
+[[[ code('3d1ba1dee9') ]]]
+
 Next, update the `createCheckoutUrl()` method. Instead of
 `$this->client->request()`, use just `$this->request()`,
 passing all the same arguments. If we head over and try to check out
 again... *boom*! *This* is a proper dump of the *real* API request as an array.
+
+[[[ code('fc00dc08a0') ]]]
 
 ## Crafting Helpful Error Messages
 
@@ -46,8 +56,11 @@ and inside, append the raw content with
 `$mainErrorMessage .= $e->getResponse()->getContent(false)`. Perfect!
 
 At the end, `throw new \Exception()` with `$mainErrorMessage`, `0`
-for the second argument, and `$e` as the third argument. This sets the *original*
-exception as the previous one, which further helps with debugging.
+for the second argument, and `$e` as the third argument. 
+
+[[[ code('3868945e39') ]]]
+
+This sets the *original* exception as the previous one, which further helps with debugging.
 That's it! This is a fairly common and useful pattern for simplifying complex
 exceptions but still providing a reference to the original.
 
@@ -66,11 +79,15 @@ We don't need this `$response->toArray()` line anymore, so we can delete that
 along with the `dd()`. Also replace the `$response` variable with `$lsCheckout`,
 since we already have an array of checkout object data here.
 
+[[[ code('5e2d4db8f9') ]]]
+
 Refresh the page again to see if it works, and... we're good!
 
 The final step is to replace all remaining `$this->client->request()` calls with
 `$this->request()`. I'll speed through this for `retrieveStoreUrl()`,
 `listOrders()`, and remove the `$response->toArray()` calls while I'm at it.
+
+[[[ code('7dca08a671') ]]]
 
 If we try our site one more time... the account page still works... and so does
 the checkout page! Our error handling process is now efficient *and*
