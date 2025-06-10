@@ -34,7 +34,7 @@ Okay, in the `openOverlay()` method, right after we creat `linkEl`,
 call `this.#disableLink(linkEl)`. *Now*,
 in the second `.then()` after this `window.LemonSqueezy...` line,
 call `this.#enableLink(linkEl)`. Do the same thing in `.catch()` after
-`console.log()`.
+`console.error()`.
 
 All right, over on our site, reload the cart page, and if we click on the
 "Checkout with LemonSqueezy" button a few times... we can see that it's slightly
@@ -68,8 +68,8 @@ To ensure our LemonSqueezy Stimulus controller works, we need to include
 *automate* it.
 
 In the `connect()` method, create a `script` variable equal to
-`window.document.querySelector()`, and pass
-`'script[src="https://app.lemonsqueezy.com/js/lemon.js"]'` as the argument. 
+`window.document.querySelector('script[src=""]'`, copy the `lemon.js`
+URL from our template and paste here.
 Check the `script` doesn't already exist with `if (!script)`. Inside,
 write `script = window.document.createElement('script')`. Now, set
 `script.src` to the full `lemon.js` URL. Add `script.defer = true` and finally,
@@ -91,7 +91,7 @@ first, but our JavaScript logic doesn't follow that redirect. Let's fix that!
 In our code, add a `console.log(response)` before the `response.ok` check. Back
 on our site, in the "Console" tab, we can see that `response.redirected` is set
 to `true` for that request. Let's add another check -
-`if (response.redirected === true)` - send the user to the login
+`if (response.redirected)` - send the user to the login
 page with `window.location.href = response.url`. Below, stop further execution
 of this chain with `return Promise.reject('User is not authenticated!')`. I'll
 add a comment above to explain this.
@@ -102,8 +102,8 @@ Okay, *now* if we click the checkout button when we're not logged in... we're
 redirected to the login page! Nice! And if we enter our credentials and log
 in... we're... redirected to the homepage instead of back to the cart page.
 
-Let's fix that too! In `lemon-squeezy_controller.js`, after `response.url`, add
-`?_target_path=`, and concatenate `window.location.pathname`. This `_target_path`
+Let's fix that too! In `lemon-squeezy_controller.js`, after `response.url`, concatenate
+`?_target_path=`, and `window.location.pathname`. This `_target_path`
 query parameter is a Symfony convention to tell us where to redirect after
 login.
 
