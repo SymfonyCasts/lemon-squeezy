@@ -1,0 +1,305 @@
+WEBVTT
+
+00:00:01.046 --> 00:00:04.916 align:middle
+Los clientes pueden comprar productos en nuestro
+sitio web, pero para finalizar la compra,
+
+00:00:04.916 --> 00:00:07.246 align:middle
+les hemos estado redirigiendo
+al sitio de LemonSqueezy
+
+00:00:07.456 --> 00:00:09.536 align:middle
+, que está alojado en un
+dominio completamente distinto.
+
+00:00:10.036 --> 00:00:13.406 align:middle
+Utilicemos las herramientas JavaScript de
+LemonSqueezy para mejorar este flujo de trabajo
+
+00:00:13.406 --> 00:00:17.216 align:middle
+En lugar de redirigir a los clientes
+a la página de pago de LemonSqueezy,
+
+00:00:17.446 --> 00:00:22.446 align:middle
+podemos presentar esa información en una "superposición de
+pago", un elegante iFrame que vive directamente en nuestro sitio.
+
+00:00:22.446 --> 00:00:26.436 align:middle
+Así que pongámonos manos a la obra y salpiquemos
+nuestro sitio web con un poco de magia JavaScript.
+
+00:00:26.436 --> 00:00:32.086 align:middle
+En primer lugar, tenemos que añadir la herramienta JavaScript
+de LemonSqueezy - lemon.js - a la página de nuestro carrito.
+
+00:00:32.526 --> 00:00:37.176 align:middle
+Abre templates/order/cart.html.twig
+y añade un nuevo bloque.
+
+00:00:37.796 --> 00:00:39.006 align:middle
+Llámalo javascripts...
+
+00:00:39.216 --> 00:00:40.606 align:middle
+y ciérralo con endblock.
+
+00:00:41.256 --> 00:00:50.896 align:middle
+Dentro, añade una etiqueta script, y establece
+src en https://app.lemonsqueezy.com/js/lemon.js.
+
+00:00:51.796 --> 00:00:53.376 align:middle
+Añade también el atributo defer.
+
+00:00:54.236 --> 00:00:58.756 align:middle
+LemonSqueezy desaconseja autoalojar el
+archivo lemon.js, ya que podrías perderte
+
+00:00:58.756 --> 00:01:01.246 align:middle
+nuevas funciones y parches
+de seguridad cruciales.
+
+00:01:01.586 --> 00:01:05.636 align:middle
+Asegúrate de enlazarlo directamente, para mantener los
+asuntos relacionados con el pago lo más seguros posible.
+
+00:01:06.446 --> 00:01:09.306 align:middle
+También tenemos que llamar a la función
+{{ parent() }} dentro de javascripts
+
+00:01:09.306 --> 00:01:11.446 align:middle
+para evitar anular completamente este bloque.
+
+00:01:11.836 --> 00:01:17.836 align:middle
+Dulce. A continuación, añade una clase CSS
+única al enlace de pago: lemonsqueezy-button.
+
+00:01:18.946 --> 00:01:21.636 align:middle
+Cuando nos dirijamos y actualicemos
+la página del carrito, será sutil,
+
+00:01:21.856 --> 00:01:25.806 align:middle
+pero te darás cuenta de que ahora estamos cargando
+la página de pago de LemonSqueezy bajo nuestra URL.
+
+00:01:26.266 --> 00:01:28.006 align:middle
+Si inspeccionaras el código fuente, verías
+
+00:01:28.006 --> 00:01:31.266 align:middle
+que LemonSqueezy está sustituyendo
+toda la página por su propio contenido.
+
+00:01:31.656 --> 00:01:34.106 align:middle
+Eso es genial, pero podemos hacerlo aún mejor.
+
+00:01:34.646 --> 00:01:37.206 align:middle
+Elimina la clase
+lemonsqueezy-button que añadimos
+
+00:01:37.276 --> 00:01:39.336 align:middle
+antes, y cámbiala por
+algo un poco más flexible.
+
+00:01:39.756 --> 00:01:46.406 align:middle
+En assets/controllers/, crea un nuevo
+controlador llamado lemon-squeezy_controller.js.
+
+00:01:47.946 --> 00:01:54.216 align:middle
+Dentro, añade import { Controller }
+from '@hotwired/stimulus', y debajo,
+
+00:01:54.456 --> 00:01:57.606 align:middle
+export default class extends Controller.
+
+00:01:58.176 --> 00:02:03.846 align:middle
+Dentro de la clase, añade dos
+métodos: connect() y openOverlay().
+
+00:02:05.496 --> 00:02:08.896 align:middle
+Ahora, vamos a conectar este
+controlador en cart.html.twig.
+
+00:02:09.326 --> 00:02:14.036 align:middle
+Añade una nueva línea al enlace de pago y
+establece data-controller="lemon-squeezy".
+
+00:02:14.586 --> 00:02:16.706 align:middle
+Esto conecta este enlace a
+nuestro controlador Stimulus.
+
+00:02:17.236 --> 00:02:21.636 align:middle
+Debajo, añade
+data-action="lemon-squeezy#openOverlay",
+
+00:02:21.926 --> 00:02:25.446 align:middle
+que indica a Stimulus que llame al método
+openOverlay() cuando se haga clic en el enlace.
+
+00:02:26.206 --> 00:02:28.806 align:middle
+También necesitamos pasar la
+URL de pago de LemonSqueezy,
+
+00:02:29.096 --> 00:02:31.776 align:middle
+pero en lugar de generarla cada vez
+que se carga la página del carrito,
+
+00:02:32.016 --> 00:02:34.216 align:middle
+vamos a generarla sólo cuando
+se haga clic en el enlace.
+
+00:02:34.916 --> 00:02:37.076 align:middle
+Necesitamos una nueva
+acción en OrderController.
+
+00:02:37.616 --> 00:02:42.906 align:middle
+Ve a src/Controller/OrderController.php
+y, justo antes del método success(),
+
+00:02:43.216 --> 00:02:46.416 align:middle
+añade otro: public function createCheckout().
+
+00:02:49.466 --> 00:02:50.836 align:middle
+Esto devolverá un Response.
+
+00:02:51.496 --> 00:02:56.146 align:middle
+Arriba, añade el atributo #[Route]
+con una ruta: /checkout/create.
+
+00:02:56.766 --> 00:03:01.426 align:middle
+Nómbralo app_order_checkout_create
+y sólo permite métodos POST.
+
+00:03:01.426 --> 00:03:06.096 align:middle
+Para las dependencias, inyecta
+LemonSqueezyApi $lsApi,
+
+00:03:06.096 --> 00:03:10.776 align:middle
+así como el usuario actual
+con #[CurrentUser] User $user.
+
+00:03:11.526 --> 00:03:14.436 align:middle
+Dentro, return $this->json() con un array :
+
+00:03:15.746 --> 00:03:21.106 align:middle
+['targetUrl' =>
+$lsApi->createCheckoutUrl($user)].
+
+00:03:22.096 --> 00:03:25.536 align:middle
+De vuelta en nuestro controlador lemon-squeezy
+Stimulus, registra un nuevo valor.
+
+00:03:26.036 --> 00:03:32.576 align:middle
+Escribe static values = {}, y
+dentro, checkoutCreateUrl: String.
+
+00:03:33.136 --> 00:03:36.146 align:middle
+En la plantilla del carrito, añade
+un nuevo atributo de valor de datos -
+
+00:03:36.506 --> 00:03:40.366 align:middle
+data-lemon-squeezy-checkout-create-url-value -
+
+00:03:40.766 --> 00:03:43.976 align:middle
+y pasa {{ path('app_order_checkout_create') }}.
+
+00:03:44.656 --> 00:03:48.476 align:middle
+Dejaré href tal cual, para que, si por alguna
+razón un usuario no tiene JS activado (
+
+00:03:48.716 --> 00:03:50.986 align:middle
+¿sigue existiendo eso?),
+pueda realizar el pago.
+
+00:03:51.526 --> 00:03:56.906 align:middle
+De vuelta a nuestro método openOverlay(), añade e
+como parámetro, y luego llama a e.preventDefault()
+
+00:03:56.906 --> 00:03:59.696 align:middle
+para impedir que los navegadores
+con JS habilitado sigan el enlace.
+
+00:03:59.696 --> 00:04:06.846 align:middle
+Para el resto de este método, coge el elemento
+enlace con const linkEl = e.currentTarget.
+
+00:04:07.726 --> 00:04:13.126 align:middle
+A continuación, necesitamos ejecutar una petición
+AJAX al checkoutCreateUrl que pasamos como valor.
+
+00:04:13.126 --> 00:04:17.926 align:middle
+Para ello, utiliza la función fetch()
+para this.checkoutCreateUrlValue.
+
+00:04:17.926 --> 00:04:27.306 align:middle
+Para las opciones, añade method: 'POST', y
+headers: {'Content-Type': 'application/json'}.
+
+00:04:28.516 --> 00:04:30.896 align:middle
+A continuación, encadena esta
+llamada a fetch() con .then().
+
+00:04:31.436 --> 00:04:37.296 align:middle
+Dentro, espera un response, y añade una
+comprobación de sanidad - if (!response.ok),
+
+00:04:37.296 --> 00:04:45.256 align:middle
+throw new Error() con Network response was
+not OK, seguido de response.statusText.
+
+00:04:46.796 --> 00:04:49.106 align:middle
+Si no, return response.json().
+
+00:04:49.616 --> 00:04:54.056 align:middle
+Eso debería pasar los datos JSON como un objeto
+al siguiente .then(), donde esperamos data.
+
+00:04:55.986 --> 00:05:02.546 align:middle
+Vamos a pedir a LemonSqueezy que abra esta URL,
+así que llama a window.LemonSqueezy.Url.Open()
+
+00:05:03.286 --> 00:05:08.086 align:middle
+y pásale data.targetUrl, que devolvimos
+de la acción createCheckout().
+
+00:05:08.086 --> 00:05:11.206 align:middle
+Por último, añade un
+catch(), esperando un error.
+
+00:05:11.946 --> 00:05:15.896 align:middle
+Dentro, escribe console.error()
+con un mensaje Fetch error:,
+
+00:05:15.896 --> 00:05:17.776 align:middle
+pasando error como segundo argumento.
+
+00:05:18.656 --> 00:05:20.976 align:middle
+Vale, esto tiene buena pinta,
+así que vamos a probarlo.
+
+00:05:21.426 --> 00:05:26.586 align:middle
+Abre nuestro sitio, y abre también las Herramientas del desarrollador
+en la pestaña Consola para ver los registros de JavaScript.
+
+00:05:26.926 --> 00:05:28.236 align:middle
+Recarga la página, y...
+
+00:05:28.456 --> 00:05:29.906 align:middle
+¡aquí está nuestro
+controlador lemon-squeezy!
+
+00:05:30.486 --> 00:05:36.126 align:middle
+Si hacemos clic en el botón "Pagar
+con LemonSqueezy", se carga y...
+
+00:05:36.636 --> 00:05:39.536 align:middle
+¡se abre la página de pago de
+LemonSqueezy en nuestro dominio!
+
+00:05:39.876 --> 00:05:40.736 align:middle
+¡Sigue funcionando!
+
+00:05:41.396 --> 00:05:44.866 align:middle
+De nuevo, esto es sutil, así que
+lo siguiente: hagámoslo aún mejor
+
+00:05:44.866 --> 00:05:48.066 align:middle
+mostrando la página de pago sobre la
+página de nuestro carrito, en un modal.
