@@ -16,7 +16,7 @@ Para `#disableLink()`, escribiremos algo de código para añadir la clase CSS `d
 
 En `#enableLink()`, haz lo contrario:`link.classList.remove('disabled')`, `link.style.pointerEvents = 'auto'`, y`link.style.opacity = '1'`.
 
-Bien, en el método `openOverlay()`, justo después de crear `linkEl`, llama a `this.#disableLink(linkEl)`. Ahora, en el segundo `.then()` después de esta línea `window.LemonSqueezy...`, llama a `this.#enableLink(linkEl)`. Haz lo mismo en `.catch()` después de`console.log()`.
+Bien, en el método `openOverlay()`, justo después de crear `linkEl`, llama a `this.#disableLink(linkEl)`. Ahora, en el segundo `.then()` después de esta línea `window.LemonSqueezy...`, llama a `this.#enableLink(linkEl)`. Haz lo mismo en `.catch()` después de`console.error()`.
 
 Muy bien, en nuestro sitio, recarga la página del carrito, y si hacemos clic varias veces en el botón "Pagar con LemonSqueezy"... podemos ver que está ligeramente atenuado e ignora por completo nuestros dobles clics. ¡Qué bien!
 
@@ -34,8 +34,7 @@ De momento, estamos llamando a `createCheckoutUrl()` en un par de sitios: en`Ord
 
 Para asegurarnos de que nuestro controlador LemonSqueezy Stimulus funciona, tenemos que incluir`lemon.js` en cada página que lo utilicemos. Si eso suena tedioso, lo es, así que vamos a automatizarlo.
 
-En el método `connect()`, crea una variable `script` igual a`window.document.querySelector()`, y pasa`'script[src="https://app.lemonsqueezy.com/js/lemon.js"]'` como argumento. 
-Comprueba que `script` no existe ya con `if (!script)`. Dentro, escribe `script = window.document.createElement('script')`. Ahora, configura`script.src` con la URL completa de `lemon.js`. Añade `script.defer = true` y, por último, añádelo al DOM con `window.document.head.appendChild(script)`.
+En el método `connect()`, crea una variable `script` igual a`window.document.querySelector('script[src=""]'`, copia la URL `lemon.js`de nuestra plantilla y pégala aquí. Comprueba que `script` no existe ya con `if (!script)`. Dentro, escribe `script = window.document.createElement('script')`. Ahora, configura`script.src` con la URL completa de `lemon.js`. Añade `script.defer = true` y, por último, añádelo al DOM con `window.document.head.appendChild(script)`.
 
 ¡Ahora podemos celebrarlo eliminando el bloque `javascripts` de la plantilla!
 
@@ -45,13 +44,13 @@ Recarga la página del carrito, haz clic en el botón de pago, podemos ver que s
 
 Pero hay un problema para los usuarios no autenticados. Si cerramos la sesión, añadimos un producto al carrito e intentamos pagar de nuevo... no ocurre nada. Si abres las Herramientas de desarrollo, verás que la petición se redirige primero a una página de inicio de sesión, pero nuestra lógica JavaScript no sigue esa redirección. ¡Vamos a arreglarlo!
 
-En nuestro código, añade un `console.log(response)` antes de la comprobación `response.ok`. De vuelta en nuestro sitio, en la pestaña "Consola", podemos ver que `response.redirected` se establece en `true` para esa petición. Añadamos otra comprobación -`if (response.redirected === true)` - y enviemos al usuario a la página de inicio de sesión con `window.location.href = response.url`. A continuación, detén la ejecución posterior de esta cadena con `return Promise.reject('User is not authenticated!')`. Añadiré un comentario más arriba para explicarlo.
+En nuestro código, añade un `console.log(response)` antes de la comprobación `response.ok`. De vuelta en nuestro sitio, en la pestaña "Consola", podemos ver que `response.redirected` se establece en `true` para esa petición. Añadamos otra comprobación -`if (response.redirected)` - y enviemos al usuario a la página de inicio de sesión con `window.location.href = response.url`. A continuación, detén la ejecución posterior de esta cadena con `return Promise.reject('User is not authenticated!')`. Añadiré un comentario más arriba para explicarlo.
 
 ## Redirigir a los usuarios de vuelta a la página del carrito
 
 Vale, ahora si hacemos clic en el botón de compra cuando no hemos iniciado sesión... ¡somos redirigidos a la página de inicio de sesión! ¡Qué bien! Y si introducimos nuestras credenciales e iniciamos sesión... se nos redirige a la página de inicio en lugar de a la página del carrito.
 
-¡Arreglemos eso también! En `lemon-squeezy_controller.js`, después de `response.url`, añade`?_target_path=`, y concatena `window.location.pathname`. Este parámetro de consulta `_target_path`es una convención de Symfony para indicarnos dónde redirigir después del inicio de sesión.
+¡Arreglemos eso también! En `lemon-squeezy_controller.js`, después de `response.url`, concatena`?_target_path=`, y `window.location.pathname`. Este parámetro de consulta `_target_path`es una convención de Symfony para indicarnos dónde redirigir después del inicio de sesión.
 
 Tenemos un autenticador personalizado para nuestro formulario de inicio de sesión, así que para que esto funcione, tenemos que hacer algunos ajustes. Abre `src/Security/LoginFormAuthenticator`. Al principio del método `onAuthenticationSuccess()`, añade`if ($targetPath = $request->query->get('_target_path'))`. Dentro,`return new RedirectResponse($targetPath)`.
 
