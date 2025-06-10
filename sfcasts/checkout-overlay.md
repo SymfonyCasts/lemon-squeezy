@@ -18,12 +18,16 @@ page. Open `templates/order/cart.html.twig` and add a new block. Call it
 set `src` to `https://app.lemonsqueezy.com/js/lemon.js`. Also add the
 `defer` attribute.
 
+[[[ code('3e63a968fd') ]]]
+
 LemonSqueezy advises *against* self-hosting the `lemon.js` file, since you might
 miss out on new features and crucial security patches. Be sure to link it
 *directly*, to keep payment-related matters as safe as possible.
 
 We also need to call the `{{ parent() }}` function inside `javascripts` to avoid
 completely overriding this block. *Sweet*.
+
+[[[ code('19c2690867') ]]]
 
 Below, add a unique CSS class to the checkout link: `lemonsqueezy-button`. When
 we head over and refresh the cart page, it's subtle, but you'll notice that we're now loading the
@@ -41,10 +45,14 @@ Inside, add `import { Controller } from '@hotwired/stimulus'`, and below that,
 `export default class extends Controller`. Inside the class, add two methods:
 `connect()` and `openOverlay()`.
 
+[[[ code('d44113a8f9') ]]]
+
 Now, let's *connect* this controller in `cart.html.twig`. Add a new line to the
 checkout link and set `data-controller="lemon-squeezy"`. This connects this link
 to our Stimulus controller. Below that, add `data-action="lemon-squeezy#openOverlay"`,
 which tells Stimulus to call the `openOverlay()` method when the link is clicked.
+
+[[[ code('ee27d7d3e1') ]]]
 
 We also need to pass the LemonSqueezy Checkout URL, but instead of generating it
 every time the cart page loads, let's only generate it when the link is clicked.
@@ -64,23 +72,33 @@ user with `#[CurrentUser] User $user`.
 
 Inside, `return $this->json()` with an array: `['targetUrl' => $lsApi->createCheckoutUrl($user)]`.
 
+[[[ code('94d13306e6') ]]]
+
 Back in our `lemon-squeezy` Stimulus controller, register a new value. Write
 `static values = {}`, and inside, `checkoutCreateUrl: String`.
+
+[[[ code('e4abe6797c') ]]]
 
 Over in the cart template, add a new data value attribute -
 `data-lemon-squeezy-checkout-create-url-value` - and pass
 `{{ path('app_order_checkout_create') }}`.
+
+[[[ code('75278c9d7f') ]]]
 
 I'll leave the `href` as-is, so, if for some reason a user doesn't have JS
 enabled (is that still a thing?), they can still checkout. Back in our
 `openOverlay()` method, add `e` as a parameter, then call `e.preventDefault()`
 to stop JS-enabled browsers from following the link.
 
+[[[ code('5904c14bb9') ]]]
+
 For the rest of this method, grab the
 link element with `const linkEl = e.currentTarget`. Below that, we need to
 execute an AJAX request to the `checkoutCreateUrl` we passed as a value. For
 that, use the `fetch()` function for `this.checkoutCreateUrlValue`.
 For the options, add `method: 'POST'`, and `headers: {'Content-Type': 'application/json'}`.
+
+[[[ code('f2ba933cc9') ]]]
 
 Next, chain this `fetch()` call with `.then()`. Inside, expect a
 `response`, and add a sanity check - `if (!response.ok)`,
@@ -90,13 +108,19 @@ followed by `response.statusText`.
 *Otherwise*, `return response.json()`. That should pass the JSON data as an
 object to the next `.then()`, where we expect `data`.
 
+[[[ code('5ae08f4846') ]]]
+
 We're going to ask LemonSqueezy to open this URL, so call
 `window.LemonSqueezy.Url.Open()` and pass `data.targetUrl`, which we returned
 from the `createCheckout()` action.
 
+[[[ code('d6866e1fac') ]]]
+
 *Finally*, add a `catch()`, expecting an `error`. Inside,
 write `console.error()` with a `Fetch error:` message, passing `error` as the
 second argument.
+
+[[[ code('32bee7b7d6') ]]]
 
 Okay, this looks good, so let's test it out. Open our site, and *also* open the
 Developer Tools in the Console tab to see the JavaScript logs. Reload the
