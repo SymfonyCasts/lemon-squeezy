@@ -16,7 +16,7 @@ Next, we need to create an endpoint in our app that will handle and save the cus
 
 This needs a request and the current user, so inject `Request $request` and the `#[CurrentUser]` PHP attribute with `User $user`. We'll assume that the ID will be passed via a POST request as `lsCustomerId`, so we'll retrieve it from the request with `$request->request->get('lsCustomerId')`.
 
-Below, set it on the user with `$user->setLsCustomerId$lsCustomerId()`. To actually *save* it to the database, we also need to inject `EntityManagerInterface $entityManager` and, at the end, call `$entityManager->flush()`. Finish with `return $this->json([])`. We don't need to return actual data here - a successful response is enough.
+Below, set it on the user with `$user->setLsCustomerId($lsCustomerId)`. To actually *save* it to the database, we also need to inject `EntityManagerInterface $entityManager` and, at the end, call `$entityManager->flush()`. Finish with `return $this->json([])`. We don't need to return actual data here - a successful response is enough.
 
 ## Updating the Stimulus Controller
 
