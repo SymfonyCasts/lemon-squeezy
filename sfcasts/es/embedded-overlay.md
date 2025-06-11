@@ -60,7 +60,7 @@ Recarga la página del carrito, haz clic en el botón de pago, podemos ver que s
 
 ## Depuración para usuarios no autenticados
 
-Pero hay un problema para los usuarios no autenticados. Si cerramos la sesión, añadimos un producto al carrito e intentamos pagar de nuevo... no ocurre nada. Si abres las Herramientas de desarrollo, verás que la petición se redirige primero a una página de inicio de sesión, pero nuestra lógica JavaScript no sigue esa redirección. ¡Vamos a arreglarlo!
+Pero hay un problema para los usuarios no autenticados. Si cerramos la sesión, añadimos un producto al carrito e intentamos pagar de nuevo... no ocurre nada. Si abres las Herramientas de desarrollo, puedes ver que la petición se redirige primero a una página de inicio de sesión, pero nuestra lógica JavaScript no sigue esa redirección. ¡Vamos a arreglarlo!
 
 En nuestro código, añade un `console.log(response)` antes de la comprobación `response.ok`.
 
@@ -80,6 +80,6 @@ Tenemos un autenticador personalizado para nuestro formulario de inicio de sesi�
 
 [[[ code('79f46c8c9b') ]]]
 
-Esta vez, si cerramos la sesión e intentamos volver a entrar... seremos redirigidos a la página de inicio de sesión. Si volvemos a iniciar sesión... ¡boom! ¡Volvemos a la página del carrito! Haz clic en el botón de pago y... ¡se cargará nuestra impresionante ventana de pago! Rellenaré algunos datos para que podamos completar el pago... pulsa el botón "Pagar", y... ¡tachán! ¡Aquí está nuestro mensaje de éxito!
+Esta vez, si cerramos la sesión e intentamos volver a entrar... seremos redirigidos a la página de inicio de sesión. Si volvemos a iniciar sesión... ¡boom! ¡Volvemos a la página del carrito! Haz clic en el botón de pago y... ¡se cargará nuestra impresionante ventana superpuesta de pago! Rellenaré algunos datos para que podamos completar el pago... pulsa el botón "Pagar", y... ¡tachán! ¡Aquí está nuestro mensaje de éxito!
 
 A continuación: Vamos a aprender a escuchar los eventos JavaScript de LemonSqueezy y a utilizarlos para sincronizar el ID de cliente con el usuario actual como alternativa al webhook que configuramos antes.
