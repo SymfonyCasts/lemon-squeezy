@@ -1,140 +1,65 @@
 # Listening to LemonSqueezy Javascript Events
 
-We have to configure webhooks locally every time we want to save
-corresponding LemonSqueezy customer ID each time a user makes an order.
-Ngrok helps us with it, but it comes with a bit of manual work.
-For instance, you need to remember to run Ngrok in the background
-before expecting webhooks and update the webhook URL every time you
-restart Ngrok agent unless you have a paid Ngrok plan.
+Right now, every time we save a user's order to the corresponding LemonSqueezy customer ID, we're configuring our webhooks *locally*. Ngrok definitely helps, but it still a bit of a pain. We still need to run Ngrok in the background before we accept webhooks, *and* we still need to *update* the webhook URL every time we restart the Ngrok agent if we don't have a paid Ngrok plan. That's... not ideal.
 
-In this video let's explore how we can alternatively listen to
-some LemonSqueezy JavaScript events. Here's a great alternative: we can
-set the customer ID upon a successful checkout this way too. LemonSqueezy
-provides a special event for this. Open the docs, go to Guides, find
-"Using Lemon.js" link in the left sidebar and in the right click on
-"Handling events".
+Let's explore an *alternative* way to listen to LemonSqueezy JavaScrip events - setting the customer ID on a successful checkout. LemonSqueezy even has a special event for this! Open the docs, go to "Guides", find "Using Lemon.js" on the left, and on the right, click "Handling events".
 
-When the checkout process is successful, it fires a `Checkout.Success`
-event. They even provide some sample code on how to handle it.
-The event returns some useful data, including the customer ID we're
-looking for.
+Here, we can see that when the checkout's successful, LemonSqueezy fires a `Checkout.Success` event. They even give us some sample code for how to handle it. This returns a bunch of useful data, including the customer ID we're looking for.
 
 ## Listening to the LemonSqueezy `Checkout.Success` Event
 
-Let's get our hands dirty. Open the `assets/controllers/lemon-squeezy_controller.js`.
-Look for `connect()` and at the bottom start with `window.LemonSqueezy.Setup()`.
-Pass `{ eventHandler: (data) => {} }` inside it. Here, write
-`if (data.event === 'Checkout.Success')`, then we need to get the 
-customer ID as `data.data.customer_id` and put it on a `lsCustomerId`
-variable. Pass this ID to a method that I will create in a second
-`this.#handleCheckout(lsCustomerId)`.
+Time to get to work! Open `assets/controllers/lemon-squeezy_controller.js`. Look for the `connect()` method and, at the bottom, start with `window.LemonSqueezy.Setup()`. Inside, pass `eventHandler: (data) => {}`, and inside *that*, write `if (data.event === 'Checkout.Success')`. Now we need to get the customer ID with `data.data.customer_id` and put it on a `lsCustomerId` variable. We'll pass the ID to `this.#handleCheckout(lsCustomerId)`. This doesn't exist yet, but we'll create it in a moment. Finally, create the `#handleCheckout()` function with `lsCustomerId` and leave it empty for now. 
 
-Now, create the `#handleCheckout()` function with `lsCustomerId` and
-leave it empty for now. The next step is to create an endpoint
-in our app that will handle and save this customer ID for the user.
+## Adding a new Endpoint for Creating Checkout URL
 
-## Adding a new Endpoint for Creating Checkout URL 
+Next, we need to create an endpoint in our app that will handle and save the customer ID for the user. To do that, open `src/Controller/OrderController.php` and create a new method: `public function handleCheckout()`. Register this `#[Route]` with a path - `/checkout/handle` - and call it `app_order_checkout_handle`. We want this method to *only* work for `POST` requests.
 
-To do this, open `src/Controller/OrderController.php` and create a new
-method, `public function handleCheckout()`. Register this route with `/checkout/handle` path, and name
-it `app_order_checkout_handle`. We want this method, this action,
-to work only for `POST` requests.
+This needs a request and the current user, so inject `Request $request` and the `#[CurrentUser]` PHP attribute with `User $user`. We'll assume that the ID will be passed via a POST request as `lsCustomerId`, so we'll retrieve it from the request with `$request->request->get('lsCustomerId')`.
 
-We'll need a request and the current user inside, so inject a request, and
-the current user PHP attribute. Assume that the ID will be
-passed via POST request as `lsCustomerId`, get it from the request as
-`$request->request->get('lsCustomerId')`, and below set it on the User.
-To actually save it to the database, we'll also need to inject
-`EntityManagerInterface $entityManager`, and then at the end call
-`$entityManager->flush()`.
-
-Finish with `return $this->json([])`. We don't need to return any actual
-data, just a successful response will be enough.
+Below, set it on the user with `$user->setLsCustomerId$lsCustomerId()`. To actually *save* it to the database, we also need to inject `EntityManagerInterface $entityManager` and, at the end, call `$entityManager->flush()`. Finish with `return $this->json([])`. We don't need to return actual data here - a successful response is enough.
 
 ## Updating the Stimulus Controller
 
-For the Stimulus controller, let's add a new value called
-`checkoutHandleUrl: String`,, and pass the URL from the template.
+For the Stimulus controller, let's add a new value called `checkoutHandleUrl: String` and pass the URL from the template. To do that, in `templates/order/cart.html.twig`, add `data-lemon-squeezy-checkout-handle-url-value=""` and pass the URL with `{{ path('app_order_checkout_handle') }}`.
 
-For this, in `templates/order/cart.html.twig`, add
-`data-lemon-squeezy-checkout-handle-url-value=""` and pass the URL as
-`{{ path('app_order_checkout_handle') }}`.
+With the value set, back in the controller, let's make an AJAX call in `#handleCheckout()` using the `fetch()` method. Set it to `this.checkoutHandleUrlValue`. For options, use `method: 'POST'`, like we configured in our endpoint, and for headers, `'Content-Type': 'application/x-www-form-urlencoded'`. This allows us to receive values with `$request->request->get()` - no need to `json_decode()` the request.
 
-Let's head back to the Stimulus controller. With the value set, let's
-start making an AJAX call in the `#handleCheckout()` using the `fetch()`
-method. It should be to `this.checkoutHandleUrlValue`. For options, use
-`method: 'POST'` as we configured in that endpoint, and headers:
-`'Content-Type': 'application/x-www-form-urlencoded'`. This will allow
-us to get passed values with simple `$request->request->get()`, no
-need to `json_decode()` the request.
+For the `body`, pass `new URLSearchParams()` and pass *that* to `lsCustomerId: lsCustomerId`. We'll also chain this `fetch()` call with `.then()`. Inside, we expect `response => {}`. If response is *not* okay, then throw a new `Error()` with a message:
 
-For the `body`, pass a `new URLSearchParams()` and pass to it
-`{ lsCustomerId: lsCustomerId, }`.
+`"Network response was not ok" + response.statusText`.
 
-Now chain this `fetch()` call with `.then()`. Inside we expect `response => {}`.
-If response is not OK - then throw a new `Error` saying "Network response was not OK "
-and concatenate `response.statusText`.
-
-Below, `return response.json()` that will give us the decoded json object
-in the next `.then()`. Take it as `data => {}`. Inside I will just leave 
-a comment that we don't need to do anything here, because we don't return
-any data from that endpoint.
-
-But let's chain a `.catch()` just in case where do
-`console.log('Fetch error:', error)`.
+Below, `return response.json()`. That will give us the decoded JSON object in the next `.then()`. Say `data => {}`, and inside, I'll just leave a comment reminding us that there's nothing to do here, because we don't return any data from that endpoint. *But*, just in case something goes wrong, we'll chain `.catch()` with `console.log('Fetch error:', error)`.
 
 ## Testing and Fixing Errors
 
-Looks good! Go to the website, add product to the cart, I will also
-open the Console tab in the Chrome Dev Tools - oh, an error!
+This looks good, so let's give it a try! Over on our site, add product to the cart, and open the "Console" tab in the Chrome Dev Tools. *Whoops*... an error.
 
 > Uncaught TypeError: Cannot read properties of undefined (reading 'Setup')
 
-Looks like we start using LemonSqueezy faster than its script is downloaded.
-Let's do a little trick and wrap with code with `script.addEventListener()`.
-We want to listen `load`, pass a function as the 2nd argument and 
-insert our code there.
+Looks like we've started using LemonSqueezy faster than its script can be downloaded. Let's do a little trick and wrap this code with `script.addEventListener()`. We want to listen for the `load`, pass a function as the second argument, and insert our code there.
 
-Now, refresh the page! Ah, still the same error.
+If we refresh the page again... *dang*... we get the *same* error.
 
-Ok, looks like we should instantiate the LemonSqueezy manually first.
-Before the problem line, write `window.createLemonSqueezy()`. I will
-also add a little comment above.
+Okay, it looks like we should try to instantiate LemonSqueezy *manually* first. Before the problem line, write `window.createLemonSqueezy()`. I'll also add a little comment above to remind *future us* what we're doing here.
 
-Refresh again - no errors! Perfect, I will also add a `console.log(data)`
-in order to know that we hit that if on the `Checkout.Success`.
+Refresh again, and... *no errors*! Perfect! Let's quickly add `console.log(data)` to our code so we'll know if we hit that `if` on `Checkout.Success`. Refresh our site one more time to load the changes... and click "Checkout with LemonSqueezy". Fill in payment info and billing address... click "Pay", and... we see the success message! And in the console... we can see the data, so our code was hit. So... did this work?
 
-One more refresh to load the changes, and click on the "Checkout with LemonSqueezy".
-If I quickly fill in payment credentials and billing address and click Pay,
-we see the success message and in the console we see the data, so our code
-was hit. Did it work?
-
-I will go to the console check the DB with:
+At your terminal, check the database with:
 
 ```terminal
 bin/console doctrine:query:sql "SELECT * FROM user"
 ```
 
-It didn't! It says that lsCustomerId value is "undefined" - hmmm,
-sounds like we were using the bad path for the customer ID. Let's
-double-check our dump. Yes, indeed, the path docs gave us is incorrect.
+It *didn't*! It says that the `lsCustomerId` value is "undefined". Hmmm, sounds like we're using the bad path for the customer ID. If we double-check our dump... *yep*. The path docs gave us is incorrect.
 
-Fix the path to: `data.data.order.data.attributes.customer_id`.
-OK, last page refresh, go thought the whole checkout process again.
-I will do it as fast as I can. Success! Now return to the terminal,
-rerun the query:
+Change the path to `data.data.order.data.attributes.customer_id`, and let's try this *one more time*. Refresh the page, go through the checkout process again (I'll speed through this to save time), and... *success*! Now, back in our terminal, rerun the query:
 
 ```terminal-silent
 bin/console doctrine:query:sql "SELECT * FROM user"
 ```
 
-Yes, the customer ID was set correctly. And we don't need that `console.log()`
-anymore, I will delete it. And also one more we missed in the `#openOverlay`.
+*Yes*! The customer ID was set correctly! We don't need that `console.log()` anymore, so we can delete it, along with another one that we missed in `#openOverlay`.
 
-So even if we don't have Ngrok running, we still were able to sync
-the LemonSqueezy customer ID with User via JavaScript events.
-This way simplifies local development a bit, so both ways are good
-and valid.
+*So* even if we don't have Ngrok running, we're *still* able to sync the LemonSqueezy customer ID with the user via JavaScript events. This approach simplifies local development a bit, but both ways are totally valid.
 
-In the next chapter, we'll tackle some potential security issues by
-preventing customer ID hijacking.
+Next: Let's tackle some potential security issues by preventing customer ID *hijacking*.
