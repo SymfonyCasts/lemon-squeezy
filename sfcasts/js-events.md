@@ -22,7 +22,7 @@ Below, set it on the user with `$user->setLsCustomerId($lsCustomerId)`. To actua
 
 For the Stimulus controller, let's add a new value called `checkoutHandleUrl: String` and pass the URL from the template. To do that, in `templates/order/cart.html.twig`, add `data-lemon-squeezy-checkout-handle-url-value=""` and pass the URL with `{{ path('app_order_checkout_handle') }}`.
 
-With the value set, back in the controller, let's make an AJAX call in `#handleCheckout()` using the `fetch()` method. Set it to `this.checkoutHandleUrlValue`. For options, use `method: 'POST'`, like we configured in our endpoint, and for headers, `'Content-Type': 'application/x-www-form-urlencoded'`. This allows us to receive values with `$request->request->get()` - no need to `json_decode()` the request.
+With the value set, back in the controller, let's make an AJAX call in `#handleCheckout()` using the `fetch()` method. Set it to `this.checkoutHandleUrlValue`. For options, use `method: 'POST'`, like we configured in our endpoint, and for headers, `'Content-Type': 'application/x-www-form-urlencoded'`. This allows us to fetch values with `$request->request->get()` - no need to `json_decode()` the request.
 
 For the `body`, pass `new URLSearchParams()` and pass *that* to `lsCustomerId: lsCustomerId`. We'll also chain this `fetch()` call with `.then()`. Inside, we expect `response => {}`. If response is *not* okay, then throw a new `Error()` with a message:
 
