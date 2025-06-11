@@ -21,20 +21,28 @@ To kick things off, open `lemon-squeezy_controller.js`. We're going to create
 some private methods here. Start with `#disableLink()` and pass in a `link`
 argument. Then add `#enableLink()` and also pass `link` as the argument.
 
+[[[ code('b65a32a087') ]]]
+
 For `#disableLink()`, we'll write some code to add the `disabled` CSS class to
 the link, disable pointer events, and dim the link slightly. Write
 `link.classList.add('disabled')`, then `link.style.pointerEvents = 'none'`, and
 finish with `link.style.opacity = '0.5'`.
 
+[[[ code('a771580170') ]]]
+
 In `#enableLink()`, do the opposite:
 `link.classList.remove('disabled')`, `link.style.pointerEvents = 'auto'`, and
 `link.style.opacity = '1'`.
+
+[[[ code('ec33ddeb13') ]]]
 
 Okay, in the `openOverlay()` method, right after we creat `linkEl`,
 call `this.#disableLink(linkEl)`. *Now*,
 in the second `.then()` after this `window.LemonSqueezy...` line,
 call `this.#enableLink(linkEl)`. Do the same thing in `.catch()` after
 `console.error()`.
+
+[[[ code('3ee0e60025') ]]]
 
 All right, over on our site, reload the cart page, and if we click on the
 "Checkout with LemonSqueezy" button a few times... we can see that it's slightly
@@ -45,6 +53,8 @@ dimmed and completely ignores our double clicks. Nice!
 Now, onto the fun part - *embedding*! Open `src/Store/LemonSqueezyApi.php` and,
 in the `createCheckoutUrl()` method, after setting the custom user ID, add
 `$attributes['checkout_options']['embed'] = true`.
+
+[[[ code('a0960d0beb') ]]]
 
 Go refresh the cart page, click the checkout button again, and... there it is -
 a shiny new LemonSqueezy overlay! We can still see our cart page
@@ -58,8 +68,13 @@ At the moment, we're calling `createCheckoutUrl()` in a couple places - in
 If we want to use embedding for *just* the JavaScript version, we can add an
 `$embed` boolean argument to `LemonSqueezyApi::createCheckoutUrl()` that
 defaults to `false`. Also replace the hard-coded `true` we used earlier
-with the new `$embed` variable. Back in `OrderController`, pass `true` to
-`createCheckoutUrl()` in the `createCheckout()` action.
+with the new `$embed` variable. 
+
+[[[ code('dab6abd525') ]]]
+
+Back in `OrderController`, pass `true` to `createCheckoutUrl()` in the `createCheckout()` action.
+
+[[[ code('03d903b833') ]]]
 
 ## Automating `lemon.js` Inclusion
 
@@ -75,6 +90,8 @@ write `script = window.document.createElement('script')`. Now, set
 `script.src` to the full `lemon.js` URL. Add `script.defer = true` and finally,
 add it to the DOM with `window.document.head.appendChild(script)`.
 
+[[[ code('cefcb9bc23') ]]]
+
 Now we can celebrate by removing the `javascripts` block from the
 template!
 
@@ -88,13 +105,18 @@ to the cart, and try to checkout again... *nothing happens*. If you open the
 Dev Tools, you can see that the request is redirected to a login page
 first, but our JavaScript logic doesn't follow that redirect. Let's fix that!
 
-In our code, add a `console.log(response)` before the `response.ok` check. Back
-on our site, in the "Console" tab, we can see that `response.redirected` is set
+In our code, add a `console.log(response)` before the `response.ok` check.
+
+[[[ code('8ce164c1c2') ]]]
+
+Back on our site, in the "Console" tab, we can see that `response.redirected` is set
 to `true` for that request. Let's add another check -
 `if (response.redirected)` - send the user to the login
 page with `window.location.href = response.url`. Below, stop further execution
 of this chain with `return Promise.reject('User is not authenticated!')`. I'll
 add a comment above to explain this.
+
+[[[ code('208d634ffd') ]]]
 
 ## Redirecting Users Back to the Cart Page
 
@@ -112,6 +134,8 @@ work, we need to make some adjustments. Open `src/Security/LoginFormAuthenticato
 the start of the `onAuthenticationSuccess()` method, add
 `if ($targetPath = $request->query->get('_target_path'))`. Inside,
 `return new RedirectResponse($targetPath)`.
+
+[[[ code('79f46c8c9b') ]]]
 
 This time, if we logout and try to checkout again... we're redirected to the
 login page. If we sign in again... boom! We're back on the cart page! Click the
