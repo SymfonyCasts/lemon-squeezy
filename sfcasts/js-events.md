@@ -1,6 +1,6 @@
 # Listening to LemonSqueezy Javascript Events
 
-Right now, every time we save a user's order to the corresponding LemonSqueezy customer ID, we're configuring our webhooks *locally*. Ngrok definitely helps, but it still a bit of a pain. We still need to run Ngrok in the background before we accept webhooks, *and* we still need to *update* the webhook URL every time we restart the Ngrok agent if we don't have a paid Ngrok plan. That's... not ideal.
+Right now, every time we want to save a LemonSqueezy customer ID on the corresponding user entity *locally*, we have to configure our webhooks. Ngrok definitely helps, but it's still a bit of a pain. We still need to run Ngrok in the background before we start receiving webhooks, *and* we still need to *update* the webhook URL every time we restart the Ngrok agent if we don't have a paid Ngrok plan. That's... not ideal.
 
 Let's explore an *alternative* way to listen to LemonSqueezy JavaScrip events - setting the customer ID on a successful checkout. LemonSqueezy even has a special event for this! Open the docs, go to "Guides", find "Using Lemon.js" on the left, and on the right, click "Handling events".
 
