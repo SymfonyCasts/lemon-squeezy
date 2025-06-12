@@ -10,15 +10,15 @@ But don't worry! We have some solutions! We *could* use the customer sync via th
 
 ## Adding Extra Checks to Prevent Data Overriding
 
-Open `lemons-squeezy_controller.js`. In `LemonSqueezy.Setup()`, you can uncomment the `console.log(data)` command to debug the response and find the path structure for the user ID. *Or*, if you'd like to skip that part, you can just trust me and write `const userId = data.data.order.meta.custom_data.user_id`.
+Open `lemons-squeezy_controller.js`. In `LemonSqueezy.Setup()`, you can uncomment the `console.log(data)` line to debug the response and find the path structure for the user ID. *Or*, if you'd like to skip that part, you can just trust me and write `const userId = data.data.order.meta.custom_data.user_id`.
 
-Next, pass this `userId` variable as the *first* argument to the `HandleCheckout()` method. In `#handleCheckout()`, change the signature to `userId lsCustomerId` and, down here, pass the `userId` to the `URLSearchParams()` object, just like we did with `lsCustomerId`.
+Next, pass this `userId` variable as the *first* argument to the `#handleCheckout()` method. In `#handleCheckout()`, change the signature to `userId lsCustomerId` and, down here, pass the `userId` to the `URLSearchParams()` object, just like we did with `lsCustomerId`.
 
 Back in `OrderController.php`, at the top of `Response`, create a `$userId` variable and set it equal to `$request->request->get('userId')`, since we're dealing with a `POST` request. This is *also* pretty similar to what we did for `lsCustomerId`.
 
 Below that, add an `if` statement: `if ($userId !== $user->getId())`. Since the `getId()` method returns an integer, *and* because I love strict comparison, let's typecast this to `string`.
 
-If this condition is met, `throw $this->createAccessDeniedException()`. Inside, we'll write a `sprintf()` function, stating:
+If this condition is met, `throw $this->createAccessDeniedException()`. Inside, we'll write an `sprintf()` function, stating:
 
 > Current user ID "%s" does not match the user ID "%s" of the order!
  
@@ -54,6 +54,6 @@ We can see here that the `lsCustomerId` field is set again. We're not running Ng
 
 ## Always use HTTPS
 
-So there you have it! We saw how LemonSqueezy handles checkouts. The cart credentials are *never* sent to our server, but they *are* sent directly to LemonSqueezy's server via the iFrame we added. That means we're not handling *any* sensitive card credentials on our servers at all. Yay! And remember to *always* use HTTPS for your checkout. Honestly, it's best to use it across your *entire website*. Not only is it standard practice, but it also *significantly* boosts your site's security and protects the users that keep your business humming.
+So there you have it! We saw how LemonSqueezy handles checkouts. The cart credentials are *never* sent to our server, but they *are* sent directly to LemonSqueezy's server via the iFrame we added. That means we're not handling or storing *any* sensitive card credentials on our servers at all. Yay! And remember to *always* use HTTPS for your checkout. Honestly, it's best to use it across your *entire website*. Not only is it standard practice, but it also *significantly* boosts your site's security and protects the users that keep your business humming.
 
 All right! That's it for this course! You're ready to start generating profit with individual purchases! We'll learn more about *subscription* payments in the *next* course, so stay tuned. And, as always, if you have any questions for us, we're here for you down in the comments. Happy coding!
