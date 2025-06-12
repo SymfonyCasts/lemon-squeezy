@@ -1,7 +1,7 @@
 # Syncing Customer ID via JavaScript event and Improving Security
 
-Welcome back! We just synced our LemonSqueezy customer ID with the user in our
-database using two different methods — through *webhooks*, which made for a
+Welcome back! We showed syncing our LemonSqueezy customer ID with the user in our
+database using two different methods: *webhooks*, which made for a
 pretty solid production setup, and via *LemonSqueezy JavaScript events*, which
 help us skip the Ngrok and webhook configuration locally. It's perfectly
 acceptable to use both methods simultaneously.
@@ -20,41 +20,39 @@ the JavaScript events *only* in dev mode. This means it won't work on
 *production*, but it *will* work locally, and real users will only be synced via
 webhooks with a signed signature on production.
 
-*Alternatively*, we could add extra checks to the `handleCheckout()` action to,
+*Alternatively*, we can add extra checks to the `handleCheckout()` action to,
 for example, verify if the current user ID corresponds to the user ID set in the
 custom data of the LemonSqueezy event. Let's explore *this* option and see how
 we can *prevent* people from overriding customer IDs with corrupted data.
 
 ## Adding Extra Checks to Prevent Data Overriding
 
-Open `lemons-squeezy_controller.js`. In `LemonSqueezy.Setup()`, you can
+Open `lemons-squeezy_controller.js`. In `LemonSqueezy.Setup()`,
 uncomment the `console.log(data)` line to debug the response and find the path
 structure for the user ID. *Or*, if you'd like to skip that part, you can just
 trust me and write `const userId = data.data.order.meta.custom_data.user_id`.
 
 Next, pass this `userId` variable as the *first* argument to the
 `#handleCheckout()` method. In `#handleCheckout()`, change the signature to
-`userId lsCustomerId` and, down here, pass the `userId` to the
-`URLSearchParams()` object, just like we did with `lsCustomerId`.
+`userId, lsCustomerId` and, down here, pass `userId` to
+`URLSearchParams()`, just like we did with `lsCustomerId`.
 
 Back in `OrderController.php`, at the top of `Response`, create a `$userId`
-variable and set it equal to `$request->request->get('userId')`, since we're
-dealing with a `POST` request. This is *also* pretty similar to what we did for
-`lsCustomerId`.
+variable and set it equal to `$request->request->get('userId')`.
 
-Below that, add an `if` statement: `if ($userId !== $user->getId())`. Since the
+Below that, add: `if ($userId !== $user->getId())`. Since the
 `getId()` method returns an integer, *and* because I love strict comparison,
-let's typecast this to `string`.
+typecast this to `string`.
 
 If this condition is met, `throw $this->createAccessDeniedException()`. Inside,
-we'll write an `sprintf()` function, stating:
+write `sprintf()`, with:
 
 > Current user ID "%s" does not match the user ID "%s" of the order!
 
-We'll pass `$user->getId()` and `$userId` as arguments.
+And pass `$user->getId()` and `$userId` as arguments.
 
-*So*, if there's an ID mismatch, we'll hit this `if` statement and throw an
-exception, so we can see it in our logs. Now we can safely set the customer,
+If there's an ID mismatch, we'll hit this `if` statement and throw an
+exception, then we can see it in our logs. Now we can safely set the customer ID,
 since we're certain it's related to the current user.
 
 ## Testing Our Setup
@@ -65,20 +63,15 @@ Head over to your terminal and run:
 bin/console doctrine:query:sql "SELECT * FROM user"
 ```
 
-We have the `lsCustomerId` set, as expected. Now, let's re-run the same command
-with a new query:
+We have the `lsCustomerId` set, so let's reset it to `NULL` with:
 
 ```terminal
 bin/console doctrine:query:sql "UPDATE user SET lsCustomerId=NULL WHERE id=1"
 ```
 
-It's good practice to always add a `WHERE` clause to your `UPDATE` or `DELETE`
-queries, so you can avoid accidentally updating *all* your records if you have
-more than one record in the table.
-
 Let's test it out! On the cart page, click the "Checkout" button, fill out the
-billing info... and click "Pay". If we wait a moment... we'll see the "Thanks
-for your order" message. So we have a brand new order on our account.
+billing info... and click "Pay". If we wait a moment... we see the "Thanks
+for your order" message. So far, so good!
 
 Back at the terminal, run the `SELECT` query again:
 
@@ -93,12 +86,13 @@ Ngrok tunnels right now, so this was set via the JavaScript event. It *works*!
 
 So there you have it! We saw how LemonSqueezy handles checkouts. The cart
 credentials are *never* sent to our server, but they *are* sent directly to
-LemonSqueezy's server via the iFrame we added. That means we're not handling or
-storing *any* sensitive card credentials on our servers at all. Yay! And
-remember to *always* use HTTPS for your checkout. Honestly, it's best to use it
-across your *entire website*. Not only is it standard practice, but it also
-*significantly* boosts your site's security and protects the users that keep
-your business humming.
+LemonSqueezy's server via the iFrame we added. That means *we're* not handling or
+storing *any* sensitive card credentials on our servers at all. There are some
+serious hoops to jump through to be able to do that... so it's great we
+don't even have to think about it!
+
+I hope this goes without saying, but *always* use HTTPS for your checkouts, and
+really, for your entire website.
 
 All right! That's it for this course! You're ready to start generating profit
 with individual purchases! We'll learn more about *subscription* payments in the
