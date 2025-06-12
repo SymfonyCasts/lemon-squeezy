@@ -3,11 +3,11 @@
 Right now, every time we want to save a LemonSqueezy customer ID on the
 corresponding user entity *locally*, we have to configure our webhooks. Ngrok
 definitely helps, but it's still a bit of a pain. We need to run Ngrok in
-the background before we start receiving webhooks, *and* we still need to
+the background before we start receiving webhooks. *And* we still need to
 *update* the webhook URL every time we restart the Ngrok agent if we don't have
 a paid Ngrok plan. That's... not ideal.
 
-Let's explore an *alternative* way - listen to LemonSqueezy *JavaScript* events
+Let's explore an *alternative* way - listening to LemonSqueezy *JavaScript* events
 and set the customer ID on a successful checkout. LemonSqueezy has a
 special event for this! Open the docs, go to "Guides", find "Using Lemon.js" on
 the left, and on the right, click on "Handling events".
@@ -32,7 +32,7 @@ so create it below, with `lsCustomerId` as a parameter.
 Next, we need to create an endpoint in our app that will handle and save the
 customer ID for the user. To do that, open `src/Controller/OrderController.php`
 and create a new method: `public function handleCheckout()`. Register this
-`#[Route]` with a path - `/checkout/handle` - name it
+`#[Route]` with a path - `/checkout/handle` and name it
 `app_order_checkout_handle`. We want this method to *only* work for `POST`
 requests.
 
@@ -82,7 +82,7 @@ cart, and open the "Console" tab in the Dev Tools. *Whoops*... an error.
 > Uncaught TypeError: Cannot read properties of undefined (reading 'Setup')
 
 Looks like we've started using LemonSqueezy faster than its script was
-downloaded. Let's do a little trick and wrap this code with
+downloaded. Let's do a little trick and wrap this code in
 `script.addEventListener()`. Listen for the `load` event, pass a function
 as the second argument, and insert our code there.
 
@@ -122,7 +122,7 @@ And... *Yes*! The customer ID was set correctly! We don't need that `console.log
 anymore, so we can delete it, along with another one that we missed in
 `#openOverlay`.
 
-*So* even if we don't have Ngrok running, we're *still* able to sync the
+*So*, even if we don't have Ngrok running, we're *still* able to sync the
 LemonSqueezy customer ID with the user via JavaScript events. This approach
 simplifies local development a bit, but both ways are totally valid.
 

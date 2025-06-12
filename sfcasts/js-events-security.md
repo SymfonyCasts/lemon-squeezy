@@ -1,6 +1,6 @@
 # Syncing Customer ID via JavaScript event and Improving Security
 
-Welcome back! We showed syncing our LemonSqueezy customer ID with the user in our
+We've now showed syncing our LemonSqueezy customer ID with the user in our
 database using two different methods: *webhooks*, which made for a
 pretty solid production setup, and via *LemonSqueezy JavaScript events*, which
 help us skip the Ngrok and webhook configuration locally. It's perfectly
@@ -17,13 +17,16 @@ fraudulent purchases.
 
 But don't worry! We have some solutions! We *could* use the customer sync via
 the JavaScript events *only* in dev mode. This means it won't work on
-*production*, but it *will* work locally, and real users will only be synced via
-webhooks with a signed signature on production.
+*production*, but it *will* work locally. *Real* users would only be synced via
+webhooks with a signed signature on production. I think we can do better though!
 
-*Alternatively*, we can add extra checks to the `handleCheckout()` action to,
-for example, verify if the current user ID corresponds to the user ID set in the
-custom data of the LemonSqueezy event. Let's explore *this* option and see how
-we can *prevent* people from overriding customer IDs with corrupted data.
+Remember back when we were setting up the webhook consumer? We couldn't
+access the current user there, so we added the user ID as custom checkout data
+that we could then access from the webhook payload. This custom data is *also*
+made available in the "Checkout.Success" event data!
+
+So, we can send that user ID to our `handleCheckout()` action and verify that the
+current user ID matches the custom data user ID.
 
 ## Adding Extra Checks to Prevent Data Overriding
 
@@ -32,12 +35,12 @@ uncomment the `console.log(data)` line to debug the response and find the path
 structure for the user ID. *Or*, if you'd like to skip that part, you can just
 trust me and write `const userId = data.data.order.meta.custom_data.user_id`.
 
-Next, pass this `userId` variable as the *first* argument to the
-`#handleCheckout()` method. In `#handleCheckout()`, change the signature to
+Next, pass this `userId` variable as the *first* argument for
+`#handleCheckout()`. In `#handleCheckout()`, change the signature to
 `userId, lsCustomerId` and, down here, pass `userId` to
 `URLSearchParams()`, just like we did with `lsCustomerId`.
 
-Back in `OrderController.php`, at the top of `Response`, create a `$userId`
+Back in `OrderController.php`, at the top, create a `$userId`
 variable and set it equal to `$request->request->get('userId')`.
 
 Below that, add: `if ($userId !== $user->getId())`. Since the
@@ -51,9 +54,8 @@ write `sprintf()`, with:
 
 And pass `$user->getId()` and `$userId` as arguments.
 
-If there's an ID mismatch, we'll hit this `if` statement and throw an
-exception, then we can see it in our logs. Now we can safely set the customer ID,
-since we're certain it's related to the current user.
+Now we can safely set the customer ID, since we're certain it's related to the
+current user.
 
 ## Testing Our Setup
 
