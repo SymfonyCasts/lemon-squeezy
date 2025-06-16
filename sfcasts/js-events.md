@@ -24,8 +24,14 @@ for the `connect()` method and, at the bottom, start with
 `window.LemonSqueezy.Setup()`. Inside, pass `eventHandler: (data) => {}`, and
 inside *that*, write `if (data.event === 'Checkout.Success')`.
 Get the customer ID with `data.data.customer_id` and put it on a `lsCustomerId`
-variable. We'll pass the ID to `this.#handleCheckout()`. This doesn't exist yet,
+variable.
+
+[[[ code('1a7d3ed79f') ]]]
+
+We'll pass the ID to `this.#handleCheckout()`. This doesn't exist yet,
 so create it below, with `lsCustomerId` as a parameter.
+
+[[[ code('93940b6eea') ]]]
 
 ## Adding a new Endpoint for Creating Checkout URL
 
@@ -37,15 +43,22 @@ and create a new method: `public function handleCheckout()`. Register this
 requests.
 
 This needs a request and the current user, so inject `Request $request` and
-`#[CurrentUser] User $user`. We'll assume that the ID will
-be passed via a POST request as `lsCustomerId`, so retrieve it from the
-request with `$request->request->get('lsCustomerId')`.
+`#[CurrentUser] User $user`.
 
-Below, set it on the user with `$user->setLsCustomerId($lsCustomerId)`. To
-actually *save* it to the database, we also need to inject
+[[[ code('3bf285b5e7') ]]]
+
+We'll assume that the ID will be passed via a POST request as `lsCustomerId`,
+so retrieve it from the request with `$request->request->get('lsCustomerId')`.
+Below, set it on the user with `$user->setLsCustomerId($lsCustomerId)`.
+
+[[[ code('97cce85263') ]]] 
+
+To actually *save* it to the database, we also need to inject
 `EntityManagerInterface $entityManager` and, at the end, call
 `$entityManager->flush()`. Finish with `return $this->json([])`. We don't need
 to return actual data here - a successful response is enough.
+
+[[[ code('8326a4e668') ]]]
 
 ## Updating the Stimulus Controller
 
@@ -55,15 +68,21 @@ In the Stimulus controller, add a new value called
 `data-lemon-squeezy-checkout-handle-url-value=""` and pass the URL with
 `{{ path('app_order_checkout_handle') }}`.
 
+[[[ code('e79883042c') ]]]
+
+[[[ code('0935de6ea7') ]]]
+
 With the value set, back in the controller,
 in `#handleCheckout()`, make an AJAX call with `fetch()`, passing
 `this.checkoutHandleUrlValue`. For options, use `method: 'POST'`, and for headers,
 `'Content-Type': 'application/x-www-form-urlencoded'`. This allows us to fetch
 values with `$request->request->get()` - no need to `json_decode()` the request.
-
 For the `body`, pass `new URLSearchParams()` with
-`lsCustomerId: lsCustomerId`. Chain this `fetch()` call
-with `.then()`. Inside, expect `response => {}`. If the response is *not* okay,
+`lsCustomerId: lsCustomerId`.
+
+[[[ code('ce8f98e1d3') ]]]
+
+Chain this `fetch()` call with `.then()`. Inside, expect `response => {}`. If the response is *not* okay,
 throw a new `Error()` with the message:
 
 `"Network response was not ok" + response.statusText`.
@@ -73,6 +92,8 @@ the next `.then()`. Accept `data => {}`, and inside, just leave a comment
 reminding us that there's nothing to do here, because we don't return any data
 from that endpoint. *But*, just in case something goes wrong, chain
 `.catch()` with `console.error('Fetch error:', error)`.
+
+[[[ code('a7cbe474bb') ]]]
 
 ## Testing and Fixing Errors
 
@@ -86,18 +107,25 @@ downloaded. Let's do a little trick and wrap this code in
 `script.addEventListener()`. Listen for the `load` event, pass a function
 as the second argument, and insert our code there.
 
+[[[ code('bdfcae72b8') ]]]
+
 If we refresh the page again... *dang*... we get the *same* error.
 
 Okay, it looks like we should try to instantiate LemonSqueezy *manually* first.
 Before the problem line, write `window.createLemonSqueezy()`. Add a
 little comment above to remind *future us* what we're doing here.
 
+[[[ code('d3708a189e') ]]]
+
 Refresh again, and... *no errors*! Perfect! Let's quickly add
 `console.log(data)` to our code so we'll know if we hit that `if` on
-`Checkout.Success`. Refresh our site one more time to load the changes... and
-click "Checkout with LemonSqueezy". Fill in payment info, billing address...
-click "Pay", and... we see the success message! And in the console... we can see
-the data, so our code was hit. So... did this work?
+`Checkout.Success`.
+
+[[[ code('2c08a75e1d') ]]]
+
+Refresh our site one more time to load the changes... and click "Checkout with LemonSqueezy".
+Fill in payment info, billing address... click "Pay", and... we see the success message!
+And in the console... we can see the data, so our code was hit. So... did this work?
 
 At your terminal, check the database with:
 
@@ -110,9 +138,12 @@ like we're using a bad path for the customer ID. If we double-check our
 dump... *yep*. The path the docs gave us is incorrect.
 
 Change the path to `data.data.order.data.attributes.customer_id`, and try
-this *one more time*. Refresh the page, go through the checkout process again
-(I'll speed through this to save time), and... *success*! Now, back in our
-terminal, rerun the query:
+this *one more time*.
+
+[[[ code('cff195be84') ]]]
+
+Refresh the page, go through the checkout process again (I'll speed through this to save time), and... *success*!
+Now, back in our terminal, rerun the query:
 
 ```terminal-silent
 bin/console doctrine:query:sql "SELECT * FROM user"
