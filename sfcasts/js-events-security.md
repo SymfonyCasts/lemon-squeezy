@@ -1,4 +1,4 @@
-# Syncing Customer ID via JavaScript event and Improving Security
+# Improving Javascript Event Security
 
 We've now showed syncing our LemonSqueezy customer ID with the user in our
 database using two different methods: *webhooks*, which made for a
