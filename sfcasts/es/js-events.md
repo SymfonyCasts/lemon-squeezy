@@ -68,11 +68,11 @@ Vale, parece que primero deberíamos intentar instanciar LemonSqueezy manualment
 
 [[[ code('d3708a189e') ]]]
 
-Actualiza de nuevo, y... ¡no hay errores! ¡Perfecto! Añadamos rápidamente`console.log(data)` a nuestro código para saber si nos encontramos con ese `if` en`Checkout.Success`.
+Actualiza de nuevo, y... ¡no hay errores! ¡Perfecto! Añadamos rápidamente`console.log(data)` a nuestro código para que sepamos si damos con ese `if` en`Checkout.Success`.
 
 [[[ code('2c08a75e1d') ]]]
 
-Actualiza el sitio una vez más para que se carguen los cambios... y haz clic en "Pagar con LemonSqueezy". Rellena los datos de pago, la dirección de facturación... haz clic en "Pagar", y... ¡veremos el mensaje de éxito! Y en la consola... podemos ver los datos, así que nuestro código ha dado en el clavo. Entonces... ¿funcionó?
+Actualiza el sitio una vez más para que se carguen los cambios... y haz clic en "Pagar con LemonSqueezy". Rellena los datos de pago, la dirección de facturación... haz clic en "Pagar", y... ¡veremos el mensaje de éxito! Y en la consola... podemos ver los datos, así que nuestro código ha funcionado. Entonces... ¿funcionó?
 
 En tu terminal, comprueba la base de datos con:
 
