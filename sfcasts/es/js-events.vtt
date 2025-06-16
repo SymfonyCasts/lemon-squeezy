@@ -1,0 +1,388 @@
+WEBVTT
+
+00:00:01.096 --> 00:00:04.346 align:middle
+Ahora mismo, cada vez que queremos guardar
+localmente un ID de cliente de LemonSqueezy
+
+00:00:04.346 --> 00:00:08.746 align:middle
+en la entidad de usuario correspondiente,
+tenemos que configurar nuestros webhooks.
+
+00:00:08.746 --> 00:00:11.396 align:middle
+Ngrok definitivamente ayuda,
+pero sigue siendo un poco pesado.
+
+00:00:11.826 --> 00:00:15.436 align:middle
+Tenemos que ejecutar Ngrok en segundo
+plano antes de empezar a recibir webhooks.
+
+00:00:15.996 --> 00:00:20.806 align:middle
+Y aún tenemos que actualizar la URL del
+webhook cada vez que reiniciamos el agente Ngrok
+
+00:00:20.806 --> 00:00:22.726 align:middle
+si no tenemos un plan Ngrok de pago.
+
+00:00:22.996 --> 00:00:24.146 align:middle
+Eso... no es lo ideal.
+
+00:00:24.146 --> 00:00:28.716 align:middle
+Exploremos una forma alternativa: escuchar
+los eventos JavaScript de LemonSqueezy
+
+00:00:28.716 --> 00:00:31.336 align:middle
+y establecer el ID de
+cliente en un pago correcto.
+
+00:00:31.836 --> 00:00:34.606 align:middle
+¡LemonSqueezy tiene un
+evento especial para esto!
+
+00:00:34.606 --> 00:00:39.716 align:middle
+Abre los documentos, ve a "Guías",
+busca "Usando Lemon.js" a la izquierda,
+
+00:00:39.716 --> 00:00:41.956 align:middle
+y a la derecha, haz clic
+en "Manejo de eventos".
+
+00:00:42.936 --> 00:00:45.566 align:middle
+Aquí podemos ver que cuando la
+compra se realiza correctamente,
+
+00:00:45.716 --> 00:00:48.336 align:middle
+LemonSqueezy lanza un evento Checkout.Success.
+
+00:00:48.986 --> 00:00:51.166 align:middle
+Incluso nos dan un código
+de ejemplo para manejarlo.
+
+00:00:51.726 --> 00:00:55.906 align:middle
+Esto devuelve un montón de datos útiles,
+incluido el ID de cliente que estamos buscando.
+
+00:00:56.856 --> 00:00:58.216 align:middle
+¡Es hora de ponerse manos a la obra!
+
+00:00:58.216 --> 00:01:01.636 align:middle
+Abre
+assets/controllers/lemon-squeezy_controller.js.
+
+00:01:01.636 --> 00:01:08.666 align:middle
+Busca el método connect() y, al final,
+empieza con window.LemonSqueezy.Setup().
+
+00:01:09.446 --> 00:01:13.846 align:middle
+Dentro, pasa eventHandler: (data)
+=> {}, y dentro de éste,
+
+00:01:13.916 --> 00:01:17.976 align:middle
+escribe if (data.event === 'Checkout.Success').
+
+00:01:19.896 --> 00:01:25.976 align:middle
+Obtén el ID del cliente con data.data.customer_id
+y ponlo en una variable lsCustomerId.
+
+00:01:27.946 --> 00:01:29.556 align:middle
+Pasaremos el ID a this.#handleCheckout().
+
+00:01:29.556 --> 00:01:31.196 align:middle
+Éste
+
+00:01:34.486 --> 00:01:38.716 align:middle
+aún no existe, así que créalo a continuación,
+con lsCustomerId como parámetro. A continuación
+
+00:01:39.586 --> 00:01:42.406 align:middle
+, tenemos que crear una ruta en
+nuestra aplicación que gestione y
+
+00:01:42.406 --> 00:01:44.426 align:middle
+guarde el ID de cliente del usuario. Para
+
+00:01:44.896 --> 00:01:48.206 align:middle
+ello, abre src/Controller/OrderController.php y
+
+00:01:48.206 --> 00:01:53.246 align:middle
+crea un nuevo método: public
+function handleCheckout(). Registra
+
+00:01:55.746 --> 00:01:59.246 align:middle
+este #[Route] con una ruta - /checkout/handle y
+
+00:01:59.696 --> 00:02:02.186 align:middle
+nómbralo app_order_checkout_handle.
+
+00:02:02.686 --> 00:02:05.196 align:middle
+Queremos que este método sólo
+funcione para peticiones a POST. Esto
+
+00:02:07.486 --> 00:02:09.566 align:middle
+necesita una petición y
+el usuario actual, así que
+
+00:02:09.566 --> 00:02:14.106 align:middle
+inyecta Request $request y
+#[CurrentUser] User $user.
+
+00:02:14.786 --> 00:02:19.296 align:middle
+Supondremos que el ID se pasará a través
+de una petición POST como lsCustomerId, así
+
+00:02:19.296 --> 00:02:25.796 align:middle
+que recupéralo de la petición con
+$request->request->get('lsCustomerId'). A continuación,
+
+00:02:27.116 --> 00:02:32.376 align:middle
+establécelo en el usuario con
+$user->setLsCustomerId($lsCustomerId). Para
+
+00:02:32.816 --> 00:02:34.526 align:middle
+guardarlo realmente en la base de datos,
+
+00:02:34.526 --> 00:02:40.266 align:middle
+también tenemos que inyectar
+EntityManagerInterface $entityManager y, al final
+
+00:02:40.266 --> 00:02:42.766 align:middle
+, llamar a $entityManager->flush(). Termina
+
+00:02:42.766 --> 00:02:46.006 align:middle
+con return $this->json([]).
+
+00:02:46.006 --> 00:02:50.736 align:middle
+Aquí no necesitamos devolver datos reales:
+basta con una respuesta satisfactoria. En
+
+00:02:50.736 --> 00:02:58.856 align:middle
+el controlador Stimulus, añade un nuevo
+valor llamado checkoutHandleUrl: String
+
+00:02:58.856 --> 00:03:01.516 align:middle
+y pásale la URL de la plantilla. Para
+
+00:03:03.196 --> 00:03:06.786 align:middle
+ello, en templates/order/cart.html.twig, añade
+
+00:03:10.966 --> 00:03:16.666 align:middle
+data-lemon-squeezy-checkout-handle-url-value=""
+y
+
+00:03:16.926 --> 00:03:20.246 align:middle
+pasa la URL con {{
+path('app_order_checkout_handle') }}. Con
+
+00:03:23.676 --> 00:03:26.856 align:middle
+el valor establecido, de vuelta en el
+controlador, en #handleCheckout(), haz
+
+00:03:29.816 --> 00:03:34.776 align:middle
+una llamada AJAX con fetch(), pasando
+this.checkoutHandleUrlValue. Para
+
+00:03:36.636 --> 00:03:41.076 align:middle
+las opciones, utiliza method: 'POST', y para las cabeceras,
+'Content-Type': 'application/x-www-form-urlencoded'.
+
+00:03:41.076 --> 00:03:45.546 align:middle
+Esto
+
+00:03:46.176 --> 00:03:49.906 align:middle
+nos permite obtener valores con
+$request->request->get() - sin
+
+00:03:50.206 --> 00:03:52.126 align:middle
+necesidad de json_decode() la petición.
+
+00:03:52.336 --> 00:03:59.096 align:middle
+Para body, pasa new URLSearchParams()
+con lsCustomerId: lsCustomerId. Encadena
+
+00:04:00.546 --> 00:04:02.516 align:middle
+esta llamada a fetch() con .then(). Dentro,
+
+00:04:03.076 --> 00:04:04.816 align:middle
+espera response => {}. Si
+
+00:04:06.866 --> 00:04:10.616 align:middle
+la respuesta no es correcta, lanza un nuevo
+Error() con el mensaje "La respuesta de la red
+
+00:04:11.706 --> 00:04:15.296 align:middle
+no fue correcta" + response.statusText. Abajo,
+
+00:04:16.536 --> 00:04:18.086 align:middle
+return response.json(). Esto
+
+00:04:18.086 --> 00:04:22.156 align:middle
+nos dará el objeto JSON descodificado
+en el siguiente .then(). Acepta
+
+00:04:22.156 --> 00:04:26.936 align:middle
+data => {}, y dentro, simplemente deja un
+comentario recordándonos que no hay nada que
+
+00:04:26.936 --> 00:04:29.906 align:middle
+hacer aquí, porque no devolvemos
+ningún dato desde esa ruta. Pero,
+
+00:04:30.406 --> 00:04:32.366 align:middle
+por si acaso algo va mal, encadena
+
+00:04:32.546 --> 00:04:37.466 align:middle
+.catch() con console.error('Fetch
+error:', error). Esto
+
+00:04:39.186 --> 00:04:40.946 align:middle
+tiene buena pinta, así que ¡intentémoslo!
+
+00:04:42.176 --> 00:04:46.436 align:middle
+En nuestro sitio, añade un producto al carrito y abre la
+pestaña "Consola" en las Herramientas de desarrollo. Vaya...
+
+00:04:47.416 --> 00:04:48.666 align:middle
+un error. Error de tipo no detectado:
+
+00:04:49.006 --> 00:04:54.046 align:middle
+Cannot read properties of undefined
+(reading 'Setup') Parece que
+
+00:04:54.046 --> 00:04:57.646 align:middle
+hemos empezado a utilizar LemonSqueezy más
+rápido de lo que se descargó su script.
+
+00:04:57.766 --> 00:05:02.626 align:middle
+Hagamos un pequeño truco y envolvamos
+este código en script.addEventListener().
+
+00:05:02.786 --> 00:05:07.146 align:middle
+Escucha el evento load, pasa una función como
+segundo argumento e inserta ahí nuestro código.
+
+00:05:11.446 --> 00:05:13.036 align:middle
+Si volvemos a actualizar
+la página... caramba...
+
+00:05:13.166 --> 00:05:14.866 align:middle
+obtenemos el mismo error. Vale,
+
+00:05:15.426 --> 00:05:19.576 align:middle
+parece que primero deberíamos intentar
+instanciar LemonSqueezy manualmente. Antes de
+
+00:05:20.246 --> 00:05:23.776 align:middle
+la línea del problema, escribe
+window.createLemonSqueezy(). Añade
+
+00:05:24.576 --> 00:05:27.766 align:middle
+un pequeño comentario arriba para recordarnos en
+el futuro lo que estamos haciendo aquí. Actualiza
+
+00:05:30.406 --> 00:05:31.646 align:middle
+de nuevo, y... ¡no hay
+
+00:05:31.856 --> 00:05:32.806 align:middle
+errores! ¡Perfecto!
+
+00:05:32.876 --> 00:05:38.616 align:middle
+Añadamos rápidamente console.log(data)
+a nuestro código para saber si
+
+00:05:38.616 --> 00:05:40.806 align:middle
+nos encontramos con ese if en
+Checkout.Success. Actualiza
+
+00:05:40.806 --> 00:05:43.866 align:middle
+nuestro sitio una vez más para
+que se carguen los cambios... y
+
+00:05:45.086 --> 00:05:46.916 align:middle
+haz clic en "Pagar con LemonSqueezy".
+
+00:05:49.046 --> 00:05:53.216 align:middle
+Rellenamos los datos de pago, la dirección
+de facturación... hacemos clic en
+
+00:05:54.846 --> 00:05:56.426 align:middle
+"Pagar", y...
+
+00:05:57.506 --> 00:05:58.916 align:middle
+¡vemos el mensaje de éxito! Y
+
+00:05:58.916 --> 00:05:59.836 align:middle
+en la consola...
+
+00:05:59.836 --> 00:06:02.006 align:middle
+podemos ver los datos, así que nuestro
+código ha dado en el clavo. Entonces...
+
+00:06:02.996 --> 00:06:04.296 align:middle
+¿funcionó?
+
+00:06:05.986 --> 00:06:07.966 align:middle
+En tu terminal, comprueba la
+base de datos con: bin/console
+
+00:06:07.966 --> 00:06:14.356 align:middle
+doctrine:query:sql "SELECT *
+FROM user" ¡No ha funcionado!
+
+00:06:14.356 --> 00:06:17.916 align:middle
+Dice que el valor es
+"indefinido". Hmmm, lsCustomerId
+
+00:06:19.386 --> 00:06:22.596 align:middle
+parece que estamos utilizando una ruta
+incorrecta para el ID de cliente. Si
+
+00:06:22.596 --> 00:06:27.166 align:middle
+volvemos a comprobar nuestro volcado... sí.
+
+00:06:28.556 --> 00:06:31.346 align:middle
+La ruta que nos dieron los
+documentos es incorrecta. Cambia
+
+00:06:32.026 --> 00:06:32.776 align:middle
+la ruta a
+
+00:06:32.776 --> 00:06:40.276 align:middle
+data.data.order.data.attributes.customer_id,
+e inténtalo una vez más. Actualiza
+
+00:06:41.846 --> 00:06:48.626 align:middle
+la página, vuelve a pasar por el
+proceso de compra (lo haré más rápido
+
+00:06:48.626 --> 00:06:52.606 align:middle
+para ahorrar tiempo), y... ¡éxito!
+
+00:06:52.696 --> 00:06:59.236 align:middle
+Ahora, de vuelta en nuestro terminal,
+vuelve a ejecutar la consulta: Y... ¡Sí!
+
+00:07:00.076 --> 00:07:02.636 align:middle
+¡El ID de cliente se ha
+configurado correctamente!
+
+00:07:04.026 --> 00:07:06.676 align:middle
+Ya no necesitamos ese , así que
+podemos borrarlo, console.log()
+
+00:07:06.926 --> 00:07:09.296 align:middle
+junto con otro que se nos
+pasó en . Así, #openOverlay
+
+00:07:09.416 --> 00:07:15.626 align:middle
+aunque no tengamos Ngrok en ejecución, podemos
+sincronizar el ID de cliente de LemonSqueezy con
+
+00:07:15.626 --> 00:07:17.696 align:middle
+el usuario mediante eventos de JavaScript. Este
+
+00:07:18.476 --> 00:07:22.416 align:middle
+enfoque simplifica un poco el desarrollo local, pero
+ambas formas son totalmente válidas. A continuación:
+
+00:07:23.276 --> 00:07:28.246 align:middle
+Vamos a abordar algunos posibles problemas de
+seguridad evitando el secuestro del ID de cliente.
