@@ -1,6 +1,6 @@
 # Mejorando la seguridad de los eventos Javascript
 
-Ya hemos demostrado que sincronizamos el ID de cliente de LemonSqueezy con el usuario de nuestra base de datos utilizando dos métodos diferentes: webhooks, con los que conseguimos una configuración de producción bastante sólida, y mediante eventos JavaScript de LemonSqueezy, que nos ayudan a omitir la configuración de Ngrok y webhook localmente. Es perfectamente aceptable utilizar ambos métodos simultáneamente.
+Ya hemos demostrado que sincronizamos el ID de cliente de LemonSqueezy con el usuario de nuestra base de datos utilizando dos métodos diferentes: webhooks, con los que conseguimos una configuración de producción bastante sólida, y mediante eventos JavaScript de LemonSqueezy, que nos ayudan a saltarnos la configuración de Ngrok y webhook localmente. Es perfectamente aceptable utilizar ambos métodos simultáneamente.
 
 Pero, dediquemos un momento a examinar nuestra acción `handleCheckout()`. Puede que tengamos un posible problema de seguridad entre manos. Los usuarios malintencionados podrían intentar enviar una petición AJAX a esta ruta utilizando un ID de cliente de LemonSqueezy diferente. Esto podría anular su propio ID de cliente, lo que podría llevar a una situación en la que nuestra aplicación generara una URL firmada para ese cliente y se la entregara al atacante. Esto les permitiría ver información personal, hacer cambios en nombre del cliente e incluso realizar compras fraudulentas.
 
