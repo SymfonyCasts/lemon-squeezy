@@ -15,6 +15,8 @@ over to the attacker. This would let them view personal information, make
 changes on behalf of the customer, and it could even allow them to make
 fraudulent purchases.
 
+[[[ code('45ff64f11f') ]]]
+
 But don't worry! We have some solutions! We *could* use the customer sync via
 the JavaScript events *only* in dev mode. This means it won't work on
 *production*, but it *will* work locally. *Real* users would only be synced via
@@ -40,6 +42,8 @@ Next, pass this `userId` variable as the *first* argument for
 `userId, lsCustomerId` and, down here, pass `userId` to
 `URLSearchParams()`, just like we did with `lsCustomerId`.
 
+[[[ code('eaf7378c76') ]]]
+
 Back in `OrderController.php`, at the top, create a `$userId`
 variable and set it equal to `$request->request->get('userId')`.
 
@@ -53,6 +57,8 @@ write `sprintf()`, with:
 > Current user ID "%s" does not match the user ID "%s" of the order!
 
 And pass `$user->getId()` and `$userId` as arguments.
+
+[[[ code('16ac40a890') ]]]
 
 Now we can safely set the customer ID, since we're certain it's related to the
 current user.
