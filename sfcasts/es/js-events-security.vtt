@@ -1,0 +1,265 @@
+WEBVTT
+
+00:00:01.076 --> 00:00:04.156 align:middle
+Ahora hemos mostrado la sincronización de nuestro
+identificador de cliente LemonSqueezy con el usuario
+
+00:00:04.156 --> 00:00:07.296 align:middle
+de nuestra base de datos utilizando
+dos métodos diferentes: webhooks,
+
+00:00:07.296 --> 00:00:11.906 align:middle
+con los que conseguimos una configuración de producción
+bastante sólida, y mediante eventos JavaScript de LemonSqueezy,
+
+00:00:12.246 --> 00:00:15.306 align:middle
+que nos ayudan a saltarnos la configuración
+de Ngrok y webhook localmente.
+
+00:00:15.866 --> 00:00:18.806 align:middle
+Es perfectamente aceptable utilizar
+ambos métodos simultáneamente.
+
+00:00:19.186 --> 00:00:22.166 align:middle
+Pero, dediquemos un momento a examinar
+nuestra acción handleCheckout().
+
+00:00:22.506 --> 00:00:25.306 align:middle
+Puede que tengamos un posible
+problema de seguridad entre manos.
+
+00:00:25.726 --> 00:00:28.466 align:middle
+Los usuarios malintencionados podrían
+intentar enviar una petición AJAX
+
+00:00:28.466 --> 00:00:31.466 align:middle
+a esta ruta utilizando un ID de
+cliente de LemonSqueezy diferente.
+
+00:00:31.996 --> 00:00:35.646 align:middle
+Esto podría anular su propio ID de cliente,
+lo que podría llevar a una situación
+
+00:00:35.646 --> 00:00:40.306 align:middle
+en la que nuestra aplicación generara una URL firmada
+para ese cliente y se la entregara al atacante.
+
+00:00:40.786 --> 00:00:44.666 align:middle
+Esto les permitiría ver información
+personal, hacer cambios en nombre del cliente
+
+00:00:44.776 --> 00:00:47.536 align:middle
+e incluso realizar compras fraudulentas.
+
+00:00:47.536 --> 00:00:48.746 align:middle
+Pero, ¡no te preocupes!
+
+00:00:48.816 --> 00:00:50.156 align:middle
+¡Tenemos algunas soluciones!
+
+00:00:50.606 --> 00:00:54.506 align:middle
+Podríamos utilizar la sincronización de clientes a
+través de los eventos JavaScript sólo en modo dev.
+
+00:00:54.926 --> 00:00:58.136 align:middle
+Esto significa que no funcionará
+en producción, pero sí localmente.
+
+00:00:58.696 --> 00:01:02.836 align:middle
+Los usuarios reales sólo se sincronizarían a través
+de webhooks con una firma firmada en producción.
+
+00:01:03.426 --> 00:01:04.636 align:middle
+Sin embargo, ¡creo que podemos hacerlo mejor!
+
+00:01:05.206 --> 00:01:07.636 align:middle
+¿Recuerdas cuando estábamos
+configurando el consumidor de webhooks?
+
+00:01:08.116 --> 00:01:13.166 align:middle
+Allí no podíamos acceder al usuario actual, así que añadimos
+el ID de usuario como datos de comprobación personalizados
+
+00:01:13.286 --> 00:01:15.576 align:middle
+a los que luego podíamos acceder
+desde la carga útil del webhook.
+
+00:01:16.086 --> 00:01:20.106 align:middle
+Estos datos personalizados también están
+disponibles en los datos del evento "Checkout.Success"
+
+00:01:20.106 --> 00:01:24.786 align:middle
+Así, podemos enviar ese ID de usuario a
+nuestra acción handleCheckout() y verificar
+
+00:01:24.786 --> 00:01:28.316 align:middle
+que el ID de usuario actual coincide con el
+ID de usuario de los datos personalizados.
+
+00:01:29.246 --> 00:01:30.986 align:middle
+Abre lemons-squeezy_controller.js.
+
+00:01:32.106 --> 00:01:37.146 align:middle
+En LemonSqueezy.Setup(), descomenta la línea
+console.log(data) para depurar la respuesta
+
+00:01:37.146 --> 00:01:39.526 align:middle
+y encontrar la estructura de
+la ruta para el ID de usuario.
+
+00:01:39.836 --> 00:01:42.786 align:middle
+O, si quieres saltarte esa
+parte, puedes confiar en mí
+
+00:01:42.786 --> 00:01:51.186 align:middle
+y escribir const userId =
+data.data.order.meta.custom_data.user_id.
+
+00:01:51.816 --> 00:01:55.876 align:middle
+A continuación, pasa esta variable userId
+como primer argumento para #handleCheckout().
+
+00:01:56.456 --> 00:02:02.336 align:middle
+En #handleCheckout(), cambia la firma
+a userId, lsCustomerId y, aquí abajo,
+
+00:02:02.776 --> 00:02:07.476 align:middle
+pasa userId a URLSearchParams(),
+igual que hicimos con lsCustomerId.
+
+00:02:08.106 --> 00:02:13.966 align:middle
+De vuelta a OrderController.php, en la parte
+superior, crea una variable $userId y hazla igual
+
+00:02:14.206 --> 00:02:16.956 align:middle
+a $request->request->get('userId').
+
+00:02:18.156 --> 00:02:25.106 align:middle
+Debajo, añade: if ($userId
+!== $user->getId()).
+
+00:02:25.106 --> 00:02:28.036 align:middle
+Como el método getId()
+devuelve un número entero
+
+00:02:28.096 --> 00:02:31.276 align:middle
+, y como me encanta la comparación
+estricta, haz un typecast de esto a string.
+
+00:02:31.276 --> 00:02:36.266 align:middle
+Si se cumple esta condición, throw
+$this->createAccessDeniedException().
+
+00:02:37.136 --> 00:02:40.486 align:middle
+Dentro, escribe sprintf(),
+con: ¡ El ID de usuario actual
+
+00:02:40.486 --> 00:02:44.586 align:middle
+"%s" no coincide con el ID
+de usuario "%s" del pedido!
+
+00:02:46.606 --> 00:02:50.916 align:middle
+Y pasa $user->getId()
+y $userId como argumentos.
+
+00:02:50.916 --> 00:02:54.946 align:middle
+Ahora podemos establecer con seguridad el ID del cliente, ya que
+estamos seguros de que está relacionado con el usuario actual.
+
+00:02:55.736 --> 00:03:01.586 align:middle
+Dirígete a tu terminal y ejecuta:
+bin/console doctrine:query:sql "SELECT *
+
+00:03:01.636 --> 00:03:06.876 align:middle
+FROM user" Tenemos el lsCustomerId configurado,
+así que vamos a restablecerlo a NULL con:
+
+00:03:07.036 --> 00:03:18.316 align:middle
+bin/console doctrine:query:sql "UPDATE user SET
+lsCustomerId=NULL WHERE id=1" ¡Vamos a probarlo!
+
+00:03:18.626 --> 00:03:25.166 align:middle
+En la página del carrito, haz clic en el botón
+"Pagar", rellena los datos de facturación...
+
+00:03:31.876 --> 00:03:32.576 align:middle
+y haz clic en "Pagar".
+
+00:03:32.576 --> 00:03:34.146 align:middle
+Si esperamos un momento...
+
+00:03:34.286 --> 00:03:36.036 align:middle
+vemos el mensaje "Gracias por tu pedido".
+
+00:03:36.286 --> 00:03:37.286 align:middle
+Hasta aquí, ¡todo bien!
+
+00:03:37.786 --> 00:03:40.336 align:middle
+De vuelta al terminal, ejecuta
+de nuevo la consulta : SELECT
+
+00:03:41.306 --> 00:03:44.336 align:middle
+Aquí podemos ver que el campo vuelve
+a estar configurado. lsCustomerId
+
+00:03:44.616 --> 00:03:49.136 align:middle
+En este momento no estamos ejecutando túneles Ngrok, por
+lo que se estableció a través del evento JavaScript.
+
+00:03:49.396 --> 00:03:51.506 align:middle
+¡Funciona! ¡Ahí lo tienes!
+
+00:03:51.736 --> 00:03:53.826 align:middle
+Hemos visto cómo LemonSqueezy
+gestiona las compras.
+
+00:03:54.076 --> 00:03:57.686 align:middle
+Las credenciales del carrito nunca se envían a
+nuestro servidor, sino que se envían directamente
+
+00:03:57.686 --> 00:04:00.536 align:middle
+al servidor de LemonSqueezy a través
+del iFrame que hemos añadido.
+
+00:04:00.936 --> 00:04:04.776 align:middle
+Esto significa que no manejamos ni almacenamos
+ninguna credencial sensible de la tarjeta
+
+00:04:04.776 --> 00:04:05.836 align:middle
+en nuestros servidores.
+
+00:04:06.356 --> 00:04:09.056 align:middle
+Hay que pasar por muchos
+obstáculos para poder hacer eso...
+
+00:04:09.246 --> 00:04:11.356 align:middle
+¡así que es estupendo que ni
+siquiera tengamos que pensar en ello!
+
+00:04:11.926 --> 00:04:16.036 align:middle
+Espero que no haga falta decirlo, pero
+utiliza siempre HTTPS para tus pagos
+
+00:04:16.126 --> 00:04:17.906 align:middle
+y, en realidad, para todo tu sitio web.
+
+00:04:18.706 --> 00:04:19.146 align:middle
+¡De acuerdo!
+
+00:04:19.146 --> 00:04:20.336 align:middle
+¡Eso es todo por este curso!
+
+00:04:20.536 --> 00:04:23.636 align:middle
+¡Estás listo para empezar a generar
+beneficios con compras individuales!
+
+00:04:24.026 --> 00:04:27.836 align:middle
+Aprenderemos más sobre los pagos por suscripción
+en el próximo curso, así que permanece atento.
+
+00:04:28.216 --> 00:04:32.386 align:middle
+Y, como siempre, si tienes alguna pregunta que
+hacernos, estamos a tu disposición en los comentarios.
+
+00:04:32.746 --> 00:04:33.426 align:middle
+¡Feliz codificación!
