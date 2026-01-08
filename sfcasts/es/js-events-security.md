@@ -1,6 +1,6 @@
 # Mejorando la seguridad de los eventos Javascript
 
-Ya hemos demostrado que sincronizamos el ID de cliente de LemonSqueezy con el usuario de nuestra base de datos utilizando dos métodos diferentes: webhooks, con los que conseguimos una configuración de producción bastante sólida, y mediante eventos JavaScript de LemonSqueezy, que nos ayudan a saltarnos la configuración de Ngrok y webhook localmente. Es perfectamente aceptable utilizar ambos métodos simultáneamente.
+Ya hemos demostrado que sincronizamos el ID de cliente de LemonSqueezy con el usuario de nuestra base de datos utilizando dos métodos diferentes: webhooks, con los que conseguimos una configuración de producción bastante sólida, y mediante eventos JavaScript de LemonSqueezy, que nos ayudan a omitir la configuración de Ngrok y webhook localmente. Es perfectamente aceptable utilizar ambos métodos simultáneamente.
 
 Pero, dediquemos un momento a examinar nuestra acción `handleCheckout()`. Puede que tengamos un posible problema de seguridad entre manos. Los usuarios malintencionados podrían intentar enviar una petición AJAX a esta ruta utilizando un ID de cliente de LemonSqueezy diferente. Esto podría anular su propio ID de cliente, lo que podría llevar a una situación en la que nuestra aplicación generara una URL firmada para ese cliente y se la entregara al atacante. Esto les permitiría ver información personal, hacer cambios en nombre del cliente e incluso realizar compras fraudulentas.
 
@@ -22,7 +22,7 @@ A continuación, pasa esta variable `userId` como primer argumento para`#handleC
 
 De vuelta a `OrderController.php`, en la parte superior, crea una variable `$userId`y hazla igual a `$request->request->get('userId')`.
 
-Debajo, añade: `if ($userId !== $user->getId())`. Como el método`getId()` devuelve un número entero, y como me encanta la comparación estricta, haz un typecast de esto a `string`.
+Debajo, añade: `if ($userId !== $user->getId())`. Como el método`getId()` devuelve un número entero, y como me encantan las comparaciones estrictas, haz un typecast de esto a `string`.
 
 Si se cumple esta condición, `throw $this->createAccessDeniedException()`. Dentro, escribe `sprintf()`, con:
 
@@ -38,11 +38,15 @@ Ahora podemos establecer con seguridad el ID del cliente, ya que estamos seguros
 
 Dirígete a tu terminal y ejecuta:
 
+***NOTE
+Desde DoctrineBundle 3.0, el comando pasó a llamarse `symfony console dbal:run-sql`
+***
+
 ```terminal
 bin/console doctrine:query:sql "SELECT * FROM user"
 ```
 
-Tenemos el `lsCustomerId` configurado, así que vamos a restablecerlo a `NULL` con:
+Ya tenemos configurado `lsCustomerId`, así que vamos a restablecerlo a `NULL` con:
 
 ```terminal
 bin/console doctrine:query:sql "UPDATE user SET lsCustomerId=NULL WHERE id=1"
