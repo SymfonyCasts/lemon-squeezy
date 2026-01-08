@@ -145,6 +145,10 @@ this *one more time*.
 Refresh the page, go through the checkout process again (I'll speed through this to save time), and... *success*!
 Now, back in our terminal, rerun the query:
 
+***NOTE
+Since DoctrineBundle 3.0, the command was renamed to `symfony console dbal:run-sql`
+***
+
 ```terminal-silent
 bin/console doctrine:query:sql "SELECT * FROM user"
 ```
