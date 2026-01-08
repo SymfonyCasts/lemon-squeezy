@@ -178,6 +178,10 @@ If we look at the request, we can see our `custom_data` -> `user_id`
 equals `1`. We can also check the database with a handy dandy SQL command. At
 your terminal, run:
 
+***NOTE
+Since DoctrineBundle 3.0, the command was renamed to `symfony console dbal:run-sql`
+***
+
 ```terminal
 bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 1"
 ```
