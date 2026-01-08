@@ -38,7 +38,7 @@ A continuación, si `$user` no existe, escribiremos `throw new EntityNotFoundExc
 
 [[[ code('f679b1a9ce') ]]]
 
-A continuación, añade `match ($event->getName())`, y para `order_created`, llama a`$this->handleOrderCreatedEvent()`. Este método aún no existe, pero lo crearemos más adelante. Pasa también `$event` y `$user` como argumentos. Llegados a este punto, sólo deberíamos tener eventos admitidos, pero por si acaso nos falta algo, añade un `default` que `throw new LogicException()`, con`sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. Muy bien.
+A continuación, añade `match ($event->getName())`, y para `order_created`, llama a`$this->handleOrderCreatedEvent()`. Este método aún no existe, pero lo crearemos más adelante. Pasa también `$event` y `$user` como argumentos. Llegados a este punto, sólo deberíamos tener eventos compatibles, pero por si acaso nos falta algo, añade un `default` que `throw new LogicException()`, con`sprintf('Unsupported LemonSqueezy event: %s', $event->getId())`. Muy bien.
 
 [[[ code('f8940a9d35') ]]]
 
@@ -48,7 +48,7 @@ Ahora, crea el método `handleOrderCreatedEvent()` con PhpStorm como una funció
 
 [[[ code('5310825963') ]]]
 
-Dentro, obtén la carga útil con `$payload = $event->getPayload()`. Debajo, busca el ID del cliente con`$customerId = $payload['data']['attributes']['customer_id']`. Si te preguntas de dónde ha salido esto, puedes encontrarlo en el inspector de Ngrok.
+Dentro, obtén el payload con `$payload = $event->getPayload()`. Debajo, busca el ID del cliente con`$customerId = $payload['data']['attributes']['customer_id']`. Si te preguntas de dónde ha salido esto, puedes encontrarlo en el inspector de Ngrok.
 
 [[[ code('aa62cbd1fb') ]]]
 
@@ -108,10 +108,14 @@ Rellenemos los datos de la tarjeta... la dirección... realicemos el pago, y esp
 
 Si miramos la petición, podemos ver que nuestra `custom_data` -> `user_id`es igual a `1`. También podemos comprobar la base de datos con un práctico comando SQL. En tu terminal, ejecuta:
 
+***NOTE
+Desde DoctrineBundle 3.0, el comando pasó a llamarse `symfony console dbal:run-sql`
+***
+
 ```terminal
 bin/console doctrine:query:sql "SELECT * FROM user WHERE id = 1"
 ```
 
 Este `lsCustomerId` es el ID único de LemonSqueezy. ¡Genial!
 
-Antes de continuar, escribamos algunas pruebas para nuestra configuración de webhook. ¡Eso a continuación!
+Antes de continuar, vamos a escribir algunas pruebas para nuestra configuración de webhook. ¡Eso a continuación!
