@@ -72,7 +72,7 @@ Actualiza de nuevo, y... ¡no hay errores! ¡Perfecto! Añadamos rápidamente`co
 
 [[[ code('2c08a75e1d') ]]]
 
-Actualiza el sitio una vez más para que se carguen los cambios... y haz clic en "Pagar con LemonSqueezy". Rellena los datos de pago, la dirección de facturación... haz clic en "Pagar", y... ¡veremos el mensaje de éxito! Y en la consola... podemos ver los datos, así que nuestro código ha funcionado. Entonces... ¿funcionó?
+Actualiza el sitio una vez más para que se carguen los cambios... y haz clic en "Pagar con LemonSqueezy". Rellena los datos de pago, la dirección de facturación... haz clic en "Pagar", y... ¡veremos el mensaje de éxito! Y en la consola... podemos ver los datos, así que nuestro código ha dado en el clavo. Entonces... ¿funcionó?
 
 En tu terminal, comprueba la base de datos con:
 
@@ -86,14 +86,18 @@ Cambia la ruta a `data.data.order.data.attributes.customer_id`, e inténtalo una
 
 [[[ code('cff195be84') ]]]
 
-Actualiza la página, vuelve a pasar por el proceso de compra (lo haré más rápido para ahorrar tiempo), y... ¡éxito! Ahora, de vuelta en nuestro terminal, vuelve a ejecutar la consulta:
+Actualiza la página, vuelve a pasar por el proceso de compra (lo haré más rápido para ahorrar tiempo) y... ¡éxito! Ahora, de vuelta en nuestro terminal, vuelve a ejecutar la consulta:
+
+***NOTE
+Desde DoctrineBundle 3.0, el comando pasó a llamarse `symfony console dbal:run-sql`
+***
 
 ```terminal-silent
 bin/console doctrine:query:sql "SELECT * FROM user"
 ```
 
-Y... ¡Sí! ¡El ID de cliente se ha configurado correctamente! Ya no necesitamos ese `console.log()`, así que podemos borrarlo, junto con otro que se nos pasó en`#openOverlay`.
+Y... ¡Sí! ¡El ID de cliente se ha establecido correctamente! Ya no necesitamos ese `console.log()`, así que podemos borrarlo, junto con otro que se nos pasó en`#openOverlay`.
 
-Así que, aunque no tengamos Ngrok en ejecución, podemos sincronizar el ID de cliente de LemonSqueezy con el usuario mediante eventos de JavaScript. Este enfoque simplifica un poco el desarrollo local, pero ambas formas son totalmente válidas.
+Así, aunque no tengamos Ngrok en ejecución, podemos sincronizar el ID de cliente de LemonSqueezy con el usuario mediante eventos de JavaScript. Este enfoque simplifica un poco el desarrollo local, pero ambas formas son totalmente válidas.
 
 A continuación: Vamos a abordar algunos posibles problemas de seguridad evitando el secuestro del ID de cliente.
